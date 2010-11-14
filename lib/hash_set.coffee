@@ -40,6 +40,14 @@ hashCode = (obj) ->
 
   _.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
 
+equal = (obj1, obj2) ->
+  if typeof(obj1.equals) == "function"
+    obj1.equals(obj2)
+  else if typeof(obj2.equals) == "function"
+    obj2.equals(obj1)
+  else
+    obj1 == obj2
+
 
 mask = (hash, shift) -> (hash >> shift) & 0x1f
 
@@ -86,7 +94,7 @@ class HashSet
     newroot = @root
     for key in arguments
       hash = hashCode(key)
-      newroot = newroot.with(0, hash, key)
+      newroot = newroot.with(0, hash, key) unless newroot.get(0, hash, key)
     if newroot != @root then new HashSet(newroot) else this
 
   # Returns a new set with the given keys removed, or this set if it
@@ -129,17 +137,15 @@ class LeafNode
 
   each: (func) -> func(@key)
 
-  get:  (shift, hash, key) -> key == @key
+  get:  (shift, hash, key) -> equal(key, @key)
 
   with: (shift, hash, key) ->
-    if key == @key
-      this
-    else if hash == @hash
+    if hash == @hash
       new CollisionNode(hash, [@key, key])
     else
       BitmapIndexedNode.make(shift, this).with(shift, hash, key)
 
-  without: (shift, hash, key) -> if key == @key then null else this
+  without: (shift, hash, key) -> null
 
   toString: -> "LeaveNode(#{@key})"
 
@@ -183,7 +189,7 @@ class BitmapIndexedNode
 
   get: (shift, hash, key) ->
     [bit, i] = bitPosAndIndex(@bitmap, hash, shift)
-    @array[i].get(shift + 5, hash, key) if @bitmap & bit != 0
+    (@bitmap & bit) != 0 && @array[i].get(shift + 5, hash, key)
 
   with: (shift, hash, key) ->
     [bit, i] = bitPosAndIndex(@bitmap, hash, shift)
@@ -197,7 +203,7 @@ class BitmapIndexedNode
       else
         table = _.map([0..31], (m) ->
           b = 1 << m
-          @array[indexForBit(@bitmap, b)] if @bitmap & b != 0)
+          @array[indexForBit(@bitmap, b)] if (@bitmap & b) != 0)
         new ArrayNode(table, mask(hash, shift), newNode, @size + 1)
     else
       v = @array[i]
@@ -244,7 +250,7 @@ class ArrayNode
 
   get: (shift, hash, key) ->
     i = mask(hash, shift)
-    @table[i] && @table[i].get(shift + 5, hash, key)
+    @table[i]? && @table[i].get(shift + 5, hash, key)
 
   with: (shift, hash, key) ->
     i = mask(hash, shift)
@@ -276,9 +282,11 @@ class ArrayNode
 
 # -- exporting
 
-this.HashSet = HashSet
+this.HashSet  = HashSet
 this.hashCode = hashCode
+this.equal    = equal
 
 if typeof(exports) != 'undefined'
-  exports.HashSet = HashSet
+  exports.HashSet  = HashSet
   exports.hashCode = hashCode
+  exports.equal    = equal
