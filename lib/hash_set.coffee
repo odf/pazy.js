@@ -70,24 +70,35 @@ class HashSet
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @root.each(func) else this
 
+  # Returns the elements in this set as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
   # Returns true or false depending on whether the given key is an
   # element of this set.
   get: (key) -> @root.get(0, hashCode(key), key)
 
-  # Helper method for iterating over a list of arguments.
-  iterate: (arguments, method) ->
-    step = (node, key) -> node[method](0, hashCode(key), key)
-    newroot = _.reduce(arguments, step, @root)
-    if newroot != @root then new HashSet(newroot) else this
-
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
-  with: -> this.iterate(arguments, 'with')
+  with: ->
+    newroot = @root
+    for key in arguments
+      hash = hashCode(key)
+      newroot = newroot.with(0, hash, key)
+    if newroot != @root then new HashSet(newroot) else this
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  without: -> this.iterate(arguments, 'without')
+  without: ->
+    newroot = @root
+    for key in arguments
+      hash = hashCode(key)
+      newroot = newroot.without(0, hash, key) if newroot.get(0, hash, key)
+    if newroot != @root then new HashSet(newroot) else this
 
+  # Returns a string representation of this set.
   toString: -> "HashSet(#{@root})"
 
 HashSet.prototype.plus  = HashSet.prototype.with
@@ -106,7 +117,7 @@ EmptyNode = {
 
   without: (shift, hash, key) -> this
 
-  toString: -> "EmptyNode()"
+  toString: -> "EmptyNode"
 }
 
 
@@ -118,7 +129,7 @@ class LeafNode
 
   each: (func) -> func(@key)
 
-  get:  (key) -> key == @key
+  get:  (shift, hash, key) -> key == @key
 
   with: (shift, hash, key) ->
     if key == @key
@@ -205,7 +216,7 @@ class BitmapIndexedNode
     else
       newBitmap = @bitmap ^ bit
       switch bitCount(newBitmap)
-        when 0 then nil
+        when 0 then null
         when 1 then this.arrayWithout(i)[0]
         else   new BitmapIndexedNode(newBitmap, this.arrayWithout(i), @size - 1)
 
@@ -258,7 +269,7 @@ class ArrayNode
         array  = @table[j] for j in remaining
         new BitmapIndexedNode(bitmap, array, size - 1)
       else
-        new ArrayNode(@table, i, nil, size - 1)
+        new ArrayNode(@table, i, null, size - 1)
 
   toString: -> "ArrayNode(#{_.compact(@table).join(", ")})"
 
