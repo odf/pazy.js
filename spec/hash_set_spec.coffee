@@ -1,5 +1,7 @@
 require.paths.unshift './lib'
 
+require 'underscore'
+
 HashSet = require('hash_set').HashSet
 
 class FunnyKey
@@ -127,7 +129,7 @@ describe "A Hash", ->
       expect(a).toContain("second")
 
 
-  describe "containing two items with different hash values", ->
+  describe "containing two items with a level 1 collision", ->
     key_a = new FunnyKey(1)
     key_b = new FunnyKey(33)
     hash = new HashSet().with(key_a).with(key_b)
@@ -150,3 +152,35 @@ describe "A Hash", ->
 
     it "should be empty when both items are removed", ->
       expect(hash.without(key_a).without(key_b).isEmpty).toBe true
+
+
+  describe "containing three items with identical hash values", ->
+    key_a = new FunnyKey(257)
+    key_b = new FunnyKey(513)
+    key_c = new FunnyKey(769)
+    hash = new HashSet().with(key_a).with(key_b).with(key_c)
+
+    it "should contain the remaining two items when one is removed", ->
+      a = hash.without(key_a).toArray()
+      expect(a.length).toEqual 2
+      expect(a).toContain key_b
+      expect(a).toContain key_c
+
+    it "should contain four items when one with a new hash value is added", ->
+      key_d = new FunnyKey(33)
+      a = hash.with(key_d).toArray()
+      expect(a.length).toEqual 4
+      expect(a).toContain key_a
+      expect(a).toContain key_b
+      expect(a).toContain key_c
+      expect(a).toContain key_d
+
+  describe "containing a wild mix of items", ->
+    keys = new FunnyKey(x * 5 + 7) for x in [0..16]
+    hash = (new HashSet()).with keys...
+
+    it "should have the right number of items", ->
+      expect(hash.size).toEqual keys.length
+
+    it "should return true for each key", ->
+      expect(hash.get(key)).toBe true for key in keys

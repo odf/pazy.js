@@ -166,14 +166,14 @@ class CollisionNode
     if hash != @hash
       BitmapIndexedNode.make(shift, this).with(shift, hash, key)
     else
-      new CollisionNode(hash, _.without(@bucket.key).concat([key]))
+      new CollisionNode(hash, _.without(@bucket, key).concat([key]))
 
   without: (shift, hash, key) ->
     newbucket = _.without(@bucket, key)
     if newbucket.length < 2
-      LeafNode.new(hash, _.first(newbucket))
+      new LeafNode(hash, _.first(newbucket))
     else
-      CollisionNode.new(hash, newbucket)
+      new CollisionNode(hash, newbucket)
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
 
@@ -201,9 +201,10 @@ class BitmapIndexedNode
         newArray = this.arrayWithInsertion(i, newNode)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
-        table = _.map([0..31], (m) ->
+        table = new Array(32)
+        for m in [0..31]
           b = 1 << m
-          @array[indexForBit(@bitmap, b)] if (@bitmap & b) != 0)
+          table[m] = @array[indexForBit(@bitmap, b)] if (@bitmap & b) != 0
         new ArrayNode(table, mask(hash, shift), newNode, @size + 1)
     else
       v = @array[i]
@@ -240,8 +241,8 @@ BitmapIndexedNode.make = (shift, node) ->
 
 # A dense interior node with room for 32 entries.
 class ArrayNode
-  constructor: (table, i, node, @size) ->
-    @table = table[0..]
+  constructor: (baseTable, i, node, @size) ->
+    @table = baseTable[0..]
     @table[i] = node
 
   each: (func) ->
@@ -257,25 +258,25 @@ class ArrayNode
 
     if @table[i]?
       node = @table[i].with(shift + 5, hash, key)
-      newSize = size + node.size - @table[i].size
+      newSize = @size + node.size - @table[i].size
       new ArrayNode(@table, i, node, newSize)
     else
-      new ArrayNode(@table, i, new LeafNode(hash, key), size + 1)
+      new ArrayNode(@table, i, new LeafNode(hash, key), @size + 1)
 
   without: (shift, hash, key) ->
     i = mask(hash, shift)
 
     node = @table[i].without(shift + 5, hash, key)
     if node?
-      new ArrayNode(@table, i, node, size - 1)
+      new ArrayNode(@table, i, node, @size - 1)
     else
       remaining = j for j in [1...@table.length] when j != i and @table[j]
       if remaining.length <= 4
         bitmap = _.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
         array  = @table[j] for j in remaining
-        new BitmapIndexedNode(bitmap, array, size - 1)
+        new BitmapIndexedNode(bitmap, array, @size - 1)
       else
-        new ArrayNode(@table, i, null, size - 1)
+        new ArrayNode(@table, i, null, @size - 1)
 
   toString: -> "ArrayNode(#{_.compact(@table).join(", ")})"
 

@@ -1,4 +1,6 @@
-jasmine = require '../jasmine-node/lib/jasmine'
+require.paths.unshift('../jasmine-node/lib')
+
+jasmine = require 'jasmine'
 sys = require 'sys'
 
 for key, val of jasmine
