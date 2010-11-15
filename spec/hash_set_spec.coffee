@@ -184,3 +184,20 @@ describe "A Hash", ->
 
     it "should return true for each key", ->
       expect(hash.get(key)).toBe true for key in keys
+
+
+  describe "containing lots of items", ->
+    keys = new FunnyKey(x) for x in [0..300]
+    hash = (new HashSet()).with keys...
+
+    it "should have the correct number of keys", ->
+      expect(hash.size).toEqual keys.length
+
+    it "should not be empty", ->
+      expect(hash.isEmpty).toBe false
+
+    it "should return true for each key", ->
+      expect(hash.get(key)).toBe true for key in keys
+
+    it "should return false when fed another key", ->
+      expect(hash.get("third")).toBe false
