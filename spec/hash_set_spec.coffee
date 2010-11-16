@@ -13,6 +13,8 @@ class FunnyKey
 
   toString: -> "FunnyKey(#{@value})"
 
+FunnyKey.sorter = (a, b) -> a.value - b.value
+
 
 describe "A Hash", ->
 
@@ -21,6 +23,9 @@ describe "A Hash", ->
 
     it "should not be empty", ->
       expect(hash.isEmpty).toBe false
+
+    it "should not be the same object as another one constructed like it", ->
+      expect(hash).not.toBe(new HashSet().plus('A').plus('B').minus('A'))
 
 
   describe "when empty", ->
@@ -201,3 +206,69 @@ describe "A Hash", ->
 
     it "should return false when fed another key", ->
       expect(hash.get("third")).toBe false
+
+    it "should contain all the keys when converted to an array", ->
+      expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(keys)
+
+    describe "some of which are then removed", ->
+      ex_keys = keys[0..100]
+      h = hash.without ex_keys...
+
+      it "should have the correct size", ->
+        expect(h.size).toEqual keys.length - ex_keys.length
+
+      it "should not be the same as the original hash", ->
+        expect(h).not.toEqual hash
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+      it "should return true for the remaining keys", ->
+        expect(h.get(key)).toBe true for key in keys when not key in ex_keys
+
+      it "should return false for the removed keys", ->
+        expect(h.get(key)).toBe false for key in ex_keys
+
+      it "should have exactly the remaining elements when made an array", ->
+        expect(h.toArray().sort(FunnyKey.sorter)).toEqual(keys[101..])
+
+    describe "from which some keys not included are removed", ->
+      ex_keys = new FunnyKey(x) for x in [1000..1100]
+      h = hash.without ex_keys...
+
+      it "should be the same object as before", ->
+        expect(h).toBe hash
+
+      it "should have the correct size", ->
+        expect(h.size).toEqual hash.size
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+    describe "all of which are then removed", ->
+      h = hash.without keys...
+
+      it "should have size 0", ->
+        expect(h.size).toEqual 0
+
+      it "should be empty", ->
+        expect(h.isEmpty).toBe true
+
+      it "should return false for the removed keys", ->
+        expect(h.get(key)).toBe false for key in keys
+
+      it "should convert to an empty array", ->
+        expect(h.toArray().length).toBe 0
+
+    describe "some of which are then inserted again", ->
+      ex_keys = keys[0..100]
+      h = hash.with ex_keys...
+
+      it "should be the same object as before", ->
+         expect(h).toBe hash
+
+      it "should have the same size as before", ->
+        expect(h.size).toEqual hash.size
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
