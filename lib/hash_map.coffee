@@ -84,7 +84,7 @@ HashMap.prototype.plus  = HashMap.prototype.with
 HashMap.prototype.minus = HashMap.prototype.without
 
 
-# The root node for the empty set.
+# The root node for the empty map.
 EmptyNode = {
   size:    0
 
@@ -100,7 +100,8 @@ EmptyNode = {
 }
 
 
-# A leaf node contains a single key and also caches its hash value.
+# A leaf node contains a single key-value pair and also caches the
+# hash value for the key.
 class LeafNode
   constructor: (@hash, @key, @value) ->
 
@@ -123,35 +124,39 @@ class LeafNode
   toString: -> "LeaveNode(#{@key})"
 
 
-#TODO -- continue from here...
-
-# A collision node contains several keys with a common hash value,
-# which is cached. The keys are stored in the array @bucket.
+# A collision node contains several key-value pairs in which all keys
+# have a common hash value, which is cached. The key-value pairs are
+# stored in an array @bucket.
 class CollisionNode
   constructor: (@hash, @bucket) ->
     @size = @bucket.length
 
   each: (func) ->
-    for key in @bucket
-      func(key)
+    for [key, value] in @bucket
+      func(key, value)
 
-  get: (shift, hash, key) -> _.contains(@bucket, key)
+  get: (shift, hash, key) ->
+    (pair = getEntry(key))? && pair[1]
 
   with: (shift, hash, key) ->
     if hash != @hash
-      BitmapIndexedNode.make(shift, this).with(shift, hash, key)
+      BitmapIndexedNode.make(shift, this).with(shift, hash, key, value)
     else
-      new CollisionNode(hash, _.without(@bucket, key).concat([key]))
+      newBucket = _.without(@bucket, getEntry(key)).concat([[key, value]]))
+      new CollisionNode(hash, newBucket)
 
   without: (shift, hash, key) ->
-    newbucket = _.without(@bucket, key)
-    if newbucket.length < 2
-      new LeafNode(hash, _.first(newbucket))
+    newBucket = _.without(@bucket, getEntry(key))
+    if newBucket.length < 2
+      new LeafNode(hash, _.first(newBucket)...)
     else
-      new CollisionNode(hash, newbucket)
+      new CollisionNode(hash, newBucket)
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
 
+  #TODO -- implement getEntry()
+
+#TODO -- continue from here...
 
 # A sparse interior node using a bitmap to indicate which of the
 # indices 0..31 are in use.
