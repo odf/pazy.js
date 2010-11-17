@@ -18,51 +18,7 @@
 
 require 'underscore'
 
-
-hashCode = (obj) ->
-  if typeof(obj.hashCode) == "function"
-    code = obj.hashCode()
-    if typeof(code) == "number" and code > 0 and code % 1 == 0
-      return code
-
-  stringVal =
-    if typeof(obj) == "string"
-      obj
-    else if typeof(obj) == "object"
-      ("#{k}:#{v}" for k,v of obj).join(",")
-    else if typeof(obj.toString) == "function"
-      obj.toString()
-    else
-      try
-        String(obj)
-      catch ex
-        Object.prototype.toString.call(obj)
-
-  _.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
-
-equal = (obj1, obj2) ->
-  if typeof(obj1.equals) == "function"
-    obj1.equals(obj2)
-  else if typeof(obj2.equals) == "function"
-    obj2.equals(obj1)
-  else
-    obj1 == obj2
-
-
-mask = (hash, shift) -> (hash >> shift) & 0x1f
-
-bitCount = (n) ->
-  n -= (n >> 1) & 0x55555555
-  n = (n & 0x33333333) + ((n >> 2) & 0x33333333)
-  n = (n & 0x0f0f0f0f) + ((n >> 4) & 0x0f0f0f0f)
-  n += n >> 8
-  (n + (n >> 16)) & 0x3f
-
-indexForBit = (bitmap, bit) -> bitCount(bitmap & (bit - 1))
-
-bitPosAndIndex = (bitmap, hash, shift) ->
-  bit = 1 << mask(hash, shift)
-  [bit, indexForBit(bitmap, bit)]
+util = require 'hash_util'
 
 
 # The HashSet class provides the public API and serves as a wrapper
@@ -86,14 +42,14 @@ class HashSet
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
-  get: (key) -> @root.get(0, hashCode(key), key)
+  get: (key) -> @root.get(0, util.hash(key), key)
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
   with: ->
     newroot = @root
     for key in arguments
-      hash = hashCode(key)
+      hash = util.hash(key)
       newroot = newroot.with(0, hash, key) unless newroot.get(0, hash, key)
     if newroot != @root then new HashSet(newroot) else this
 
@@ -102,7 +58,7 @@ class HashSet
   without: ->
     newroot = @root
     for key in arguments
-      hash = hashCode(key)
+      hash = util.hash(key)
       newroot = newroot.without(0, hash, key) if newroot.get(0, hash, key)
     if newroot != @root then new HashSet(newroot) else this
 
@@ -137,7 +93,7 @@ class LeafNode
 
   each: (func) -> func(@key)
 
-  get:  (shift, hash, key) -> equal(key, @key)
+  get:  (shift, hash, key) -> util.equal(key, @key)
 
   with: (shift, hash, key) ->
     if hash == @hash
@@ -188,15 +144,15 @@ class BitmapIndexedNode
       node.each(func)
 
   get: (shift, hash, key) ->
-    [bit, i] = bitPosAndIndex(@bitmap, hash, shift)
+    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
     (@bitmap & bit) != 0 && @array[i].get(shift + 5, hash, key)
 
   with: (shift, hash, key) ->
-    [bit, i] = bitPosAndIndex(@bitmap, hash, shift)
+    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
 
     if (@bitmap & bit) == 0
       newNode = new LeafNode(hash, key)
-      n = bitCount(@bitmap)
+      n = util.bitCount(@bitmap)
       if n < 8
         newArray = this.arrayWithInsertion(i, newNode)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
@@ -204,8 +160,8 @@ class BitmapIndexedNode
         table = new Array(32)
         for m in [0..31]
           b = 1 << m
-          table[m] = @array[indexForBit(@bitmap, b)] if (@bitmap & b) != 0
-        new ArrayNode(table, mask(hash, shift), newNode, @size + 1)
+          table[m] = @array[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
+        new ArrayNode(table, util.mask(hash, shift), newNode, @size + 1)
     else
       v = @array[i]
       node = v.with(shift + 5, hash, key)
@@ -213,7 +169,7 @@ class BitmapIndexedNode
       new BitmapIndexedNode(@bitmap, this.arrayWith(i, node), newSize)
 
   without: (shift, hash, key) ->
-    [bit, i] = bitPosAndIndex(@bitmap, hash, shift)
+    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
 
     v = @array[i]
     node = v.without(shift + 5, hash, key)
@@ -222,7 +178,7 @@ class BitmapIndexedNode
       new BitmapIndexedNode(@bitmap, this.arrayWith(i, node), newSize)
     else
       newBitmap = @bitmap ^ bit
-      switch bitCount(newBitmap)
+      switch util.bitCount(newBitmap)
         when 0 then null
         when 1 then this.arrayWithout(i)[0]
         else   new BitmapIndexedNode(newBitmap, this.arrayWithout(i), @size - 1)
@@ -236,7 +192,7 @@ class BitmapIndexedNode
   arrayWithout: (i) -> @array[...i].concat(@array[i+1..])
 
 BitmapIndexedNode.make = (shift, node) ->
-  new BitmapIndexedNode(1 << mask(node.hash, shift), [node], node.size)
+  new BitmapIndexedNode(1 << util.mask(node.hash, shift), [node], node.size)
 
 
 # A dense interior node with room for 32 entries.
@@ -250,11 +206,11 @@ class ArrayNode
       node.each(func) if node?
 
   get: (shift, hash, key) ->
-    i = mask(hash, shift)
+    i = util.mask(hash, shift)
     @table[i]? && @table[i].get(shift + 5, hash, key)
 
   with: (shift, hash, key) ->
-    i = mask(hash, shift)
+    i = util.mask(hash, shift)
 
     if @table[i]?
       node = @table[i].with(shift + 5, hash, key)
@@ -264,7 +220,7 @@ class ArrayNode
       new ArrayNode(@table, i, new LeafNode(hash, key), @size + 1)
 
   without: (shift, hash, key) ->
-    i = mask(hash, shift)
+    i = util.mask(hash, shift)
 
     node = @table[i].without(shift + 5, hash, key)
     if node?
@@ -283,11 +239,7 @@ class ArrayNode
 
 # -- exporting
 
-this.HashSet  = HashSet
-this.hashCode = hashCode
-this.equal    = equal
+this.HashSet = HashSet
 
 if typeof(exports) != 'undefined'
-  exports.HashSet  = HashSet
-  exports.hashCode = hashCode
-  exports.equal    = equal
+  exports.HashSet = HashSet
