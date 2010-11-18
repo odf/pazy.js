@@ -13,7 +13,7 @@ class FunnyKey
 
   toString: -> "FunnyKey(#{@value})"
 
-FunnyKey.sorter = (a, b) -> a[1] - b[1]
+FunnyKey.sorter = (a, b) -> a[0].value - b[0].value
 
 
 describe "A Hash", ->
@@ -220,4 +220,61 @@ describe "A Hash", ->
         expect(h.get(key)).not.toBeDefined() for key in ex_keys
 
       it "should have exactly the original items as an array", ->
+        expect(h.toArray().sort(FunnyKey.sorter)).toEqual items
+
+    describe "all of which are then removed", ->
+      h = hash.without keys...
+
+      it "should have size 0", ->
+        expect(h.size).toEqual 0
+
+      it "should be empty", ->
+        expect(h.isEmpty).toBe true
+
+      it "should return nothing for the removed keys", ->
+        expect(h.get(key)).not.toBeDefined() for key in keys
+
+      it "should convert to an empty array", ->
+        expect(h.toArray().length).toBe 0
+
+    describe "some of which are then replaced", ->
+      ex_keys = keys[0..100]
+      newItems = [k, k.value.toString()] for k in ex_keys
+      h = hash.with newItems...
+
+      it "should have the same size as before", ->
+        expect(h.size).toBe hash.size
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+      it "should retrieve the original values for the untouched keys", ->
+        expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
+
+      it "should return the new values for the modified keys", ->
+        expect(h.get(key)).toBe key.value.toString() for key in ex_keys
+
+      it "should contain the appropriate key-value pairs", ->
+        a = h.toArray().sort(FunnyKey.sorter)
+        expect(a[101..]).toEqual items[101..]
+        expect(a[0..100]).toEqual ([k, v.toString()] for [k, v] in items[0..100])
+
+    describe "some of which are then overwritten with the original value", ->
+      ex_keys = keys[0..100]
+      newItems = [k, k.value] for k in ex_keys
+      h = hash.with newItems...
+
+      it "should be the same object as before", ->
+        expect(h).toBe hash
+
+      it "should have the same size as before", ->
+        expect(h.size).toEqual hash.size
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+      it "should retrieve the original values for all keys", ->
+        expect(h.get(key)).toBe key.value for key in keys
+
+      it "should contain the appropriate key-value pair", ->
         expect(h.toArray().sort(FunnyKey.sorter)).toEqual items
