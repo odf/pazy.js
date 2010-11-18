@@ -139,7 +139,7 @@ class CollisionNode
       func([key, value])
 
   get: (shift, hash, key) ->
-    (pair = this.getEntry(key))? && pair[1]
+    pair[1] if (pair = this.getEntry(key))?
 
   with: (shift, hash, key, value) ->
     if hash != @hash

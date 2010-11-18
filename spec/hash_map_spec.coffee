@@ -177,3 +177,47 @@ describe "A Hash", ->
 
     it "should contain all the items when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
+
+    describe "some of which are then removed", ->
+      ex_keys = keys[0..100]
+      h = hash.without ex_keys...
+
+      it "should have the correct size", ->
+        expect(h.size).toEqual keys.length - ex_keys.length
+
+      it "should not be the same as the original hash", ->
+        expect(h).not.toEqual hash
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+      it "should retrieve the associated values for the remaining keys", ->
+        expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
+
+      it "should not return anything for the removed keys", ->
+        expect(h.get(key)).not.toBeDefined() for key in ex_keys
+
+      it "should have exactly the remaining elements when made an array", ->
+        expect(h.toArray().sort(FunnyKey.sorter)).toEqual(items[101..])
+
+    describe "from which some keys not included are removed", ->
+      ex_keys = new FunnyKey(x) for x in [1000..1100]
+      h = hash.without ex_keys...
+
+      it "should be the same object as before", ->
+        expect(h).toBe hash
+
+      it "should have the correct size", ->
+        expect(h.size).toEqual hash.size
+
+      it "should not be empty", ->
+        expect(h.isEmpty).toBe false
+
+      it "should retrieve the associated values for the original keys", ->
+        expect(h.get(key)).toBe key.value for key in keys
+
+      it "should not return anything for the 'removed' keys", ->
+        expect(h.get(key)).not.toBeDefined() for key in ex_keys
+
+      it "should have exactly the original items as an array", ->
+        expect(h.toArray().sort(FunnyKey.sorter)).toEqual items
