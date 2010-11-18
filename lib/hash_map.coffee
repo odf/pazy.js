@@ -124,7 +124,7 @@ class LeafNode
 
   without: (shift, hash, key) -> null
 
-  toString: -> "LeaveNode(#{@key})"
+  toString: -> "LeaveNode(#{@key}, #{@value})"
 
 
 # A collision node contains several key-value pairs in which all keys
@@ -145,7 +145,7 @@ class CollisionNode
     if hash != @hash
       BitmapIndexedNode.make(shift, this).with(shift, hash, key, value)
     else
-      newBucket = _.without(@bucket, getEntry(key)).concat([[key, value]]))
+      newBucket = _.without(@bucket, getEntry(key)).concat([[key, value]])
       new CollisionNode(hash, newBucket)
 
   without: (shift, hash, key) ->
@@ -157,7 +157,7 @@ class CollisionNode
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
 
-  getEntry: (key) -> _.detect @bucket, (pair) -> equal(pair[0], key))
+  getEntry: (key) -> _.detect @bucket, (pair) -> equal(pair[0], key)
 
 
 # A sparse interior node using a bitmap to indicate which of the

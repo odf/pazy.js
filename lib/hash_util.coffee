@@ -1,6 +1,6 @@
 util = {
   hash : (obj) ->
-    if typeof(obj.hashCode) == "function"
+    if obj? and typeof(obj.hashCode) == "function"
       code = obj.hashCode()
       if typeof(code) == "number" and code > 0 and code % 1 == 0
         return code
@@ -10,7 +10,7 @@ util = {
         obj
       else if typeof(obj) == "object"
         ("#{k}:#{v}" for k,v of obj).join(",")
-      else if typeof(obj.toString) == "function"
+      else if obj? and typeof(obj.toString) == "function"
         obj.toString()
       else
         try
@@ -21,9 +21,9 @@ util = {
     _.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
 
   equal: (obj1, obj2) ->
-    if typeof(obj1.equals) == "function"
+    if obj1? and typeof(obj1.equals) == "function"
       obj1.equals(obj2)
-    else if typeof(obj2.equals) == "function"
+    else if obj2? and typeof(obj2.equals) == "function"
       obj2.equals(obj1)
     else
       obj1 == obj2
