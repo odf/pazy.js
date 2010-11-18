@@ -16,9 +16,12 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
-require 'underscore'
 
-util = require 'hash_util'
+if typeof(require) == 'function'
+  require 'underscore'
+  util = require 'hash_util'
+else
+  util = this.hashUtil
 
 
 # The HashSet class provides the public API and serves as a wrapper
@@ -154,7 +157,7 @@ class BitmapIndexedNode
       newNode = new LeafNode(hash, key)
       n = util.bitCount(@bitmap)
       if n < 8
-        newArray = this.arrayWithInsertion(i, newNode)
+        newArray = util.arrayWithInsertion(@array, i, newNode)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
         table = new Array(32)
@@ -166,7 +169,7 @@ class BitmapIndexedNode
       v = @array[i]
       node = v.with(shift + 5, hash, key)
       newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, this.arrayWith(i, node), newSize)
+      new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
 
   without: (shift, hash, key) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
@@ -175,21 +178,16 @@ class BitmapIndexedNode
     node = v.without(shift + 5, hash, key)
     if node?
       newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, this.arrayWith(i, node), newSize)
+      new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
     else
       newBitmap = @bitmap ^ bit
+      newArray  = util.arrayWithout(@array, i)
       switch util.bitCount(newBitmap)
         when 0 then null
-        when 1 then this.arrayWithout(i)[0]
-        else   new BitmapIndexedNode(newBitmap, this.arrayWithout(i), @size - 1)
+        when 1 then newArray[0]
+        else   new BitmapIndexedNode(newBitmap, newArray, @size - 1)
 
   toString: -> "BitmapIndexedNode(#{@array.join(", ")})"
-
-  arrayWith: (i, node) -> @array[...i].concat([node], @array[i+1..])
-
-  arrayWithInsertion: (i, node) -> @array[...i].concat([node], @array[i..])
-
-  arrayWithout: (i) -> @array[...i].concat(@array[i+1..])
 
 BitmapIndexedNode.make = (shift, node) ->
   new BitmapIndexedNode(1 << util.mask(node.hash, shift), [node], node.size)
