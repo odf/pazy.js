@@ -13,7 +13,7 @@ class FunnyKey
 
   toString: -> "FunnyKey(#{@value})"
 
-FunnyKey.sorter = (a, b) -> a.value - b.value
+FunnyKey.sorter = (a, b) -> a[1] - b[1]
 
 
 describe "A Hash", ->
@@ -100,10 +100,17 @@ describe "A Hash", ->
   describe "containing two items with level one collision", ->
     key_a = new FunnyKey(1)
     key_b = new FunnyKey(33)
+    key_c = new FunnyKey(5)
     hash = new HashMap().with([key_a, "a"]).with([key_b, "b"])
 
+    it "should contain two elements", ->
+      expect(hash.size).toBe 2
+
+    it "should not return anything when get is called with a third key", ->
+      expect(hash.get(key_c)).not.toBeDefined()
+
     it "should not change when an item not included is removed", ->
-      a = hash.without(new FunnyKey(5)).toArray()
+      a = hash.without(key_c).toArray()
       expect(a.length).toBe 2
       expect(a).toContain [key_a, "a"]
       expect(a).toContain [key_b, "b"]
@@ -116,4 +123,57 @@ describe "A Hash", ->
       h = hash.without(key_a).without(key_b)
       expect(h.isEmpty).toBe true
 
+  describe "containing three items with identical hash values", ->
+    key_a = new FunnyKey(257)
+    key_b = new FunnyKey(513)
+    key_c = new FunnyKey(769)
+    key_d = new FunnyKey(33)
+    hash = new HashMap().with([key_a, "a"], [key_b, "b"], [key_c, "c"])
 
+    it "should contain the remaining two items when one is removed", ->
+      a = hash.without(key_a).toArray()
+      expect(a.length).toBe 2
+      expect(a).toContain [key_b, "b"]
+      expect(a).toContain [key_c, "c"]
+
+    it "should contain four items when one with a new hash value is added", ->
+      a = hash.with([key_d, "d"]).toArray()
+      expect(a.length).toBe 4
+      expect(a).toContain [key_a, "a"]
+      expect(a).toContain [key_b, "b"]
+      expect(a).toContain [key_c, "c"]
+      expect(a).toContain [key_d, "d"]
+
+  describe "containing a wild mix of items", ->
+    keys  = new FunnyKey(x * 5 + 7) for x in [0..16]
+    items = [key, key.value] for key in keys
+    hash  = (new HashMap()).with items...
+
+    it "should have the right number of items", ->
+      expect(hash.size).toEqual keys.length
+
+    it "should retrieve the associated value for each key", ->
+      expect(hash.get(key)).toBe key.value for key in keys
+
+    it "should contain all the items when converted to an array", ->
+      expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
+
+  describe "containing lots of items", ->
+    keys  = new FunnyKey(x) for x in [0..300]
+    items = [key, key.value] for key in keys
+    hash  = (new HashMap()).with items...
+
+    it "should have the correct number of items", ->
+      expect(hash.size).toEqual keys.length
+
+    it "should not be empty", ->
+      expect(hash.isEmpty).toBe false
+
+    it "should retrieve the associated value for each key", ->
+      expect(hash.get(key)).toBe key.value for key in keys
+
+    it "should not return anythin when fed another key", ->
+      expect(hash.get("third")).not.toBeDefined()
+
+    it "should contain all the items when converted to an array", ->
+      expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)

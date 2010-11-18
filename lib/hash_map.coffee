@@ -136,20 +136,20 @@ class CollisionNode
 
   each: (func) ->
     for [key, value] in @bucket
-      func(key, value)
+      func([key, value])
 
   get: (shift, hash, key) ->
-    (pair = getEntry(key))? && pair[1]
+    (pair = this.getEntry(key))? && pair[1]
 
-  with: (shift, hash, key) ->
+  with: (shift, hash, key, value) ->
     if hash != @hash
       BitmapIndexedNode.make(shift, this).with(shift, hash, key, value)
     else
-      newBucket = _.without(@bucket, getEntry(key)).concat([[key, value]])
+      newBucket = _.without(@bucket, this.getEntry(key)).concat([[key, value]])
       new CollisionNode(hash, newBucket)
 
   without: (shift, hash, key) ->
-    newBucket = _.without(@bucket, getEntry(key))
+    newBucket = _.without(@bucket, this.getEntry(key))
     if newBucket.length < 2
       new LeafNode(hash, _.first(newBucket)...)
     else
@@ -157,7 +157,7 @@ class CollisionNode
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
 
-  getEntry: (key) -> _.detect @bucket, (pair) -> equal(pair[0], key)
+  getEntry: (key) -> _.detect @bucket, (pair) -> util.equal(pair[0], key)
 
 
 # A sparse interior node using a bitmap to indicate which of the
@@ -171,7 +171,7 @@ class BitmapIndexedNode
 
   get: (shift, hash, key) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
-    (@bitmap & bit) != 0 && @array[i].get(shift + 5, hash, key)
+    @array[i].get(shift + 5, hash, key) if (@bitmap & bit) != 0
 
   with: (shift, hash, key, value) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
@@ -228,7 +228,7 @@ class ArrayNode
 
   get: (shift, hash, key) ->
     i = util.mask(hash, shift)
-    @table[i]? && @table[i].get(shift + 5, hash, key)
+    @table[i].get(shift + 5, hash, key) if @table[i]?
 
   with: (shift, hash, key, value) ->
     i = util.mask(hash, shift)
