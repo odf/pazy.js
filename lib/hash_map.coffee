@@ -115,16 +115,19 @@ class LeafNode
   get:  (shift, hash, key) -> @value if util.equal(key, @key)
 
   with: (shift, hash, leaf) ->
-    if util.equal(@key, leaf.key)
-      leaf
-    else if hash == @hash
-      new CollisionNode(hash, [[@key, @value], [leaf.key, leaf.value]])
-    else
-      new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
+    this.baseForAdditionOf(shift, hash, leaf).with(shift, hash, leaf)
 
   without: (shift, hash, key) -> null
 
   toString: -> "LeaveNode(#{@key}, #{@value})"
+
+  baseForAdditionOf: (shift, hash, leaf) ->
+    if util.equal(@key, leaf.key)
+      EmptyNode
+    else if hash == @hash
+      new CollisionNode(hash).with(shift, @hash, this)
+    else
+      new BitmapIndexedNode().with(shift, @hash, this)
 
 
 # A collision node contains several key-value pairs in which all keys
@@ -132,6 +135,7 @@ class LeafNode
 # stored in an array @bucket.
 class CollisionNode
   constructor: (@hash, @bucket) ->
+    @bucket = [] unless @bucket?
     @size = @bucket.length
 
   each: (func) ->
