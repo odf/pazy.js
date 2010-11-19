@@ -60,7 +60,7 @@ class HashMap
     for [key, value] in arguments
       hash = util.hash(key)
       unless util.equal(newroot.get(0, hash, key), value)
-        newroot = newroot.with(0, hash, key, value)
+        newroot = newroot.with(0, hash, new LeafNode(hash, key, value))
     if newroot != @root then new HashMap(newroot) else this
 
   # Returns a new set with the given keys removed, or this set if it
@@ -95,7 +95,7 @@ EmptyNode = {
 
   each:    (func) -> ()
 
-  with:    (shift, hash, key, value) -> new LeafNode(hash, key, value)
+  with:    (shift, hash, leaf) -> leaf
 
   without: (shift, hash, key) -> this
 
@@ -114,13 +114,13 @@ class LeafNode
 
   get:  (shift, hash, key) -> @value if util.equal(key, @key)
 
-  with: (shift, hash, key, value) ->
-    if util.equal(key, @key)
-      new LeafNode(hash, key, value)
+  with: (shift, hash, leaf) ->
+    if util.equal(@key, leaf.key)
+      leaf
     else if hash == @hash
-      new CollisionNode(hash, [[@key, @value], [key, value]])
+      new CollisionNode(hash, [[@key, @value], [leaf.key, leaf.value]])
     else
-      BitmapIndexedNode.make(shift, this).with(shift, hash, key, value)
+      new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
 
   without: (shift, hash, key) -> null
 
@@ -141,11 +141,12 @@ class CollisionNode
   get: (shift, hash, key) ->
     pair[1] if (pair = this.getEntry(key))?
 
-  with: (shift, hash, key, value) ->
+  with: (shift, hash, leaf) ->
     if hash != @hash
-      BitmapIndexedNode.make(shift, this).with(shift, hash, key, value)
+      new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
     else
-      newBucket = _.without(@bucket, this.getEntry(key)).concat([[key, value]])
+      newBucket = _.without(@bucket, this.getEntry(leaf.key))
+                   .concat([[leaf.key, leaf.value]])
       new CollisionNode(hash, newBucket)
 
   without: (shift, hash, key) ->
@@ -164,41 +165,44 @@ class CollisionNode
 # indices 0..31 are in use.
 class BitmapIndexedNode
   constructor: (@bitmap, @array, @size) ->
+    unless @bitmap?
+      @bitmap = 0
+      @array  = []
+      @size   = 0
 
   each: (func) ->
     for node in @array
       node.each(func)
 
-  get: (shift, hash, key) ->
-    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
-    @array[i].get(shift + 5, hash, key) if (@bitmap & bit) != 0
+  get: (shift, key, data) ->
+    [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
+    @array[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
 
-  with: (shift, hash, key, value) ->
-    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
+  with: (shift, key, leaf) ->
+    [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
     if (@bitmap & bit) == 0
-      newNode = new LeafNode(hash, key, value)
       n = util.bitCount(@bitmap)
       if n < 8
-        newArray = util.arrayWithInsertion(@array, i, newNode)
+        newArray = util.arrayWithInsertion(@array, i, leaf)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
         table = new Array(32)
         for m in [0..31]
           b = 1 << m
           table[m] = @array[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
-        new ArrayNode(table, util.mask(hash, shift), newNode, @size + 1)
+        new ArrayNode(table, util.mask(key, shift), leaf, @size + 1)
     else
       v = @array[i]
-      node = v.with(shift + 5, hash, key, value)
+      node = v.with(shift + 5, key, leaf)
       newSize = @size + node.size - v.size
       new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
 
-  without: (shift, hash, key) ->
-    [bit, i] = util.bitPosAndIndex(@bitmap, hash, shift)
+  without: (shift, key, data) ->
+    [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
     v = @array[i]
-    node = v.without(shift + 5, hash, key)
+    node = v.without(shift + 5, key, data)
     if node?
       newSize = @size + node.size - v.size
       new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
@@ -212,9 +216,6 @@ class BitmapIndexedNode
 
   toString: -> "BitmapIndexedNode(#{@array.join(", ")})"
 
-BitmapIndexedNode.make = (shift, node) ->
-  new BitmapIndexedNode(1 << util.mask(node.hash, shift), [node], node.size)
-
 
 # A dense interior node with room for 32 entries.
 class ArrayNode
@@ -226,24 +227,24 @@ class ArrayNode
     for node in @table
       node.each(func) if node?
 
-  get: (shift, hash, key) ->
-    i = util.mask(hash, shift)
-    @table[i].get(shift + 5, hash, key) if @table[i]?
+  get: (shift, key, data) ->
+    i = util.mask(key, shift)
+    @table[i].get(shift + 5, key, data) if @table[i]?
 
-  with: (shift, hash, key, value) ->
-    i = util.mask(hash, shift)
+  with: (shift, key, leaf) ->
+    i = util.mask(key, shift)
 
     if @table[i]?
-      node = @table[i].with(shift + 5, hash, key, value)
+      node = @table[i].with(shift + 5, key, leaf)
       newSize = @size + node.size - @table[i].size
       new ArrayNode(@table, i, node, newSize)
     else
-      new ArrayNode(@table, i, new LeafNode(hash, key, value), @size + 1)
+      new ArrayNode(@table, i, leaf, @size + 1)
 
-  without: (shift, hash, key) ->
-    i = util.mask(hash, shift)
+  without: (shift, key, data) ->
+    i = util.mask(key, shift)
 
-    node = @table[i].without(shift + 5, hash, key)
+    node = @table[i].without(shift + 5, key, data)
     if node?
       new ArrayNode(@table, i, node, @size - 1)
     else
