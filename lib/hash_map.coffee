@@ -115,16 +115,17 @@ class LeafNode
   get:  (shift, hash, key) -> @value if util.equal(key, @key)
 
   with: (shift, hash, leaf) ->
-    this.baseForAdditionOf(shift, hash, leaf).with(shift, hash, leaf)
+    if util.equal(@key, leaf.key)
+      leaf
+    else
+      this.baseForAdditionOf(shift, hash, leaf).with(shift, hash, leaf)
 
   without: (shift, hash, key) -> null
 
   toString: -> "LeafNode(#{@key}, #{@value})"
 
   baseForAdditionOf: (shift, hash, leaf) ->
-    if util.equal(@key, leaf.key)
-      EmptyNode
-    else if hash == @hash
+    if hash == @hash
       new CollisionNode(hash).with(shift, @hash, this)
     else
       new BitmapIndexedNode().with(shift, @hash, this)
