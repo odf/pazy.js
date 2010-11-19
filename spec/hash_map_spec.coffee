@@ -74,8 +74,8 @@ describe "A Hash", ->
       expect(a.length).toEqual 1
       expect(a).toContain(["first", 1])
 
-    it "should print as HashMap(LeaveNode(first, 1))", ->
-      expect(hash.toString()).toEqual('HashMap(LeaveNode(first, 1))')
+    it "should print as HashMap(LeafNode(first, 1))", ->
+      expect(hash.toString()).toEqual('HashMap(LeafNode(first, 1))')
 
     describe "the value of which is then changed", ->
       h = hash.with(["first", "one"])

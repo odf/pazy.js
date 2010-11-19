@@ -73,8 +73,8 @@ describe "A Hash", ->
       expect(a.length).toEqual 1
       expect(a).toContain("first")
 
-    it "should print as HashSet(LeaveNode(first))", ->
-      expect(hash.toString()).toEqual('HashSet(LeaveNode(first))')
+    it "should print as HashSet(LeafNode(first))", ->
+      expect(hash.toString()).toEqual('HashSet(LeafNode(first))')
 
 
   describe "containing one item with custom hashCode() and equals()", ->
@@ -101,8 +101,8 @@ describe "A Hash", ->
       expect(a.length).toEqual 1
       expect(a).toContain(key)
 
-    it "should print as HashSet(LeaveNode(FunnyKey(33)))", ->
-      expect(hash.toString()).toEqual('HashSet(LeaveNode(FunnyKey(33)))')
+    it "should print as HashSet(LeafNode(FunnyKey(33)))", ->
+      expect(hash.toString()).toEqual('HashSet(LeafNode(FunnyKey(33)))')
 
 
   describe "containing two items", ->

@@ -119,7 +119,7 @@ class LeafNode
 
   without: (shift, hash, key) -> null
 
-  toString: -> "LeaveNode(#{@key}, #{@value})"
+  toString: -> "LeafNode(#{@key}, #{@value})"
 
   baseForAdditionOf: (shift, hash, leaf) ->
     if util.equal(@key, leaf.key)

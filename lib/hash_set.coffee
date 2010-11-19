@@ -106,7 +106,7 @@ class LeafNode
 
   without: (shift, hash, key) -> null
 
-  toString: -> "LeaveNode(#{@key})"
+  toString: -> "LeafNode(#{@key})"
 
 
 # A collision node contains several keys with a common hash value,
