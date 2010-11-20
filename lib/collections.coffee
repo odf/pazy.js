@@ -49,6 +49,8 @@ util = {
     a[j] for j in [0...a.length] when j != i
 
 
+  isKey: (n) -> typeof(n) == "number" and (0x80000000 > n >= 0) and (n % 1 == 0)
+
   mask: (key, shift) -> (key >> (27 - shift)) & 0x1f
 
   bitCount: (n) ->
@@ -233,7 +235,7 @@ class IntSet
   # this set if it already contains all those elements.
   with: ->
     newroot = @root
-    for key in arguments
+    for key in arguments when util.isKey(key)
       unless newroot.get(0, key)
         newroot = newroot.with(0, key, new IntLeaf(key))
     if newroot != @root then new IntSet(newroot) else this
@@ -262,7 +264,7 @@ hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) % 0x80000000
 hashCode = (obj) ->
   if obj? and typeof(obj.hashCode) == "function"
     code = obj.hashCode()
-    if typeof(code) == "number" and code > 0 and code % 1 == 0
+    if util.isKey code
       return code
 
   stringVal =

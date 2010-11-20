@@ -117,10 +117,10 @@ describe "An IntSet", ->
 
 
   describe "containing four items with collisions in the higher bits", ->
-    key_a = 0xfffffff1
-    key_b = 0xfffffff3
-    key_c = 0xffff0ff5
-    key_d = 0xffff0ff7
+    key_a = 0x7ffffff1
+    key_b = 0x7ffffff3
+    key_c = 0x7fff0ff5
+    key_d = 0x7fff0ff7
     hash = new IntSet().with(key_a, key_b, key_c, key_d)
 
     it "should return true for all keys", ->
