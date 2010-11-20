@@ -180,6 +180,74 @@ class ArrayNode
 
 
 # --------------------------------------------------------------------
+# Collections with integer keys.
+# --------------------------------------------------------------------
+
+# A leaf node contains a single integer.
+class IntLeaf
+  constructor: (@key) ->
+
+  size: 1
+
+  each: (func) -> func(@key)
+
+  get:  (shift, key, data) -> key == @key
+
+  with: (shift, key, leaf) ->
+    new BitmapIndexedNode().with(shift, @key, this).with(shift, key, leaf)
+
+  without: (shift, key, data) -> null
+
+  toString: -> "LeafNode(#{@key})"
+
+
+# The IntSet class.
+class IntSet
+  # The constructor creates an empty IntSet.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+
+  # If called with a block, iterates over the elements in this set;
+  # otherwise, returns this set (this mimics Ruby enumerables).
+  each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements in this set as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
+  # Returns true or false depending on whether the given key is an
+  # element of this set.
+  get: (key) -> @root.get(0, key) == true
+
+  # Returns a new set with the given keys inserted as elements, or
+  # this set if it already contains all those elements.
+  with: ->
+    newroot = @root
+    for key in arguments
+      unless newroot.get(0, key)
+        newroot = newroot.with(0, key, new IntLeaf(key))
+    if newroot != @root then new IntSet(newroot) else this
+
+  # Returns a new set with the given keys removed, or this set if it
+  # does not contain any of them.
+  without: ->
+    newroot = @root
+    for key in arguments
+      newroot = newroot.without(0, key) if newroot.get(0, key)
+    if newroot != @root then new IntSet(newroot) else this
+
+  # Returns a string representation of this set.
+  toString: -> "IntSet(#{@root})"
+
+IntSet.prototype.plus  = IntSet.prototype.with
+IntSet.prototype.minus = IntSet.prototype.without
+
+
+# --------------------------------------------------------------------
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
@@ -263,14 +331,11 @@ class HashLeaf
   get:  (shift, hash, key) -> true if areEqual(key, @key)
 
   with: (shift, hash, leaf) ->
-    if areEqual(@key, leaf.key)
-      leaf
+    if hash == @hash
+      base = new CollisionNode(hash)
     else
-      if hash == @hash
-        base = new CollisionNode(hash)
-      else
-        base = new BitmapIndexedNode()
-      base.with(shift, @hash, this).with(shift, hash, leaf)
+      base = new BitmapIndexedNode()
+    base.with(shift, @hash, this).with(shift, hash, leaf)
 
   without: (shift, hash, key) -> null
 
@@ -332,19 +397,49 @@ HashSet.prototype.minus = HashSet.prototype.without
 
 # A leaf node contains a single key-value pair and also caches the
 # hash value for the key.
-class HashLeafWithValue extends HashLeaf
+class HashLeafWithValue
   constructor: (@hash, @key, @value) ->
+
+  size: 1
 
   each: (func) -> func([@key, @value])
 
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
+
+  with: (shift, hash, leaf) ->
+    if areEqual(@key, leaf.key)
+      leaf
+    else
+      if hash == @hash
+        base = new CollisionNode(hash)
+      else
+        base = new BitmapIndexedNode()
+      base.with(shift, @hash, this).with(shift, hash, leaf)
+
+  without: (shift, hash, key) -> null
 
   toString: -> "LeafNode(#{@key}, #{@value})"
 
 
 # The HashMap class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
-class HashMap extends HashSet
+class HashMap
+  # The constructor creates an empty HashSet.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+
+  # If called with a block, iterates over the elements in this set;
+  # otherwise, returns this set (this mimics Ruby enumerables).
+  each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements in this set as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
   # Retrieves the value associated with the given key, or nil if the
   # key is not present.
   get: (key) -> @root.get(0, hashCode(key), key)
@@ -387,9 +482,11 @@ HashMap.prototype.minus = HashMap.prototype.without
 # Exporting.
 # --------------------------------------------------------------------
 
+this.IntSet  = IntSet
 this.HashMap = HashMap
-this.HashSet = HashMap
+this.HashSet = HashSet
 
 if typeof(exports) != 'undefined'
+  exports.IntSet  = IntSet
   exports.HashMap = HashMap
   exports.HashSet = HashSet
