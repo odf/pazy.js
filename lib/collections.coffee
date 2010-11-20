@@ -330,50 +330,19 @@ HashSet.prototype.minus = HashSet.prototype.without
 
 # A leaf node contains a single key-value pair and also caches the
 # hash value for the key.
-class HashLeafWithValue
+class HashLeafWithValue extends HashLeaf
   constructor: (@hash, @key, @value) ->
-
-  size: 1
 
   each: (func) -> func([@key, @value])
 
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
-
-  with: (shift, hash, leaf) ->
-    if areEqual(@key, leaf.key)
-      leaf
-    else
-      if hash == @hash
-        base = new CollisionNode(hash)
-      else
-        base = new BitmapIndexedNode()
-      base.with(shift, @hash, this).with(shift, hash, leaf)
-
-  without: (shift, hash, key) -> null
 
   toString: -> "LeafNode(#{@key}, #{@value})"
 
 
 # The HashMap class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
-class HashMap
-  # The constructor creates an empty HashMap.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the items (key-value pairs)
-  # in this map; otherwise, returns this map (this mimics Ruby
-  # enumerables).
-  each: (func) -> if func? then @root.each(func) else this
-
-  # Returns the items in this map as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
-
+class HashMap extends HashSet
   # Retrieves the value associated with the given key, or nil if the
   # key is not present.
   get: (key) -> @root.get(0, hashCode(key), key)
