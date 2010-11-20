@@ -1,12 +1,15 @@
 # --------------------------------------------------------------------
-# A map class based on Rich Hickey's persistent hash trie
-# implementation from Clojure (http://clojure.org). Originally
-# presented as a mutable data structure in a paper by Phil Bagwell.
+# A number of collection classes based on Rich Hickey's persistent
+# hash trie implementation from Clojure (http://clojure.org), which
+# was originally introduced as a mutable data structure in a paper by
+# Phil Bagwell.
 #
-# To simplify the logic, the HashMap class only calls with() or
-# without() on the root node if a change needs to be made. Thus
-# there is no longer any special code in the node classes for
-# optimizing idempotent operations.
+# To simplify the logic downstream, all node classes assume that
+# with() or without() are only ever called if they would result in a
+# changed node. This has therefore to be assured by the caller, and
+# ultimately by the collection classes themselves.
+#
+# TODO - Change this behaviour?
 #
 # This version: Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 #
@@ -21,6 +24,7 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
+# TODO - Eliminate the dependency on underscore.
 require 'underscore' if typeof require == 'function'
 
 
