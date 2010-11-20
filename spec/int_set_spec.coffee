@@ -120,11 +120,11 @@ describe "An IntSet", ->
       expect(hash.without(key_a).without(key_b).isEmpty).toBe true
 
 
-  describe "containing four items with a level 6 collision", ->
+  describe "containing four items with higher level collisions", ->
     key_a = 0x1fffffff
     key_b = 0x3fffffff
-    key_c = 0x5fffffff
-    key_d = 0x7fffffff
+    key_c = 0x5ff0ffff
+    key_d = 0x7ff0ffff
     hash = new IntSet().with(key_a, key_b, key_c, key_d)
 
     it "should return true for all keys", ->

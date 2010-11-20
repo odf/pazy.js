@@ -85,19 +85,19 @@ EmptyNode = {
 # A sparse interior node using a bitmap to indicate which of the
 # indices 0..31 are in use.
 class BitmapIndexedNode
-  constructor: (@bitmap, @array, @size) ->
+  constructor: (@bitmap, @table, @size) ->
     unless @bitmap?
       @bitmap = 0
-      @array  = []
+      @table  = []
       @size   = 0
 
   each: (func) ->
-    for node in @array
+    for node in @table
       node.each(func)
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
-    @array[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
+    @table[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
 
   with: (shift, key, leaf) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -105,37 +105,43 @@ class BitmapIndexedNode
     if (@bitmap & bit) == 0
       n = util.bitCount(@bitmap)
       if n < 8
-        newArray = util.arrayWithInsertion(@array, i, leaf)
+        newArray = util.arrayWithInsertion(@table, i, leaf)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
         table = new Array(32)
         for m in [0..31]
           b = 1 << m
-          table[m] = @array[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
+          table[m] = @table[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
         new ArrayNode(table, util.mask(key, shift), leaf, @size + 1)
     else
-      v = @array[i]
+      v = @table[i]
       node = v.with(shift + 5, key, leaf)
       newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
+      new BitmapIndexedNode(@bitmap, util.arrayWith(@table, i, node), newSize)
 
   without: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
-    v = @array[i]
+    v = @table[i]
     node = v.without(shift + 5, key, data)
     if node?
-      newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, util.arrayWith(@array, i, node), newSize)
+      newBitmap = @bitmap
+      newSize   = @size + node.size - v.size
+      newArray  = util.arrayWith(@table, i, node)
     else
       newBitmap = @bitmap ^ bit
-      newArray  = util.arrayWithout(@array, i)
-      switch util.bitCount(newBitmap)
-        when 0 then null
-        when 1 then newArray[0]
-        else   new BitmapIndexedNode(newBitmap, newArray, @size - 1)
+      newSize   = @size - 1
+      newArray  = util.arrayWithout(@table, i)
 
-  toString: -> "BitmapIndexedNode(#{@array.join(", ")})"
+    bits = util.bitCount(newBitmap)
+    if bits == 0
+      null
+    else if bits == 1 and not newArray[0].table?
+      newArray[0]
+    else
+      new BitmapIndexedNode(newBitmap, newArray, newSize)
+
+  toString: -> "BitmapIndexedNode(#{@table.join(", ")})"
 
 
 # A dense interior node with room for 32 entries.
