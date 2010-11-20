@@ -243,7 +243,7 @@ class IntSet
   # does not contain any of them.
   without: ->
     newroot = @root
-    for key in arguments when newroot.get(0, key)
+    for key in arguments when util.isKey(key) and newroot.get(0, key)
       newroot = newroot.without(0, key)
     if newroot != @root then new IntSet(newroot) else this
 

@@ -92,6 +92,12 @@ describe "An IntSet", ->
       expect(a).toContain(1337)
       expect(a).toContain(4023)
 
+    it "should not change when illegal items are added", ->
+      expect(hash.with("a", -1, 2.34, 0x100000000, [1], {1:2})).toBe hash
+
+    it "should not change when illegal items are removed", ->
+      expect(hash.without("a", -1, 2.34, 0x100000000, [1], {1:2})).toBe hash
+
 
   describe "containing four items with collisions in the lower bits", ->
     key_a = 0x1fffffff
