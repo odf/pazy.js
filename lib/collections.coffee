@@ -9,8 +9,6 @@
 # changed node. This has therefore to be assured by the caller, and
 # ultimately by the collection classes themselves.
 #
-# TODO - Change this behaviour?
-#
 # This version: Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 #
 # Original copyright and licensing:
@@ -41,11 +39,14 @@ util = {
       result = step(result, x)
     result
 
-  arrayWith: (a, i, x) -> a[...i].concat([x], a[i+1..])
+  arrayWith: (a, i, x) ->
+    (if j == i then x else a[j]) for j in [0...a.length]
 
-  arrayWithInsertion: (a, i, x) -> a[...i].concat([x], a[i..])
+  arrayWithInsertion: (a, i, x) ->
+    (if j < i then a[j] else if j > i then a[j-1] else x) for j in [0..a.length]
 
-  arrayWithout: (a, i) -> a[...i].concat(a[i+1..])
+  arrayWithout: (a, i) ->
+    a[j] for j in [0...a.length] when j != i
 
 
   mask: (key, shift) -> (key >> shift) & 0x1f
@@ -140,8 +141,7 @@ class BitmapIndexedNode
 # A dense interior node with room for 32 entries.
 class ArrayNode
   constructor: (baseTable, i, node, @size) ->
-    @table = baseTable[0..]
-    @table[i] = node
+    @table = util.arrayWith(baseTable, i, node)
 
   each: (func) ->
     for node in @table
@@ -232,7 +232,9 @@ class CollisionNode
     if hash != @hash
       new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
     else
-      new CollisionNode(hash, this.bucketWithout(leaf.key).concat([leaf]))
+      newBucket = this.bucketWithout(leaf.key)
+      newBucket.push leaf
+      new CollisionNode(hash, newBucket)
 
   without: (shift, hash, key) ->
     switch @bucket.length
