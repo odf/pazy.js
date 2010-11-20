@@ -14,7 +14,7 @@ class FunnyKey
 FunnyKey.sorter = (a, b) -> a.value - b.value
 
 
-describe "A Hash", ->
+describe "A HashSet", ->
 
 	describe "with two items the first of which is removed", ->
     hash = new HashSet().plus('A').plus('B').minus('A')

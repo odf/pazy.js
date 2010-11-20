@@ -120,7 +120,7 @@ describe "An IntSet", ->
       expect(hash.without(key_a).without(key_b).isEmpty).toBe true
 
 
-  describe "containing three items with identical hash values", ->
+  describe "containing three items", ->
     key_a = 257
     key_b = 513
     key_c = 769

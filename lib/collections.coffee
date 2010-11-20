@@ -251,6 +251,8 @@ IntSet.prototype.minus = IntSet.prototype.without
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
+hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) % 0x80000000
+
 hashCode = (obj) ->
   if obj? and typeof(obj.hashCode) == "function"
     code = obj.hashCode()
@@ -270,7 +272,7 @@ hashCode = (obj) ->
       catch ex
         Object.prototype.toString.call(obj)
 
-  util.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
+  util.reduce(stringVal, hashStep, 0)
 
 areEqual = (obj1, obj2) ->
   if obj1? and typeof(obj1.equals) == "function"

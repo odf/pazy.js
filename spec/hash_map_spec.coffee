@@ -14,7 +14,7 @@ class FunnyKey
 FunnyKey.sorter = (a, b) -> a[0].value - b[0].value
 
 
-describe "A Hash", ->
+describe "A HashMap", ->
 
 	describe "with two items the first of which is removed", ->
     hash = new HashMap().plus(['A', true]).plus(['B', true]).minus('A')
