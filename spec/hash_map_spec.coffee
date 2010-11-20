@@ -1,7 +1,5 @@
 require.paths.unshift './lib'
 
-require 'underscore'
-
 HashMap = require('collections').HashMap
 
 class FunnyKey

@@ -1,7 +1,5 @@
 require.paths.unshift './lib'
 
-require 'underscore'
-
 HashSet = require('collections').HashSet
 
 class FunnyKey
