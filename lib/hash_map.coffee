@@ -24,6 +24,10 @@
 require 'underscore' if typeof require == 'function'
 
 
+# --------------------------------------------------------------------
+# Nodes and support functions used by several collections.
+# --------------------------------------------------------------------
+
 # A collection of utility functions used by interior nodes.
 util = {
   arrayWith: (a, i, x) -> a[...i].concat([x], a[i+1..])
@@ -33,7 +37,7 @@ util = {
   arrayWithout: (a, i) -> a[...i].concat(a[i+1..])
 
 
-  mask: (hash, shift) -> (hash >> shift) & 0x1f
+  mask: (key, shift) -> (key >> shift) & 0x1f
 
   bitCount: (n) ->
     n -= (n >> 1) & 0x55555555
@@ -44,8 +48,8 @@ util = {
 
   indexForBit: (bitmap, bit) -> util.bitCount(bitmap & (bit - 1))
 
-  bitPosAndIndex: (bitmap, hash, shift) ->
-    bit = 1 << util.mask(hash, shift)
+  bitPosAndIndex: (bitmap, key, shift) ->
+    bit = 1 << util.mask(key, shift)
     [bit, util.indexForBit(bitmap, bit)]
 }
 
@@ -54,13 +58,13 @@ util = {
 EmptyNode = {
   size:    0
 
-  get:     (shift, hash, key) -> ()
+  get:     (shift, key, data) -> ()
 
   each:    (func) -> ()
 
-  with:    (shift, hash, leaf) -> leaf
+  with:    (shift, key, leaf) -> leaf
 
-  without: (shift, hash, key) -> this
+  without: (shift, key, data) -> this
 
   toString: -> "EmptyNode"
 }
@@ -164,6 +168,10 @@ class ArrayNode
   toString: -> "ArrayNode(#{(x for x in @table when x?).join(", ")})"
 
 
+# --------------------------------------------------------------------
+# Support for collections that use hashing.
+# --------------------------------------------------------------------
+
 hashCode = (obj) ->
   if obj? and typeof(obj.hashCode) == "function"
     code = obj.hashCode()
@@ -192,90 +200,6 @@ areEqual = (obj1, obj2) ->
     obj2.equals(obj1)
   else
     obj1 == obj2
-
-
-# The HashMap class provides the public API and serves as a wrapper
-# for the various node classes that hold the actual information.
-class HashMap
-  # The constructor creates an empty HashMap.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the items (key-value pairs)
-  # in this map; otherwise, returns this map (this mimics Ruby
-  # enumerables).
-  each: (func) -> if func? then @root.each(func) else this
-
-  # Returns the items in this map as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
-
-  # Retrieves the value associated with the given key, or nil if the
-  # key is not present.
-  get: (key) -> @root.get(0, hashCode(key), key)
-
-  # Returns a new map with the given key-value pair inserted, or
-  # this map if it already contains that pair.
-  with: ->
-    newroot = @root
-    for [key, value] in arguments
-      hash = hashCode(key)
-      unless areEqual(newroot.get(0, hash, key), value)
-        newroot = newroot.with(0, hash, new LeafNode(hash, key, value))
-    if newroot != @root then new HashMap(newroot) else this
-
-  # Returns a new set with the given keys removed, or this set if it
-  # does not contain any of them.
-  without: ->
-    newroot = @root
-    for key in arguments
-      hash = hashCode(key)
-      if typeof(newroot.get(0, hash, key)) != 'undefined'
-        newroot = newroot.without(0, hash, key)
-    if newroot != @root then new HashMap(newroot) else this
-
-  # Returns a map with the values transformed by to the function
-  # given.
-  apply: (func) ->
-    h = new HashMap()
-    this.each (key) -> h = h.with(func(key))
-    h
-
-  # Returns a string representation of this set.
-  toString: -> "HashMap(#{@root})"
-
-HashMap.prototype.plus  = HashMap.prototype.with
-HashMap.prototype.minus = HashMap.prototype.without
-
-
-# A leaf node contains a single key-value pair and also caches the
-# hash value for the key.
-class LeafNode
-  constructor: (@hash, @key, @value) ->
-
-  size: 1
-
-  each: (func) -> func([@key, @value])
-
-  get:  (shift, hash, key) -> @value if areEqual(key, @key)
-
-  with: (shift, hash, leaf) ->
-    if areEqual(@key, leaf.key)
-      leaf
-    else
-      if hash == @hash
-        base = new CollisionNode(hash)
-      else
-        base = new BitmapIndexedNode()
-      base.with(shift, @hash, this).with(shift, hash, leaf)
-
-  without: (shift, hash, key) -> null
-
-  toString: -> "LeafNode(#{@key}, #{@value})"
 
 
 # A collision node contains several leaf nodes, stored in an array
@@ -311,9 +235,179 @@ class CollisionNode
     item for item in @bucket when not areEqual(item.key, key)
 
 
-# -- exporting
+# --------------------------------------------------------------------
+# The hash set collection class and its leaf nodes.
+# --------------------------------------------------------------------
 
-this.HashMap  = HashMap
+# A leaf node contains a single key and also caches its hash value.
+class HashLeaf
+  constructor: (@hash, @key) ->
+
+  size: 1
+
+  each: (func) -> func(@key)
+
+  get:  (shift, hash, key) -> true if areEqual(key, @key)
+
+  with: (shift, hash, leaf) ->
+    if areEqual(@key, leaf.key)
+      leaf
+    else
+      if hash == @hash
+        base = new CollisionNode(hash)
+      else
+        base = new BitmapIndexedNode()
+      base.with(shift, @hash, this).with(shift, hash, leaf)
+
+  without: (shift, hash, key) -> null
+
+  toString: -> "LeafNode(#{@key})"
+
+
+# The HashSet class provides the public API and serves as a wrapper
+# for the various node classes that hold the actual information.
+class HashSet
+  # The constructor creates an empty HashSet.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+
+  # If called with a block, iterates over the elements in this set;
+  # otherwise, returns this set (this mimics Ruby enumerables).
+  each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements in this set as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
+  # Returns true or false depending on whether the given key is an
+  # element of this set.
+  get: (key) -> @root.get(0, hashCode(key), key) == true
+
+  # Returns a new set with the given keys inserted as elements, or
+  # this set if it already contains all those elements.
+  with: ->
+    newroot = @root
+    for key in arguments
+      hash = hashCode(key)
+      unless newroot.get(0, hash, key)
+        newroot = newroot.with(0, hash, new HashLeaf(hash, key))
+    if newroot != @root then new HashSet(newroot) else this
+
+  # Returns a new set with the given keys removed, or this set if it
+  # does not contain any of them.
+  without: ->
+    newroot = @root
+    for key in arguments
+      hash = hashCode(key)
+      newroot = newroot.without(0, hash, key) if newroot.get(0, hash, key)
+    if newroot != @root then new HashSet(newroot) else this
+
+  # Returns a string representation of this set.
+  toString: -> "HashSet(#{@root})"
+
+HashSet.prototype.plus  = HashSet.prototype.with
+HashSet.prototype.minus = HashSet.prototype.without
+
+
+# --------------------------------------------------------------------
+# The hash map collection class and its leaf nodes.
+# --------------------------------------------------------------------
+
+# A leaf node contains a single key-value pair and also caches the
+# hash value for the key.
+class HashLeafWithValue
+  constructor: (@hash, @key, @value) ->
+
+  size: 1
+
+  each: (func) -> func([@key, @value])
+
+  get:  (shift, hash, key) -> @value if areEqual(key, @key)
+
+  with: (shift, hash, leaf) ->
+    if areEqual(@key, leaf.key)
+      leaf
+    else
+      if hash == @hash
+        base = new CollisionNode(hash)
+      else
+        base = new BitmapIndexedNode()
+      base.with(shift, @hash, this).with(shift, hash, leaf)
+
+  without: (shift, hash, key) -> null
+
+  toString: -> "LeafNode(#{@key}, #{@value})"
+
+
+# The HashMap class provides the public API and serves as a wrapper
+# for the various node classes that hold the actual information.
+class HashMap
+  # The constructor creates an empty HashMap.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+
+  # If called with a block, iterates over the items (key-value pairs)
+  # in this map; otherwise, returns this map (this mimics Ruby
+  # enumerables).
+  each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the items in this map as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
+  # Retrieves the value associated with the given key, or nil if the
+  # key is not present.
+  get: (key) -> @root.get(0, hashCode(key), key)
+
+  # Returns a new map with the given key-value pair inserted, or
+  # this map if it already contains that pair.
+  with: ->
+    newroot = @root
+    for [key, value] in arguments
+      hash = hashCode(key)
+      unless areEqual(newroot.get(0, hash, key), value)
+        newroot = newroot.with(0, hash, new HashLeafWithValue(hash, key, value))
+    if newroot != @root then new HashMap(newroot) else this
+
+  # Returns a new set with the given keys removed, or this set if it
+  # does not contain any of them.
+  without: ->
+    newroot = @root
+    for key in arguments
+      hash = hashCode(key)
+      if typeof(newroot.get(0, hash, key)) != 'undefined'
+        newroot = newroot.without(0, hash, key)
+    if newroot != @root then new HashMap(newroot) else this
+
+  # Returns a map with the values transformed by to the function
+  # given.
+  apply: (func) ->
+    h = new HashMap()
+    this.each (key) -> h = h.with(func(key))
+    h
+
+  # Returns a string representation of this set.
+  toString: -> "HashMap(#{@root})"
+
+HashMap.prototype.plus  = HashMap.prototype.with
+HashMap.prototype.minus = HashMap.prototype.without
+
+
+# --------------------------------------------------------------------
+# Exporting.
+# --------------------------------------------------------------------
+
+this.HashMap = HashMap
+this.HashSet = HashMap
 
 if typeof(exports) != 'undefined'
-  exports.HashMap  = HashMap
+  exports.HashMap = HashMap
+  exports.HashSet = HashSet
