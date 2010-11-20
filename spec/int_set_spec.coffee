@@ -120,6 +120,29 @@ describe "An IntSet", ->
       expect(hash.without(key_a).without(key_b).isEmpty).toBe true
 
 
+  describe "containing four items with a level 6 collision", ->
+    key_a = 0x1fffffff
+    key_b = 0x3fffffff
+    key_c = 0x5fffffff
+    key_d = 0x7fffffff
+    hash = new IntSet().with(key_a, key_b, key_c, key_d)
+
+    it "should return true for all keys", ->
+      expect(hash.get(key_a)).toBe true
+      expect(hash.get(key_b)).toBe true
+      expect(hash.get(key_c)).toBe true
+      expect(hash.get(key_d)).toBe true
+
+    it "should not be empty when all items but one are removed", ->
+      expect(hash.without(key_a, key_b, key_c).isEmpty).toBe false
+
+    it "should have size 1 when all items but one are removed", ->
+      expect(hash.without(key_a, key_b, key_c).size).toEqual 1
+
+    it "should be empty when all items are removed", ->
+      expect(hash.without(key_a, key_b, key_c, key_d).isEmpty).toBe true
+
+
   describe "containing three items", ->
     key_a = 257
     key_b = 513
