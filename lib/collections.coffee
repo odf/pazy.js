@@ -24,16 +24,23 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
-# TODO - Eliminate the dependency on underscore.
-require 'underscore' if typeof require == 'function'
-
-
 # --------------------------------------------------------------------
 # Nodes and support functions used by several collections.
 # --------------------------------------------------------------------
 
 # A collection of utility functions used by interior nodes.
 util = {
+  find: (a, test) ->
+    for x in a
+      return x if test(x) == true
+    ()
+
+  reduce: (a, step, init) ->
+    result = init
+    for x in a
+      result = step(result, x)
+    result
+
   arrayWith: (a, i, x) -> a[...i].concat([x], a[i+1..])
 
   arrayWithInsertion: (a, i, x) -> a[...i].concat([x], a[i..])
@@ -163,7 +170,7 @@ class ArrayNode
     else
       remaining = j for j in [1...@table.length] when j != i and @table[j]
       if remaining.length <= 4
-        bitmap = _.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
+        bitmap = util.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
         array  = @table[j] for j in remaining
         new BitmapIndexedNode(bitmap, array, @size - 1)
       else
@@ -195,7 +202,7 @@ hashCode = (obj) ->
       catch ex
         Object.prototype.toString.call(obj)
 
-  _.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
+  util.reduce(stringVal, ((code, c) -> code * 37 + c.charCodeAt(0)), 0)
 
 areEqual = (obj1, obj2) ->
   if obj1? and typeof(obj1.equals) == "function"
@@ -218,7 +225,7 @@ class CollisionNode
       node.each(func)
 
   get: (shift, hash, key) ->
-    leaf = _.detect @bucket, (v) -> areEqual(v.key, key)
+    leaf = util.find @bucket, (v) -> areEqual(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
   with: (shift, hash, leaf) ->
@@ -230,7 +237,7 @@ class CollisionNode
   without: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
-      when 2    then _.detect @bucket, (v) -> not areEqual(v.key, key)
+      when 2    then util.find @bucket, (v) -> not areEqual(v.key, key)
       else           new CollisionNode(hash, this.bucketWithout(key))
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
