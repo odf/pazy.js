@@ -21,7 +21,6 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
-
 if typeof(require) == 'function'
   require 'underscore'
   util = require 'hash_util'
@@ -129,39 +128,37 @@ class LeafNode
   toString: -> "LeafNode(#{@key}, #{@value})"
 
 
-# A collision node contains several key-value pairs in which all keys
-# have a common hash value, which is cached. The key-value pairs are
-# stored in an array @bucket.
+# A collision node contains several leaf nodes, stored in an array
+# @bucket, in which all keys share a common hash value.
 class CollisionNode
   constructor: (@hash, @bucket) ->
     @bucket = [] unless @bucket?
     @size = @bucket.length
 
   each: (func) ->
-    for item in @bucket
-      func(item)
+    for node in @bucket
+      node.each(func)
 
   get: (shift, hash, key) ->
-    pair[1] if (pair = _.detect @bucket, (pair) -> util.equal(pair[0], key))?
+    leaf = _.detect @bucket, (v) -> util.equal(v.key, key)
+    leaf.get(shift, hash, key) if leaf?
 
   with: (shift, hash, leaf) ->
     if hash != @hash
       new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
     else
-      newBucket = this.bucketWithout(leaf.key).concat([[leaf.key, leaf.value]])
-      new CollisionNode(hash, newBucket)
+      new CollisionNode(hash, this.bucketWithout(leaf.key).concat([leaf]))
 
   without: (shift, hash, key) ->
-    newBucket = this.bucketWithout key
-    if newBucket.length < 2
-      new LeafNode(hash, _.first(newBucket)...)
-    else
-      new CollisionNode(hash, newBucket)
+    switch @bucket.length
+      when 0, 1 then null
+      when 2    then _.detect @bucket, (v) -> not util.equal(v.key, key)
+      else           new CollisionNode(hash, this.bucketWithout(key))
 
   toString: -> "CollisionNode(#{@bucket.join(", ")})"
 
   bucketWithout: (key) ->
-    item for item in @bucket when not util.equal(item[0], key)
+    item for item in @bucket when not util.equal(item.key, key)
 
 
 # A sparse interior node using a bitmap to indicate which of the
@@ -259,7 +256,7 @@ class ArrayNode
       else
         new ArrayNode(@table, i, null, @size - 1)
 
-  toString: -> "ArrayNode(#{_.compact(@table).join(", ")})"
+  toString: -> "ArrayNode(#{(x for x in @table when x?).join(", ")})"
 
 
 # -- exporting
