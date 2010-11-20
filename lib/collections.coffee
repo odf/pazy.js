@@ -235,17 +235,16 @@ class IntSet
   # this set if it already contains all those elements.
   with: ->
     newroot = @root
-    for key in arguments when util.isKey(key)
-      unless newroot.get(0, key)
-        newroot = newroot.with(0, key, new IntLeaf(key))
+    for key in arguments when util.isKey(key) and not newroot.get(0, key)
+      newroot = newroot.with(0, key, new IntLeaf(key))
     if newroot != @root then new IntSet(newroot) else this
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
   without: ->
     newroot = @root
-    for key in arguments
-      newroot = newroot.without(0, key) if newroot.get(0, key)
+    for key in arguments when newroot.get(0, key)
+      newroot = newroot.without(0, key)
     if newroot != @root then new IntSet(newroot) else this
 
   # Returns a string representation of this set.
