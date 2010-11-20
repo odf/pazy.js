@@ -191,7 +191,7 @@ class ArrayNode
 # Collections with integer keys.
 # --------------------------------------------------------------------
 
-# A leaf node contains a single integer.
+# A leaf node containing a single integer.
 class IntLeaf
   constructor: (@key) ->
 
@@ -252,6 +252,81 @@ class IntSet
 
 IntSet.prototype.plus  = IntSet.prototype.with
 IntSet.prototype.minus = IntSet.prototype.without
+
+
+# A leaf node with an integer key and arbitrary value.
+class IntLeafWithValue
+  constructor: (@key, @value) ->
+
+  size: 1
+
+  each: (func) -> func([@key, @value])
+
+  get:  (shift, key, data) -> @value if key == @key
+
+  with: (shift, key, leaf) ->
+    if @key == key
+      leaf
+    else
+      new BitmapIndexedNode().with(shift, @key, this).with(shift, key, leaf)
+
+  without: (shift, key, data) -> null
+
+  toString: -> "LeafNode(#{@key}, #{@value})"
+
+
+# The IntMap class is essentially a huge sparse array.
+class IntMap
+  # The constructor creates an empty IntMap.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+
+  # If called with a block, iterates over the elements in this set;
+  # otherwise, returns this set (this mimics Ruby enumerables).
+  each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements in this set as an array.
+  toArray: ->
+    tmp = []
+    this.each (key) -> tmp.push(key)
+    tmp
+
+  # Returns true or false depending on whether the given key is an
+  # element of this set.
+  get: (key) -> @root.get(0, key)
+
+  # Returns a new set with the given keys inserted as elements, or
+  # this set if it already contains all those elements.
+  with: ->
+    newroot = @root
+    for [key, value] in arguments when util.isKey(key)
+      unless areEqual(newroot.get(0, key), value)
+        newroot = newroot.with(0, key, new IntLeafWithValue(key, value))
+    if newroot != @root then new IntMap(newroot) else this
+
+  # Returns a new set with the given keys removed, or this set if it
+  # does not contain any of them.
+  without: ->
+    newroot = @root
+    for key in arguments when util.isKey(key)
+      unless typeof newroot.get(0, key) == 'undefined'
+        newroot = newroot.without(0, key)
+    if newroot != @root then new IntMap(newroot) else this
+
+  # Returns a map with the values transformed by to the function
+  # given.
+  apply: (func) ->
+    h = new HashMap()
+    this.each (key) -> h = h.with(func(key))
+    h
+
+  # Returns a string representation of this set.
+  toString: -> "IntMap(#{@root})"
+
+IntMap.prototype.plus  = IntMap.prototype.with
+IntMap.prototype.minus = IntMap.prototype.without
 
 
 # --------------------------------------------------------------------
@@ -492,10 +567,12 @@ HashMap.prototype.minus = HashMap.prototype.without
 # --------------------------------------------------------------------
 
 this.IntSet  = IntSet
+this.IntMap  = IntMap
 this.HashMap = HashMap
 this.HashSet = HashSet
 
 if typeof(exports) != 'undefined'
   exports.IntSet  = IntSet
+  exports.IntMap  = IntMap
   exports.HashMap = HashMap
   exports.HashSet = HashSet
