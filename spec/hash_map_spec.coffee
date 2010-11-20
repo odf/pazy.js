@@ -2,7 +2,7 @@ require.paths.unshift './lib'
 
 require 'underscore'
 
-HashMap = require('hash_map').HashMap
+HashMap = require('collections').HashMap
 
 class FunnyKey
   constructor: (@value) ->

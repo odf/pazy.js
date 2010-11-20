@@ -2,7 +2,7 @@ require.paths.unshift './lib'
 
 require 'underscore'
 
-HashSet = require('hash_map').HashSet
+HashSet = require('collections').HashSet
 
 class FunnyKey
   constructor: (@value) ->
