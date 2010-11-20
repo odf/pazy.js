@@ -49,7 +49,7 @@ util = {
     a[j] for j in [0...a.length] when j != i
 
 
-  mask: (key, shift) -> (key >> shift) & 0x1f
+  mask: (key, shift) -> (key >> (27 - shift)) & 0x1f
 
   bitCount: (n) ->
     n -= (n >> 1) & 0x55555555

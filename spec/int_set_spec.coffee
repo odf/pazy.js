@@ -2,8 +2,6 @@ require.paths.unshift './lib'
 
 IntSet = require('collections').IntSet
 
-intSorter = (a, b) -> a - b
-
 
 describe "An IntSet", ->
 
@@ -95,36 +93,34 @@ describe "An IntSet", ->
       expect(a).toContain(4023)
 
 
-  describe "containing two items with a level 1 collision", ->
-    key_a = 1
-    key_b = 33
-    hash = new IntSet().with(key_a).with(key_b)
-
-    it "should not change when an item not included is removed", ->
-      a = hash.without(5).toArray()
-      expect(a.length).toEqual 2
-      expect(a).toContain key_a
-      expect(a).toContain key_b
-
-    it "should return true for both keys", ->
-      expect(hash.get(key_a)).toBe true
-      expect(hash.get(key_b)).toBe true
-
-    it "should not be empty when the first item is removed", ->
-      expect(hash.without(key_a).isEmpty).toBe false
-
-    it "should have size 1 when the first item is removed", ->
-      expect(hash.without(key_a).size).toEqual 1
-
-    it "should be empty when both items are removed", ->
-      expect(hash.without(key_a).without(key_b).isEmpty).toBe true
-
-
-  describe "containing four items with higher level collisions", ->
+  describe "containing four items with collisions in the lower bits", ->
     key_a = 0x1fffffff
     key_b = 0x3fffffff
     key_c = 0x5ff0ffff
     key_d = 0x7ff0ffff
+    hash = new IntSet().with(key_a, key_b, key_c, key_d)
+
+    it "should return true for all keys", ->
+      expect(hash.get(key_a)).toBe true
+      expect(hash.get(key_b)).toBe true
+      expect(hash.get(key_c)).toBe true
+      expect(hash.get(key_d)).toBe true
+
+    it "should not be empty when all items but one are removed", ->
+      expect(hash.without(key_a, key_b, key_c).isEmpty).toBe false
+
+    it "should have size 1 when all items but one are removed", ->
+      expect(hash.without(key_a, key_b, key_c).size).toEqual 1
+
+    it "should be empty when all items are removed", ->
+      expect(hash.without(key_a, key_b, key_c, key_d).isEmpty).toBe true
+
+
+  describe "containing four items with collisions in the higher bits", ->
+    key_a = 0xfffffff1
+    key_b = 0xfffffff3
+    key_c = 0xffff0ff5
+    key_d = 0xffff0ff7
     hash = new IntSet().with(key_a, key_b, key_c, key_d)
 
     it "should return true for all keys", ->
@@ -192,7 +188,7 @@ describe "An IntSet", ->
       expect(hash.get("third")).toBe false
 
     it "should contain all the keys when converted to an array", ->
-      expect(hash.toArray().sort(intSorter)).toEqual(keys)
+      expect(hash.toArray()).toEqual(keys)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
@@ -214,7 +210,7 @@ describe "An IntSet", ->
         expect(h.get(key)).toBe false for key in ex_keys
 
       it "should have exactly the remaining elements when made an array", ->
-        expect(h.toArray().sort(intSorter)).toEqual(keys[101..])
+        expect(h.toArray()).toEqual(keys[101..])
 
     describe "from which some keys not included are removed", ->
       ex_keys = [1000..1100]
