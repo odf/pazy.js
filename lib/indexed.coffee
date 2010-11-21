@@ -146,7 +146,7 @@ class BitmapIndexedNode
       if node.progeny?
         new ProxyNode(util.bitCount(newBitmap - 1), node)
       else
-        newArray[0]
+        node
     else
       new BitmapIndexedNode(newBitmap, newArray, newSize)
 

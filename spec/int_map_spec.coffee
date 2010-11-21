@@ -1,6 +1,6 @@
 require.paths.unshift './lib'
 
-IntMap = require('collections').IntMap
+IntMap = require('indexed').IntMap
 
 
 describe "An IntMap", ->

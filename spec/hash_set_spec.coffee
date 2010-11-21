@@ -1,6 +1,6 @@
 require.paths.unshift './lib'
 
-HashSet = require('collections').HashSet
+HashSet = require('indexed').HashSet
 
 class FunnyKey
   constructor: (@value) ->

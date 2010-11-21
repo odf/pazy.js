@@ -1,6 +1,6 @@
 require.paths.unshift './lib'
 
-IntSet = require('collections').IntSet
+IntSet = require('indexed').IntSet
 
 
 describe "An IntSet", ->
