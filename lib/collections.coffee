@@ -167,8 +167,7 @@ class ProxyNode
     i = util.mask(key, shift)
 
     if @child_index == i
-      node = @progeny.with(shift + 5, key, leaf)
-      new ProxyNode(i, node)
+      new ProxyNode(i, @progeny.with(shift + 5, key, leaf))
     else
       bitmap = (1 << @child_index) | (1 << i)
       array = if i < @child_index then [leaf, @progeny] else [@progeny, leaf]
@@ -176,11 +175,10 @@ class ProxyNode
 
   without: (shift, key, data) ->
     node = @progeny.without(shift + 5, key, data)
-
-    if node?
+    if node?.progeny?
       new ProxyNode(@child_index, node)
     else
-      null
+      node
 
   toString: -> "ProxyNode(#{@progeny})"
 
