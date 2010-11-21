@@ -118,8 +118,11 @@ class BitmapIndexedNode
     else
       v = @progeny[i]
       node = v.with(shift + 5, key, leaf)
-      newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, util.arrayWith(@progeny, i, node), newSize)
+      if @bitmap == (1 << i)
+        new ProxyNode(i, node)
+      else
+        array = util.arrayWith(@progeny, i, node)
+        new BitmapIndexedNode(@bitmap, array, @size + node.size - v.size)
 
   without: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -180,8 +183,6 @@ class ProxyNode
       null
 
   toString: -> "ProxyNode(#{@progeny})"
-
-ProxyNode.make = (shift, key, leaf) -> new ProxyNode(util.mask(key, shift), leaf)
 
 
 # A dense interior node with room for 32 entries.
