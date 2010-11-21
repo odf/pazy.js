@@ -87,19 +87,19 @@ EmptyNode = {
 # A sparse interior node using a bitmap to indicate which of the
 # indices 0..31 are in use.
 class BitmapIndexedNode
-  constructor: (@bitmap, @table, @size) ->
+  constructor: (@bitmap, @progeny, @size) ->
     unless @bitmap?
-      @bitmap = 0
-      @table  = []
-      @size   = 0
+      @bitmap  = 0
+      @progeny = []
+      @size    = 0
 
   each: (func) ->
-    for node in @table
+    for node in @progeny
       node.each(func)
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
-    @table[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
+    @progeny[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
 
   with: (shift, key, leaf) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -107,84 +107,122 @@ class BitmapIndexedNode
     if (@bitmap & bit) == 0
       n = util.bitCount(@bitmap)
       if n < 8
-        newArray = util.arrayWithInsertion(@table, i, leaf)
+        newArray = util.arrayWithInsertion(@progeny, i, leaf)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
-        table = new Array(32)
+        progeny = new Array(32)
         for m in [0..31]
           b = 1 << m
-          table[m] = @table[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
-        new ArrayNode(table, util.mask(key, shift), leaf, @size + 1)
+          progeny[m] = @progeny[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
+        new ArrayNode(progeny, util.mask(key, shift), leaf, @size + 1)
     else
-      v = @table[i]
+      v = @progeny[i]
       node = v.with(shift + 5, key, leaf)
       newSize = @size + node.size - v.size
-      new BitmapIndexedNode(@bitmap, util.arrayWith(@table, i, node), newSize)
+      new BitmapIndexedNode(@bitmap, util.arrayWith(@progeny, i, node), newSize)
 
   without: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
-    v = @table[i]
+    v = @progeny[i]
     node = v.without(shift + 5, key, data)
     if node?
       newBitmap = @bitmap
       newSize   = @size + node.size - v.size
-      newArray  = util.arrayWith(@table, i, node)
+      newArray  = util.arrayWith(@progeny, i, node)
     else
       newBitmap = @bitmap ^ bit
       newSize   = @size - 1
-      newArray  = util.arrayWithout(@table, i)
+      newArray  = util.arrayWithout(@progeny, i)
 
     bits = util.bitCount(newBitmap)
     if bits == 0
       null
-    else if bits == 1 and not newArray[0].table?
-      newArray[0]
+    else if bits == 1
+      node = newArray[0]
+      if node.progeny?
+        new ProxyNode(util.bitCount(newBitmap - 1), node)
+      else
+        newArray[0]
     else
       new BitmapIndexedNode(newBitmap, newArray, newSize)
 
-  toString: -> "BitmapIndexedNode(#{@table.join(", ")})"
+  toString: -> "BitmapIndexedNode(#{@progeny.join(", ")})"
 
 
-# A dense interior node with room for 32 entries.
-class ArrayNode
-  constructor: (baseTable, i, node, @size) ->
-    @table = util.arrayWith(baseTable, i, node)
+# Special case of a sparse interior node which has exactly one descendant.
+class ProxyNode
+  constructor: (@child_index, @progeny) ->
+    @size = @progeny.size
 
-  each: (func) ->
-    for node in @table
-      node.each(func) if node?
+  each: (func) -> @progeny.each(func)
 
   get: (shift, key, data) ->
-    i = util.mask(key, shift)
-    @table[i].get(shift + 5, key, data) if @table[i]?
+    @progeny.get(shift + 5, key, data) if @child_index == util.mask(key, shift)
 
   with: (shift, key, leaf) ->
     i = util.mask(key, shift)
 
-    if @table[i]?
-      node = @table[i].with(shift + 5, key, leaf)
-      newSize = @size + node.size - @table[i].size
-      new ArrayNode(@table, i, node, newSize)
+    if @child_index == i
+      node = @progeny.with(shift + 5, key, leaf)
+      new ProxyNode(i, node)
     else
-      new ArrayNode(@table, i, leaf, @size + 1)
+      bitmap = (1 << @child_index) | (1 << i)
+      array = if i < @child_index then [leaf, @progeny] else [@progeny, leaf]
+      new BitmapIndexedNode(bitmap, array, @size + leaf.size)
+
+  without: (shift, key, data) ->
+    node = @progeny.without(shift + 5, key, data)
+
+    if node?
+      new ProxyNode(@child_index, node)
+    else
+      null
+
+  toString: -> "ProxyNode(#{@progeny})"
+
+ProxyNode.make = (shift, key, leaf) -> new ProxyNode(util.mask(key, shift), leaf)
+
+
+# A dense interior node with room for 32 entries.
+class ArrayNode
+  constructor: (progeny, i, node, @size) ->
+    @progeny = util.arrayWith(progeny, i, node)
+
+  each: (func) ->
+    for node in @progeny
+      node.each(func) if node?
+
+  get: (shift, key, data) ->
+    i = util.mask(key, shift)
+    @progeny[i].get(shift + 5, key, data) if @progeny[i]?
+
+  with: (shift, key, leaf) ->
+    i = util.mask(key, shift)
+
+    if @progeny[i]?
+      node = @progeny[i].with(shift + 5, key, leaf)
+      newSize = @size + node.size - @progeny[i].size
+      new ArrayNode(@progeny, i, node, newSize)
+    else
+      new ArrayNode(@progeny, i, leaf, @size + 1)
 
   without: (shift, key, data) ->
     i = util.mask(key, shift)
 
-    node = @table[i].without(shift + 5, key, data)
+    node = @progeny[i].without(shift + 5, key, data)
     if node?
-      new ArrayNode(@table, i, node, @size - 1)
+      new ArrayNode(@progeny, i, node, @size - 1)
     else
-      remaining = j for j in [1...@table.length] when j != i and @table[j]
+      remaining = j for j in [1...@progeny.length] when j != i and @progeny[j]
       if remaining.length <= 4
         bitmap = util.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
-        array  = @table[j] for j in remaining
+        array  = @progeny[j] for j in remaining
         new BitmapIndexedNode(bitmap, array, @size - 1)
       else
-        new ArrayNode(@table, i, null, @size - 1)
+        new ArrayNode(@progeny, i, null, @size - 1)
 
-  toString: -> "ArrayNode(#{(x for x in @table when x?).join(", ")})"
+  toString: -> "ArrayNode(#{(x for x in @progeny when x?).join(", ")})"
 
 
 # --------------------------------------------------------------------
