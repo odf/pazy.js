@@ -37,11 +37,39 @@ class Stream
   map: (func) ->
     new Stream(func(@first), => @rest().map(func) if @rest())
 
+  select: (pred) ->
+    if pred(@first)
+      new Stream(@first, => @rest().select(pred) if @rest())
+    else if @rest()
+      @rest().select(pred)
+
   combine: (other, op) ->
     new Stream(op(this.first, other.first), =>
       this.rest().combine(other.rest(), op) if this.rest() and other.rest())
 
-  plus: (other) -> this.combine(other, (a,b) -> a + b)
+  plus:  (other) -> this.combine(other, (a,b) -> a + b)
+  minus: (other) -> this.combine(other, (a,b) -> a - b)
+  times: (other) -> this.combine(other, (a,b) -> a * b)
+  by:    (other) -> this.combine(other, (a,b) -> a / b)
+
+  accumulate: (start, op) ->
+    new_start = op(start, @first)
+    new Stream(new_start, => @rest().accumulate(new_start, op) if @rest())
+
+  sums:     -> this.accumulate(0, (a,b) -> a + b)
+  products: -> this.accumulate(1, (a,b) -> a * b)
+
+  merge: (other) -> new Stream(@first, => other.merge(@rest()) if other)
+
+  concat: (other) ->
+    new Stream(@first, => if @rest() then @rest().concat(other) else other)
+
+  # CAUTION: don't call the following methods on an infinite stream.
+  last: ->
+    stream = this
+    while stream.rest()
+      stream = stream.rest()
+    stream.first
 
   toArray: ->
     stream = this
@@ -64,7 +92,7 @@ Stream.from = (start) -> Stream.iterate(start, (n) -> n + 1)
 
 puts = (s) -> print (if s? then s else '') + "\n"
 
-puts "new Stream(1, -> new Stream(2)):"
+puts "A stream with just the numbers 1 and 2:"
 puts new Stream(1, -> new Stream(2))
 puts()
 
@@ -80,4 +108,28 @@ puts()
 
 puts "The squares of the number from 101 to 110:"
 puts Stream.from(1).drop(100).map((n) -> n * n).take(10)
-puts
+puts()
+
+puts "The accumulated products of the numbers from 1 to 10:"
+puts Stream.from(1).products().take(10)
+puts()
+
+puts "The first 12 Fibonacci numbers with running positions:"
+puts fibonacci.combine(Stream.from(0), (x, i) -> "#{i}: #{x}").take(12)
+puts()
+
+puts "The same merged into a single sequence:"
+puts Stream.from(0).merge(fibonacci).take(24)
+puts()
+
+puts "The concatenation of the two streams:"
+puts Stream.from(0).take(12).concat(fibonacci.take(12))
+puts()
+
+puts "The first 10 even fibonacci numbers:"
+puts fibonacci.select((n) -> n % 2 == 0).take(10)
+puts()
+
+puts "The largest Fibonacci number under 1,000,000:"
+puts fibonacci.take_while((n) ->  n < 1000000).last()
+puts()
