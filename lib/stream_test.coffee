@@ -1,16 +1,13 @@
-suspend = (code) ->
-  cache = {
-    force: ->
-      val = code()
-      this.force = () -> val
-      val
-  }
-  -> cache.force()
-
-
 class Stream
   constructor: (@first, rest) ->
-    @rest = if rest? then suspend(rest) else -> null
+    if typeof(rest) == 'function'
+      @rest = () -> @force_rest(rest())
+    else
+      @force_rest(rest)
+
+  force_rest: (val) ->
+    @rest = () -> val
+    val
 
   take_while: (pred) ->
     if pred(@first)
@@ -48,17 +45,17 @@ class Stream
     new Stream(op(this.first, other.first), =>
       this.rest().combine(other.rest(), op) if this.rest() and other.rest())
 
-  plus:  (other) -> this.combine(other, (a,b) -> a + b)
-  minus: (other) -> this.combine(other, (a,b) -> a - b)
-  times: (other) -> this.combine(other, (a,b) -> a * b)
-  by:    (other) -> this.combine(other, (a,b) -> a / b)
+  plus:  (other) -> @combine(other, (a,b) -> a + b)
+  minus: (other) -> @combine(other, (a,b) -> a - b)
+  times: (other) -> @combine(other, (a,b) -> a * b)
+  by:    (other) -> @combine(other, (a,b) -> a / b)
 
   accumulate: (start, op) ->
     new_start = op(start, @first)
     new Stream(new_start, => @rest().accumulate(new_start, op) if @rest())
 
-  sums:     -> this.accumulate(0, (a,b) -> a + b)
-  products: -> this.accumulate(1, (a,b) -> a * b)
+  sums:     -> @accumulate(0, (a,b) -> a + b)
+  products: -> @accumulate(1, (a,b) -> a * b)
 
   merge: (other) -> new Stream(@first, => other.merge(@rest()) if other)
 
@@ -80,8 +77,7 @@ class Stream
       stream = stream.rest()
     results
 
-  toString: ->
-    this.toArray().join(', ')
+  toString: -> @toArray().join(', ')
 
 Stream.iterate = (start, step) ->
   new Stream(start, -> Stream.iterate(step(start), step))
@@ -135,8 +131,8 @@ puts "The largest Fibonacci number under 1,000,000:"
 puts fibonacci.take_while((n) ->  n < 1000000).last()
 puts()
 
-test   = (p) -> (n) -> n % p != 0
-sieve  = (s) -> new Stream(s.first, -> sieve(s.rest().select(test(s.first))))
+next   = (s) -> sieve(s.rest().select((n) -> n % s.first != 0))
+sieve  = (s) -> new Stream(s.first, -> next(s))
 primes = sieve(Stream.from(2))
 
 puts "The prime numbers between 10000 and 10100:"
