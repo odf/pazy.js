@@ -7,6 +7,7 @@ suspend = (code) ->
   }
   -> cache.force()
 
+
 class Stream
   constructor: (@first, rest) ->
     @rest = if rest? then suspend(rest) else -> null
@@ -102,7 +103,7 @@ puts "The first 100 Fibonacci numbers:"
 puts fibonacci.take(100)
 puts()
 
-puts "The Fibonacci numbers between and 1000 and 100000:"
+puts "The Fibonacci numbers between 1000 and 100000:"
 puts fibonacci.drop_while((n) ->  n < 1000).take_while((n) ->  n < 100000)
 puts()
 
@@ -132,4 +133,12 @@ puts()
 
 puts "The largest Fibonacci number under 1,000,000:"
 puts fibonacci.take_while((n) ->  n < 1000000).last()
+puts()
+
+test   = (p) -> (n) -> n % p != 0
+sieve  = (s) -> new Stream(s.first, -> sieve(s.rest().select(test(s.first))))
+primes = sieve(Stream.from(2))
+
+puts "The prime numbers between 10000 and 10100:"
+puts primes.drop_while((n) ->  n < 10000).take_while((n) ->  n < 10100)
 puts()
