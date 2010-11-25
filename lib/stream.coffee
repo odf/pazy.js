@@ -81,6 +81,7 @@ class Stream
     while stream?
       func(stream.first)
       stream = stream.rest()
+    null
 
   size: ->
     count = 0
@@ -100,10 +101,10 @@ class Stream
 
   toString: -> @toArray().join(', ')
 
-Stream.range = (start, step) ->
-  new Stream(start, -> Stream.range(step(start), step))
+Stream.iterate = (start, step) ->
+  new Stream(start, -> Stream.iterate(step(start), step))
 
-Stream.from = (start) -> Stream.range(start, (n) -> n + 1)
+Stream.from = (start) -> new Stream(start, -> Stream.from(start + 1))
 
 
 # --------------------------------------------------------------------
