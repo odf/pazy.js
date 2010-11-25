@@ -59,16 +59,19 @@ class Stream
 
   merge: (other) -> new Stream(@first, => other.merge(@rest()) if other)
 
-  concat: (other) ->
-    next = if typeof other == 'function' then other else -> other
-    new Stream(@first, => if @rest() then @rest().concat(next) else next())
+  concatl: (next) ->
+    new Stream(@first, => if @rest() then @rest().concatl(next) else next())
 
-  flatten: -> @first.concat(=> @rest().flatten() if @rest())
+  concat: (other) -> @concatl(=> other)
+
+  flatten: -> @first.concatl(=> @rest().flatten() if @rest())
 
   flat_map: (func) -> @map(func).flatten()
 
+  each: (func) ->
+    func(@first)
+    @rest().each(func) if @rest()
 
-  # CAUTION: don't call the following methods on an infinite stream.
   last: ->
     stream = this
     while stream.rest()
@@ -145,6 +148,10 @@ puts "The prime numbers between 1000 and 1100:"
 puts primes.drop_while((n) ->  n < 1000).take_while((n) ->  n < 1100)
 puts()
 
-puts "flat_map test:"
+puts "Testing flat():"
 puts Stream.from(1).take(9).flat_map((n) -> Stream.from(n * 100).take(10))
+puts()
+
+puts "Testing each():"
+fibonacci.take(10).each (n) -> puts n
 puts()
