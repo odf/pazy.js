@@ -1,6 +1,9 @@
-require.paths.unshift './lib'
+if typeof(require) != 'undefined'
+  require.paths.unshift './lib'
+  HashSet = require('indexed').HashSet
+else
+  HashSet = pazy.HashSet
 
-HashSet = require('indexed').HashSet
 
 class FunnyKey
   constructor: (@value) ->

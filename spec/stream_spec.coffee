@@ -1,6 +1,8 @@
-require.paths.unshift './lib'
-
-Stream = require('stream').Stream
+if typeof(require) != 'undefined'
+  require.paths.unshift './lib'
+  Stream = require('stream').Stream
+else
+  Stream = pazy.Stream
 
 
 describe "A Stream made of the numbers 1 and 2", ->

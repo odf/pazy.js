@@ -1,7 +1,8 @@
-require.paths.unshift './lib'
-
-IntMap = require('indexed').IntMap
-
+if typeof(require) != 'undefined'
+  require.paths.unshift './lib'
+  IntMap = require('indexed').IntMap
+else
+  IntMap = pazy.IntMap
 
 describe "An IntMap", ->
 

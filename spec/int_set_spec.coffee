@@ -1,6 +1,8 @@
-require.paths.unshift './lib'
-
-IntSet = require('indexed').IntSet
+if typeof(require) != 'undefined'
+  require.paths.unshift './lib'
+  IntSet = require('indexed').IntSet
+else
+  IntSet = pazy.IntSet
 
 
 describe "An IntSet", ->
