@@ -603,12 +603,13 @@ HashMap.prototype.minus = HashMap.prototype.without
 # Exporting.
 # --------------------------------------------------------------------
 
-this.IntSet  = IntSet
-this.IntMap  = IntMap
-this.HashMap = HashMap
-this.HashSet = HashSet
-
-if typeof(exports) != 'undefined'
+if typeof(exports) == 'undefined'
+  this.pazy = {} if typeof this.pazy == 'undefined'
+  this.pazy.IntSet  = IntSet
+  this.pazy.IntMap  = IntMap
+  this.pazy.HashMap = HashMap
+  this.pazy.HashSet = HashSet
+else
   exports.IntSet  = IntSet
   exports.IntMap  = IntMap
   exports.HashMap = HashMap

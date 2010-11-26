@@ -111,7 +111,8 @@ Stream.from = (start) -> new Stream(start, -> Stream.from(start + 1))
 # Exporting.
 # --------------------------------------------------------------------
 
-this.Stream = Stream
-
-if typeof(exports) != 'undefined'
+if typeof(exports) == 'undefined'
+  this.pazy = {} if typeof this.pazy == 'undefined'
+  this.pazy.Stream = Stream
+else
   exports.Stream = Stream
