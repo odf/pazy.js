@@ -1,6 +1,6 @@
 == pazy - Functional (-ish) data structures for Javascript
 
-(via Coffeescript[http://jashkenas.github.com/coffee-script/)
+(via Coffeescript[http://jashkenas.github.com/coffee-script/])
 
 The name pazy is a contraction of
 persistent[http://en.wikipedia.org/wiki/Persistent_data_structure] and
@@ -29,7 +29,7 @@ for at least 100% statement coverage.
 
 This code is made available under the MIT Licence
 
---
+
 Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 
 Permission is hereby granted, free of charge, to any person obtaining
