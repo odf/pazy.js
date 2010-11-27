@@ -20,8 +20,17 @@ describe "A Stream made of the numbers 1 and 2", ->
   it "should end with a 2", ->
     expect(stream.last()).toBe 2
 
+  it "should print as 'Stream(1, ...)'", ->
+    expect(stream.toString()).toEqual "Stream(1, ...)"
+
+  it "should print as '1,2' when converted to an array", ->
+    expect(stream.toArray().toString()).toEqual "1,2"
+
 describe "A stream implementing the recursion formula for Fibonacci numbers", ->
   stream = new Stream(0, -> new Stream(1, -> stream.rest().plus stream))
+
+  it "should print as 'Stream(0, ...)'", ->
+    expect(stream.toString()).toEqual "Stream(0, ...)"
 
   it "should start with the numbers 0, 1, 1, 2, 3, 5, 8, 13, 21 and 34", ->
     expect(stream.take(10).toArray()).toEqual [0,1,1,2,3,5,8,13,21,34]
@@ -73,14 +82,29 @@ describe "A stream implementing a simple prime number sieve", ->
     it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
       expect(stream.take(12).toArray()).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
 
-# puts "The squares of the number from 101 to 110:"
-# puts Stream.from(1).drop(100).map((n) -> n * n).take(10)
-# puts()
+describe "A stream containing the squares of the numbers from 101 to 110", ->
+  stream = Stream.from(1).drop(100).map((n) -> n * n).take(10)
 
-# puts "Testing flat():"
-# puts Stream.from(1).take(9).flat_map((n) -> Stream.from(n * 100).take(10))
-# puts()
+  it "should print as 'Stream(10201, ...)'", ->
+    expect(stream.toString()).toEqual "Stream(10201, ...)"
 
-# puts "Testing each():"
-# fibonacci.take(10).each (n) -> puts n
-# puts()
+  it "should end with 12100", ->
+    expect(stream.last()).toBe 12100
+
+  it "should have 10 elements", ->
+    expect(stream.size()).toBe 10
+
+describe "A stream containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
+  stream = Stream.range(1, 2).cartesian Stream.range(1, 3)
+
+  it "should have four elements", ->
+    expect(stream.size()).toBe 6
+
+  it "should start with [1,1]", ->
+    expect(stream.first).toEqual [1,1]
+
+  it "should end with [2,3]", ->
+    expect(stream.last()).toEqual [2,3]
+
+  it "should contain the expected elements", ->
+    expect(stream.toArray()).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
