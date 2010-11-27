@@ -1,3 +1,4 @@
+# --------------------------------------------------------------------
 # A stream class for Javascript like all the cool languages have.
 #
 # Streams are essentially Lisp-ish lists with deferred evaluation on
@@ -16,6 +17,7 @@
 # streams.
 #
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# --------------------------------------------------------------------
 
 
 class Stream

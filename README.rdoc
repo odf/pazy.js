@@ -1,0 +1,50 @@
+== pazy - Functional (-ish) data structures for Javascript
+   via Coffeescript[http://jashkenas.github.com/coffee-script/]
+
+The name pazy is a contraction of
+persistent[http://en.wikipedia.org/wiki/Persistent_data_structure] and
+lazy[http://en.wikipedia.org/wiki/Lazy_evaluation], two powerful
+principles in the implementation of efficient immutable data
+structures.
+
+This is my humble attempt at implementing a collection of practical
+immutable data structures for use in my Javascript projects. I am
+using Coffeescript instead of plain Javascript because it provides a
+clutter-free way of writing code that translates into clean and
+straightforward Javascript.
+
+I am not a specialist in functional programming or data structures,
+and I am fairly new to Javascript, so more than anything else, this is
+about me figuring out how these things work. Nonetheless, I am trying
+to make the code as efficient and robust as possible without
+sacrificing clarity.
+
+A test suite using the fantastic
+Jasmine[http://pivotal.github.com/jasmine/] framework is
+included. Once I figure out how to make
+JSCoverage[http://siliconforks.com/jscoverage/] talk to me, I will aim
+for at least 100% statement coverage.
+
+
+This code is made available under the MIT Licence
+
+Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
