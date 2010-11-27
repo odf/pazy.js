@@ -22,14 +22,10 @@
 
 class Stream
   constructor: (@first, rest) ->
-    if typeof(rest) == 'function'
-      @rest = -> @force_rest(rest())
+    @rest = if rest?
+      => val = rest(); (@rest = -> val)()
     else
-      @force_rest(rest)
-
-  force_rest: (val) ->
-    @rest = -> val
-    val
+      -> null
 
   take_while: (pred) ->
     if pred(@first)
