@@ -108,3 +108,18 @@ describe "A stream containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
 
   it "should contain the expected elements", ->
     expect(stream.toArray()).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
+
+describe "The reversal of the stream of integers from 0 to 10", ->
+  stream = Stream.range(1, 10).reverse()
+
+  it "should have ten elements", ->
+    expect(stream.size()).toBe 10
+
+  it "should start with a 10", ->
+    expect(stream.first).toBe 10
+
+  it "should end with a 1", ->
+    expect(stream.last()).toBe 1
+
+  it "should contain the numbers from 10 down to 1", ->
+    expect(stream.toArray()).toEqual [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]

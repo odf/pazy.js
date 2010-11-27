@@ -39,20 +39,6 @@ class Stream
     if n > 0
       new Stream(@first, => if @rest() then @rest().take(n-1))
 
-  drop_while: (pred) ->
-    stream = this
-    while stream and pred(stream.first)
-      stream = stream.rest()
-    stream
-
-  drop: (n) ->
-    stream = this
-    i = n
-    while stream and i > 0
-      stream = stream.rest()
-      i -= 1
-    stream
-
   get: (n) -> this.drop(n).first
 
   map: (func) ->
@@ -97,7 +83,25 @@ class Stream
 
   toString: -> "Stream(#{@first}, ...)"
 
-  # The following functions force evaluation of the complete stream
+  # The following functions force evaluation of the complete stream or
+  # portiosn of the stream. Since Javascript does not optimize tail
+  # recursion, iterative implementations were chosen instead of the
+  # cleaner recursive versions in order to avoid stack overflow when
+  # streams get large.
+
+  drop_while: (pred) ->
+    stream = this
+    while stream and pred(stream.first)
+      stream = stream.rest()
+    stream
+
+  drop: (n) ->
+    stream = this
+    i = n
+    while stream and i > 0
+      stream = stream.rest()
+      i -= 1
+    stream
 
   each: (func) ->
     stream = this
@@ -105,6 +109,13 @@ class Stream
       val = func(stream.first)
       stream = stream.rest()
     val
+
+  reverse: ->
+    rev = null
+    @each (x) ->
+      t = rev
+      rev = new Stream(x, -> t)
+    rev
 
   size: ->
     count = 0
