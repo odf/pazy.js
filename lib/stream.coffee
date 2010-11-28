@@ -80,7 +80,7 @@ class Stream
   toString: -> "Stream(#{@first}, ...)"
 
   # The following functions force evaluation of the complete stream or
-  # portiosn of the stream. Since Javascript does not optimize tail
+  # portions of the stream. Since Javascript does not optimize tail
   # recursion, iterative implementations were chosen instead of the
   # cleaner recursive versions in order to avoid stack overflow when
   # streams get large.
