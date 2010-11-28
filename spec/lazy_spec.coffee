@@ -1,5 +1,5 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift './lib'
+  require.paths.unshift('#{__dirname}/../lib')
   suspend = require('lazy').suspend
 else
   suspend = pazy.suspend

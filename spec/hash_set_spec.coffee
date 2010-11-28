@@ -1,5 +1,5 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift './lib'
+  require.paths.unshift('#{__dirname}/../lib')
   HashSet = require('indexed').HashSet
 else
   HashSet = pazy.HashSet
