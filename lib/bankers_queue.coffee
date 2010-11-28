@@ -15,24 +15,24 @@ else
 
 
 class Queue
-  constructor: (front, lenf, rear, lenr) ->
-    [@front, @lenf, @rear, @lenr] =
+  constructor: (front, len_f, rear, len_r) ->
+    [@front, @len_f, @rear, @len_r] =
       if typeof(front) == 'undefined'
         [null, 0, null, 0]
-      else if lenr <= lenf
-        [front, lenf, rear, lenr]
+      else if len_r <= len_f
+        [front, len_f, rear, len_r]
       else
         rev = rear.reverse()
-        [(if front then front.concat(rev) else rev), lenf + lenr, null, 0]
+        [(if front then front.concat(rev) else rev), len_f + len_r, null, 0]
 
     @first = @front?.first
-    @size  = @lenf + @lenr
+    @size  = @len_f + @len_r
 
   push: (x) ->
     r = @rear
-    new Queue(@front, @lenf, new Stream(x, -> r), @lenr + 1)
+    new Queue(@front, @len_f, new Stream(x, -> r), @len_r + 1)
 
-  rest: -> if @front then new Queue(@front.rest(), @lenf - 1, @rear, @lenr)
+  rest: -> if @front then new Queue(@front.rest(), @len_f - 1, @rear, @len_r)
 
 
 # --------------------------------------------------------------------
