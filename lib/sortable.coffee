@@ -36,8 +36,12 @@ class Sortable
     else
       [0, -> null]
 
-  plus: (x) ->
-    new Sortable(@less, @size + 1, => addSegment(@less, [x], @_segs(), @size))
+  plus: ->
+    s = this
+    for x in arguments
+      s = new Sortable(s.less, s.size + 1,
+                       -> addSegment(s.less, [x], s._segs(), s.size))
+    s
 
   sort: ->
     [buf, segs] = [[], @_segs()]
