@@ -39,8 +39,9 @@ class Sortable
   plus: ->
     s = this
     for x in arguments
+      t = s
       s = new Sortable(s.less, s.size + 1,
-                       -> addSegment(s.less, [x], s._segs(), s.size))
+                       -> addSegment(t.less, [x], t._segs(), t.size))
     s
 
   sort: ->
@@ -50,18 +51,12 @@ class Sortable
     buf
 
 
-segsToString = (segs) ->
-  buf = []
-  while segs?
-    buf.push(segs[0])
-    segs = segs[1]
-  ("[#{a}]" for a in buf).join(", ")
+# --------------------------------------------------------------------
+# Exporting.
+# --------------------------------------------------------------------
 
-puts = (s) -> print s + '\n'
-
-a = new Sortable((a, b) -> a < b)
-b = a.plus(3).plus(4).plus(2).plus(5).plus(1).plus(7).plus(6)
-
-puts "b.size    = #{b.size}"
-puts "b._segs() = #{segsToString(b._segs())}"
-puts "b.sort()  = #{b.sort()}"
+if typeof(exports) == 'undefined'
+  this.pazy = {} if typeof this.pazy == 'undefined'
+  this.pazy.Sortable = Sortable
+else
+  exports.Sortable = Sortable
