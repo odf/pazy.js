@@ -1,37 +1,25 @@
 # --------------------------------------------------------------------
 # An implementation of Chris Okasaki's shared bottom-up-merge
-# sortable.
+# sortable, a functional data structure with amortized persistent
+# execution time O(log n) per operation for adding an element and O(n)
+# for extracting a sorted result.
 #
 # The recursive helper functions merge(), addSeg() and mergeAll() from
 # the original algorithm have been replaced with iterative
 # implementations to avoid stack overflow, and the new code for
 # mergeAll() then inserted into sort().
 #
-# A list of arrays is used to represent the data instead of a list of
-# lists.
+# A simple nested-pairs list of arrays is used instead of a list of
+# lists to represent the data .
 #
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 
-if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
-  suspend = require('lazy').suspend
-else
-  suspend = pazy.suspend
-
-
 merge = (less, xs, ys) ->
   [buf, ix, iy, lx, ly] = [[], 0, 0, xs.length, ys.length]
-
   while ix < lx and iy < ly
-    if less(xs[ix], ys[iy])
-      buf.push(xs[ix])
-      ix += 1
-    else
-      buf.push(ys[iy])
-      iy += 1
-
+    if less(xs[ix], ys[iy]) then buf.push(xs[ix++]) else buf.push(ys[iy++])
   buf.concat(xs[ix..], ys[iy..])
 
 
@@ -43,11 +31,13 @@ addSegment = (less, seg, segs, bits) ->
 
 class Sortable
   constructor: (@less, size, segments) ->
-    [@size, @_segs] = if size? then [size, segments] else [0, -> null]
+    [@size, @_segs] = if size?
+      [size, => val = segments(); (@_segs = -> val)()]
+    else
+      [0, -> null]
 
   plus: (x) ->
-    new Sortable(@less, @size + 1,
-                 suspend(=> addSegment(@less, [x], @_segs(), @size)))
+    new Sortable(@less, @size + 1, => addSegment(@less, [x], @_segs(), @size))
 
   sort: ->
     [buf, segs] = [[], @_segs()]
