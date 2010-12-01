@@ -266,7 +266,7 @@ class IntSet
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
-  get: (key) -> @root.get(0, key) == true
+  contains: (key) -> @root.get(0, key) == true
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
@@ -484,7 +484,7 @@ class HashSet
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
-  get: (key) -> @root.get(0, hashCode(key), key) == true
+  contains: (key) -> @root.get(0, hashCode(key), key) == true
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.

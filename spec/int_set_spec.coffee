@@ -26,8 +26,8 @@ describe "An IntSet", ->
     it "should be empty", ->
       expect(hash.isEmpty).toBe true
 
-    it "should return false on get", ->
-      expect(hash.get("first")).toBe false
+    it "should return false on contains", ->
+      expect(hash.contains("first")).toBe false
 
     it "should still be empty when without is called", ->
       expect(hash.without("first").size).toEqual 0
@@ -52,10 +52,10 @@ describe "An IntSet", ->
       expect(hash.without(1337).isEmpty).toBe true
 
     it "should return true for the key", ->
-      expect(hash.get(1337)).toBe true
+      expect(hash.contains(1337)).toBe true
 
     it "should return false when fed another key", ->
-      expect(hash.get(4023)).toBe false
+      expect(hash.contains(4023)).toBe false
 
     it "should contain the key", ->
       a = hash.toArray()
@@ -82,11 +82,11 @@ describe "An IntSet", ->
       expect(hash.without(4023).without(1337).isEmpty).toBe true
 
     it "should return true for both keys", ->
-      expect(hash.get(1337)).toBe true
-      expect(hash.get(4023)).toBe true
+      expect(hash.contains(1337)).toBe true
+      expect(hash.contains(4023)).toBe true
 
     it "should return false when fed another key", ->
-      expect(hash.get(65535)).toBe false
+      expect(hash.contains(65535)).toBe false
 
     it "should contain the keys", ->
       a = hash.toArray()
@@ -109,10 +109,10 @@ describe "An IntSet", ->
     hash = new IntSet().with(key_a, key_b, key_c, key_d)
 
     it "should return true for all keys", ->
-      expect(hash.get(key_a)).toBe true
-      expect(hash.get(key_b)).toBe true
-      expect(hash.get(key_c)).toBe true
-      expect(hash.get(key_d)).toBe true
+      expect(hash.contains(key_a)).toBe true
+      expect(hash.contains(key_b)).toBe true
+      expect(hash.contains(key_c)).toBe true
+      expect(hash.contains(key_d)).toBe true
 
     it "should not be empty when all items but one are removed", ->
       expect(hash.without(key_a, key_b, key_c).isEmpty).toBe false
@@ -132,10 +132,10 @@ describe "An IntSet", ->
     hash = new IntSet().with(key_a, key_b, key_c, key_d)
 
     it "should return true for all keys", ->
-      expect(hash.get(key_a)).toBe true
-      expect(hash.get(key_b)).toBe true
-      expect(hash.get(key_c)).toBe true
-      expect(hash.get(key_d)).toBe true
+      expect(hash.contains(key_a)).toBe true
+      expect(hash.contains(key_b)).toBe true
+      expect(hash.contains(key_c)).toBe true
+      expect(hash.contains(key_d)).toBe true
 
     it "should not be empty when all items but one are removed", ->
       expect(hash.without(key_a, key_b, key_c).isEmpty).toBe false
@@ -176,7 +176,7 @@ describe "An IntSet", ->
       expect(hash.size).toEqual keys.length
 
     it "should return true for each key", ->
-      expect(hash.get(key)).toBe true for key in keys
+      expect(hash.contains(key)).toBe true for key in keys
 
 
   describe "containing lots of items", ->
@@ -190,10 +190,10 @@ describe "An IntSet", ->
       expect(hash.isEmpty).toBe false
 
     it "should return true for each key", ->
-      expect(hash.get(key)).toBe true for key in keys
+      expect(hash.contains(key)).toBe true for key in keys
 
     it "should return false when fed another key", ->
-      expect(hash.get("third")).toBe false
+      expect(hash.contains("third")).toBe false
 
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray()).toEqual(keys)
@@ -212,10 +212,10 @@ describe "An IntSet", ->
         expect(h.isEmpty).toBe false
 
       it "should return true for the remaining keys", ->
-        expect(h.get(key)).toBe true for key in keys when not key in ex_keys
+        expect(h.contains(key)).toBe true for key in keys when not key in ex_keys
 
       it "should return false for the removed keys", ->
-        expect(h.get(key)).toBe false for key in ex_keys
+        expect(h.contains(key)).toBe false for key in ex_keys
 
       it "should have exactly the remaining elements when made an array", ->
         expect(h.toArray()).toEqual(keys[101..])
@@ -243,7 +243,7 @@ describe "An IntSet", ->
         expect(h.isEmpty).toBe true
 
       it "should return false for the removed keys", ->
-        expect(h.get(key)).toBe false for key in keys
+        expect(h.contains(key)).toBe false for key in keys
 
       it "should convert to an empty array", ->
         expect(h.toArray().length).toBe 0

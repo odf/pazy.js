@@ -38,8 +38,8 @@ describe "A HashSet", ->
     it "should be empty", ->
       expect(hash.isEmpty).toBe true
 
-    it "should return false on get", ->
-      expect(hash.get("first")).toBe false
+    it "should return false on contains", ->
+      expect(hash.contains("first")).toBe false
 
     it "should still be empty when without is called", ->
       expect(hash.without("first").size).toEqual 0
@@ -64,10 +64,10 @@ describe "A HashSet", ->
       expect(hash.without("first").isEmpty).toBe true
 
     it "should return true for the key", ->
-      expect(hash.get("first")).toBe true
+      expect(hash.contains("first")).toBe true
 
     it "should return false when fed another key", ->
-      expect(hash.get("second")).toBe false
+      expect(hash.contains("second")).toBe false
 
     it "should contain the key", ->
       a = hash.toArray()
@@ -92,10 +92,10 @@ describe "A HashSet", ->
       expect(hash.without(key).isEmpty).toBe true
 
     it "should return true for the key", ->
-      expect(hash.get(key)).toBe true
+      expect(hash.contains(key)).toBe true
 
     it "should return false when fed another key", ->
-      expect(hash.get("second")).toBe false
+      expect(hash.contains("second")).toBe false
 
     it "should contain the key", ->
       a = hash.toArray()
@@ -122,11 +122,11 @@ describe "A HashSet", ->
       expect(hash.without("second").without("first").isEmpty).toBe true
 
     it "should return true for both keys", ->
-      expect(hash.get("first")).toBe true
-      expect(hash.get("second")).toBe true
+      expect(hash.contains("first")).toBe true
+      expect(hash.contains("second")).toBe true
 
     it "should return false when fed another key", ->
-      expect(hash.get("third")).toBe false
+      expect(hash.contains("third")).toBe false
 
     it "should contain the keys", ->
       a = hash.toArray()
@@ -147,8 +147,8 @@ describe "A HashSet", ->
       expect(a).toContain key_b
 
     it "should return true for both keys", ->
-      expect(hash.get(key_a)).toBe true
-      expect(hash.get(key_b)).toBe true
+      expect(hash.contains(key_a)).toBe true
+      expect(hash.contains(key_b)).toBe true
 
     it "should not be empty when the first item is removed", ->
       expect(hash.without(key_a).isEmpty).toBe false
@@ -189,7 +189,7 @@ describe "A HashSet", ->
       expect(hash.size).toEqual keys.length
 
     it "should return true for each key", ->
-      expect(hash.get(key)).toBe true for key in keys
+      expect(hash.contains(key)).toBe true for key in keys
 
 
   describe "containing lots of items", ->
@@ -203,10 +203,10 @@ describe "A HashSet", ->
       expect(hash.isEmpty).toBe false
 
     it "should return true for each key", ->
-      expect(hash.get(key)).toBe true for key in keys
+      expect(hash.contains(key)).toBe true for key in keys
 
     it "should return false when fed another key", ->
-      expect(hash.get("third")).toBe false
+      expect(hash.contains("third")).toBe false
 
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(keys)
@@ -225,10 +225,10 @@ describe "A HashSet", ->
         expect(h.isEmpty).toBe false
 
       it "should return true for the remaining keys", ->
-        expect(h.get(key)).toBe true for key in keys when not key in ex_keys
+        expect(h.contains(key)).toBe true for key in keys when not key in ex_keys
 
       it "should return false for the removed keys", ->
-        expect(h.get(key)).toBe false for key in ex_keys
+        expect(h.contains(key)).toBe false for key in ex_keys
 
       it "should have exactly the remaining elements when made an array", ->
         expect(h.toArray().sort(FunnyKey.sorter)).toEqual(keys[101..])
@@ -256,7 +256,7 @@ describe "A HashSet", ->
         expect(h.isEmpty).toBe true
 
       it "should return false for the removed keys", ->
-        expect(h.get(key)).toBe false for key in keys
+        expect(h.contains(key)).toBe false for key in keys
 
       it "should convert to an empty array", ->
         expect(h.toArray().length).toBe 0
