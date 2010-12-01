@@ -6,27 +6,13 @@
 #
 # The recursive helper functions merge(), addSeg() and mergeAll() from
 # the original algorithm have been replaced with iterative
-# implementations to avoid stack overflow, and the new code for
-# mergeAll() then inserted into sort().
+# versions to avoid stack overflow.
 #
 # A simple nested-pairs list of arrays is used instead of a list of
 # lists to represent the data .
 #
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
-
-
-merge = (less, xs, ys) ->
-  [buf, ix, iy, lx, ly] = [[], 0, 0, xs.length, ys.length]
-  while ix < lx and iy < ly
-    if less(xs[ix], ys[iy]) then buf.push(xs[ix++]) else buf.push(ys[iy++])
-  buf.concat(xs[ix..], ys[iy..])
-
-
-addSegment = (less, seg, segs, bits) ->
-  while bits % 2 > 0
-    [seg, segs, bits] = [merge(less, seg, segs[0]), segs[1], bits >> 1]
-  [seg, segs]
 
 
 class Sortable
@@ -40,8 +26,7 @@ class Sortable
     s = this
     for x in arguments
       t = s
-      s = new Sortable(s.less, s.size + 1,
-                       -> addSegment(t.less, [x], t._segs(), t.size))
+      s = new Sortable(s.less, s.size + 1, -> newSegments(x, t))
     s
 
   sort: ->
@@ -49,6 +34,18 @@ class Sortable
     while segs?
       [buf, segs] = [merge(@less, buf, segs[0]), segs[1]]
     buf
+
+  merge = (less, xs, ys) ->
+    [buf, ix, iy, lx, ly] = [[], 0, 0, xs.length, ys.length]
+    while ix < lx and iy < ly
+      if less(xs[ix], ys[iy]) then buf.push(xs[ix++]) else buf.push(ys[iy++])
+    buf.concat(xs[ix..], ys[iy..])
+
+  newSegments = (x, t) ->
+    [seg, less, segs, bits] = [[x], t.less, t._segs(), t.size]
+    while bits % 2 > 0
+      [seg, segs, bits] = [merge(less, seg, segs[0]), segs[1], bits >> 1]
+    [seg, segs]
 
 
 # --------------------------------------------------------------------
