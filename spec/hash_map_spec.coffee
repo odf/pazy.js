@@ -146,8 +146,8 @@ describe "A HashMap", ->
       expect(a).toContain [key_d, "d"]
 
   describe "containing a wild mix of items", ->
-    keys  = new FunnyKey(x * 5 + 7) for x in [0..16]
-    items = [key, key.value] for key in keys
+    keys  = (new FunnyKey(x * 5 + 7) for x in [0..16])
+    items = ([key, key.value] for key in keys)
     hash  = (new HashMap()).with items...
 
     it "should have the right number of items", ->
@@ -160,8 +160,8 @@ describe "A HashMap", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
   describe "containing lots of items", ->
-    keys  = new FunnyKey(x) for x in [0..300]
-    items = [key, key.value] for key in keys
+    keys  = (new FunnyKey(x) for x in [0..300])
+    items = ([key, key.value] for key in keys)
     hash  = (new HashMap()).with items...
 
     it "should have the correct number of items", ->
@@ -202,7 +202,7 @@ describe "A HashMap", ->
         expect(h.toArray().sort(FunnyKey.sorter)).toEqual(items[101..])
 
     describe "from which some keys not included are removed", ->
-      ex_keys = new FunnyKey(x) for x in [1000..1100]
+      ex_keys = (new FunnyKey(x) for x in [1000..1100])
       h = hash.without ex_keys...
 
       it "should be the same object as before", ->
@@ -240,7 +240,7 @@ describe "A HashMap", ->
 
     describe "some of which are then replaced", ->
       ex_keys = keys[0..100]
-      newItems = [k, k.value.toString()] for k in ex_keys
+      newItems = ([k, k.value.toString()] for k in ex_keys)
       h = hash.with newItems...
 
       it "should have the same size as before", ->
@@ -262,7 +262,7 @@ describe "A HashMap", ->
 
     describe "some of which are then overwritten with the original value", ->
       ex_keys = keys[0..100]
-      newItems = [k, k.value] for k in ex_keys
+      newItems = ([k, k.value] for k in ex_keys)
       h = hash.with newItems...
 
       it "should be the same object as before", ->

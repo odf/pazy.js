@@ -169,7 +169,7 @@ describe "An IntSet", ->
       expect(a).toContain key_d
 
   describe "containing a wild mix of items", ->
-    keys = x * 5 + 7 for x in [0..16]
+    keys = (x * 5 + 7 for x in [0..16])
     hash = (new IntSet()).with keys...
 
     it "should have the right number of items", ->

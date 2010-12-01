@@ -182,7 +182,7 @@ describe "A HashSet", ->
       expect(a).toContain key_d
 
   describe "containing a wild mix of items", ->
-    keys = new FunnyKey(x * 5 + 7) for x in [0..16]
+    keys = (new FunnyKey(x * 5 + 7) for x in [0..16])
     hash = (new HashSet()).with keys...
 
     it "should have the right number of items", ->
@@ -193,7 +193,7 @@ describe "A HashSet", ->
 
 
   describe "containing lots of items", ->
-    keys = new FunnyKey(x) for x in [0..300]
+    keys = (new FunnyKey(x) for x in [0..300])
     hash = (new HashSet()).with keys...
 
     it "should have the correct number of keys", ->
@@ -234,7 +234,7 @@ describe "A HashSet", ->
         expect(h.toArray().sort(FunnyKey.sorter)).toEqual(keys[101..])
 
     describe "from which some keys not included are removed", ->
-      ex_keys = new FunnyKey(x) for x in [1000..1100]
+      ex_keys = (new FunnyKey(x) for x in [1000..1100])
       h = hash.without ex_keys...
 
       it "should be the same object as before", ->

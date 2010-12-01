@@ -124,7 +124,7 @@ describe "An IntMap", ->
 
   describe "containing four items with collisions in the lower bits", ->
     keys = [0x1fffffff, 0x3fffffff, 0x5ff0ffff, 0x7ff0ffff]
-    items = [key, "0x#{key.toString(16)}"] for key in keys
+    items = ([key, "0x#{key.toString(16)}"] for key in keys)
     hash = (new IntMap()).with items...
 
     it "should return the associated value for all keys", ->
@@ -142,7 +142,7 @@ describe "An IntMap", ->
 
   describe "containing four items with collisions in the higher bits", ->
     keys = [0x7ffffff1, 0x7ffffff3, 0x7fff0ff5, 0x7fff0ff7]
-    items = [key, "0x#{key.toString(16)}"] for key in keys
+    items = ([key, "0x#{key.toString(16)}"] for key in keys)
     hash = (new IntMap()).with items...
 
     it "should return the associated value for all keys", ->
@@ -181,9 +181,9 @@ describe "An IntMap", ->
 
 
   describe "containing a wild mix of items", ->
-    keys  = (x * 5 + 7) for x in [0..16]
-    items = [key, key.toString()] for key in keys
-    scrambled = items[(i * 7) % 17] for i in [0..16]
+    keys  = ((x * 5 + 7) for x in [0..16])
+    items = ([key, key.toString()] for key in keys)
+    scrambled = (items[(i * 7) % 17] for i in [0..16])
     hash  = (new IntMap()).with scrambled...
 
     it "should have the right number of items", ->
@@ -198,8 +198,8 @@ describe "An IntMap", ->
 
   describe "containing lots of items", ->
     keys  = [0..306]
-    items = [key, key.toString()] for key in keys
-    scrambled = items[(i * 127) % 307] for i in [0..306]
+    items = ([key, key.toString()] for key in keys)
+    scrambled = (items[(i * 127) % 307] for i in [0..306])
     hash  = (new IntMap()).with items...
 
     it "should have the correct number of items", ->
@@ -219,7 +219,7 @@ describe "An IntMap", ->
 
 
     describe "some of which are then removed", ->
-      ex_keys = keys[(i * 37) % 101] for i in [0..100]
+      ex_keys = (keys[(i * 37) % 101] for i in [0..100])
       h = hash.without ex_keys...
 
       it "should have the correct size", ->
@@ -241,7 +241,7 @@ describe "An IntMap", ->
         expect(h.toArray()).toEqual(items[101..])
 
     describe "from which some keys not included are removed", ->
-      ex_keys = keys[(i * 37) % 101 + 1000] for i in [0..100]
+      ex_keys = (keys[(i * 37) % 101 + 1000] for i in [0..100])
       h = hash.without ex_keys...
 
       it "should be the same object as before", ->
@@ -279,8 +279,8 @@ describe "An IntMap", ->
 
     describe "some of which are then replaced", ->
       ex_keys = [0..100]
-      newItems = [k, "0x#{k.toString(16)}"] for k in ex_keys
-      scrambled = newItems[(i * 41) % 101] for i in [0..100]
+      newItems = ([k, "0x#{k.toString(16)}"] for k in ex_keys)
+      scrambled = (newItems[(i * 41) % 101] for i in [0..100])
       h = hash.with scrambled...
 
       it "should have the same size as before", ->
@@ -301,7 +301,7 @@ describe "An IntMap", ->
         expect(a[0..100]).toEqual newItems
 
     describe "some of which are then overwritten with the original value", ->
-      scrambled = items[(i * 41) % 101] for i in [0..100]
+      scrambled = (items[(i * 41) % 101] for i in [0..100])
       h = hash.with scrambled...
 
       it "should be the same object as before", ->

@@ -31,7 +31,7 @@ util = {
   find: (a, test) ->
     for x in a
       return x if test(x) == true
-    ()
+    undefined
 
   reduce: (a, step, init) ->
     result = init
@@ -72,9 +72,9 @@ util = {
 EmptyNode = {
   size:    0
 
-  get:     (shift, key, data) -> ()
+  get:     (shift, key, data) -> undefined
 
-  each:    (func) -> ()
+  each:    (func) -> undefined
 
   with:    (shift, key, leaf) -> leaf
 
@@ -213,10 +213,10 @@ class ArrayNode
     if node?
       new ArrayNode(@progeny, i, node, @size - 1)
     else
-      remaining = j for j in [1...@progeny.length] when j != i and @progeny[j]
+      remaining = (j for j in [1...@progeny.length] when j != i and @progeny[j])
       if remaining.length <= 4
         bitmap = util.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
-        array  = @progeny[j] for j in remaining
+        array  = (@progeny[j] for j in remaining)
         new BitmapIndexedNode(bitmap, array, @size - 1)
       else
         new ArrayNode(@progeny, i, null, @size - 1)
