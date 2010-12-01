@@ -8,16 +8,18 @@ for key, val of jasmine
 
 isVerbose = false
 showColors = true
+pattern = "_spec.coffee$"
 
 process.argv.forEach (arg) ->
   switch arg
     when '--color'   then showColors = true
     when '--noColor' then showColors = false
     when '--verbose' then isVerbose  = true
+    else                  pattern = arg
 
 jasmine.executeSpecsInFolder(
   process.cwd() + '/spec',
   ((runner, log) -> process.exit(runner.results().failedCount)),
   isVerbose,
   showColors,
-  "_spec.coffee$")
+  pattern)
