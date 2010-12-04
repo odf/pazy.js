@@ -102,9 +102,9 @@ class Stream
   each: (func) ->
     stream = this
     while stream
-      val = func(stream.first)
+      func(stream.first)
       stream = stream.rest()
-    val
+    undefined
 
   reverse: ->
     rev = null
@@ -116,6 +116,7 @@ class Stream
   size: ->
     count = 0
     @each -> count += 1
+    count
 
   last: ->
     stream = this

@@ -96,6 +96,7 @@ class BitmapIndexedNode
   each: (func) ->
     for node in @progeny
       node.each(func)
+    undefined
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -191,6 +192,7 @@ class ArrayNode
   each: (func) ->
     for node in @progeny
       node.each(func) if node?
+    undefined
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -234,7 +236,9 @@ class IntLeaf
 
   size: 1
 
-  each: (func) -> func(@key)
+  each: (func) ->
+    func(@key)
+    undefined
 
   get:  (shift, key, data) -> key == @key
 
@@ -297,7 +301,9 @@ class IntLeafWithValue
 
   size: 1
 
-  each: (func) -> func([@key, @value])
+  each: (func) ->
+    func([@key, @value])
+    undefined
 
   get:  (shift, key, data) -> @value if key == @key
 
@@ -412,6 +418,7 @@ class CollisionNode
   each: (func) ->
     for node in @bucket
       node.each(func)
+    undefined
 
   get: (shift, hash, key) ->
     leaf = util.find @bucket, (v) -> areEqual(v.key, key)
@@ -447,7 +454,9 @@ class HashLeaf
 
   size: 1
 
-  each: (func) -> func(@key)
+  each: (func) ->
+    func(@key)
+    undefined
 
   get:  (shift, hash, key) -> true if areEqual(key, @key)
 
@@ -523,7 +532,9 @@ class HashLeafWithValue
 
   size: 1
 
-  each: (func) -> func([@key, @value])
+  each: (func) ->
+    func([@key, @value])
+    undefined
 
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
 
