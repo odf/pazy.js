@@ -22,6 +22,13 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
+if typeof(require) != 'undefined'
+  require.paths.unshift __dirname
+  Stream = require('stream').Stream
+else
+  Stream = pazy.Stream
+
+
 # --------------------------------------------------------------------
 # Nodes and support functions used by several collections.
 # --------------------------------------------------------------------
@@ -76,6 +83,8 @@ EmptyNode = {
 
   each:    (func) -> undefined
 
+  elements: -> null
+
   with:    (shift, key, leaf) -> leaf
 
   without: (shift, key, data) -> this
@@ -97,6 +106,8 @@ class BitmapIndexedNode
     for node in @progeny
       node.each(func)
     undefined
+
+  elements: -> Stream.fromArray(@progeny).flat_map (n) -> n?.elements()
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -161,6 +172,8 @@ class ProxyNode
 
   each: (func) -> @progeny.each(func)
 
+  elements: -> @progeny.elements()
+
   get: (shift, key, data) ->
     @progeny.get(shift + 5, key, data) if @child_index == util.mask(key, shift)
 
@@ -193,6 +206,8 @@ class ArrayNode
     for node in @progeny
       node.each(func) if node?
     undefined
+
+  elements: -> Stream.fromArray(@progeny).flat_map (n) -> n?.elements()
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -240,6 +255,8 @@ class IntLeaf
     func(@key)
     undefined
 
+  elements: -> new Stream(@key)
+
   get:  (shift, key, data) -> key == @key
 
   with: (shift, key, leaf) ->
@@ -261,6 +278,9 @@ class IntSet
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements as a stream
+  elements: -> @root?.elements()
 
   # Returns the elements in this set as an array.
   toArray: ->
@@ -305,6 +325,8 @@ class IntLeafWithValue
     func([@key, @value])
     undefined
 
+  elements: -> new Stream([@key, @value])
+
   get:  (shift, key, data) -> @value if key == @key
 
   with: (shift, key, leaf) ->
@@ -329,6 +351,9 @@ class IntMap
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the (key,value)-pairs as a stream
+  items: -> @root?.elements()
 
   # Returns the elements in this set as an array.
   toArray: ->
@@ -420,6 +445,8 @@ class CollisionNode
       node.each(func)
     undefined
 
+  elements: -> Stream.fromArray(@bucket).flat_map (n) -> n?.elements()
+
   get: (shift, hash, key) ->
     leaf = util.find @bucket, (v) -> areEqual(v.key, key)
     leaf.get(shift, hash, key) if leaf?
@@ -458,6 +485,8 @@ class HashLeaf
     func(@key)
     undefined
 
+  elements: -> new Stream(@key)
+
   get:  (shift, hash, key) -> true if areEqual(key, @key)
 
   with: (shift, hash, leaf) ->
@@ -484,6 +513,9 @@ class HashSet
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the elements as a stream
+  elements: -> @root?.elements()
 
   # Returns the elements in this set as an array.
   toArray: ->
@@ -536,6 +568,8 @@ class HashLeafWithValue
     func([@key, @value])
     undefined
 
+  elements: -> new Stream([@key, @value])
+
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
 
   with: (shift, hash, leaf) ->
@@ -565,6 +599,9 @@ class HashMap
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @root.each(func) else this
+
+  # Returns the (key,value)-pairs as a stream
+  items: -> @root?.elements()
 
   # Returns the elements in this set as an array.
   toArray: ->

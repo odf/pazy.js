@@ -211,6 +211,12 @@ describe "A HashSet", ->
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(keys)
 
+    it "should return an element stream of the correct size", ->
+      expect(hash.elements().size()).toEqual(hash.size)
+
+    it "should return a stream with all the keys on calling elements()", ->
+      expect(hash.elements().toArray().sort(FunnyKey.sorter)).toEqual(keys)
+
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
       h = hash.without ex_keys...

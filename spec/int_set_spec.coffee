@@ -198,6 +198,15 @@ describe "An IntSet", ->
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray()).toEqual(keys)
 
+    it "should have the first key as its first element", ->
+      expect(hash.elements().first).toEqual(keys[0])
+
+    it "should have the second key as its second element", ->
+      expect(hash.elements().rest().first).toEqual(keys[1])
+
+    it "should have the last key as its last element", ->
+      expect(hash.elements().last()).toEqual(keys[300])
+
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
       h = hash.without ex_keys...

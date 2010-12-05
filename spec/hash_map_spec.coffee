@@ -179,6 +179,12 @@ describe "A HashMap", ->
     it "should contain all the items when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
+    it "should return an item stream of the correct size", ->
+      expect(hash.items().size()).toEqual(hash.size)
+
+    it "should return a stream with all the keys on calling elements()", ->
+      expect(hash.items().toArray().sort(FunnyKey.sorter)).toEqual(items)
+
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
       h = hash.without ex_keys...
