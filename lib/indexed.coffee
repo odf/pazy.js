@@ -265,10 +265,7 @@ class IntSet
   elements: -> @root?.elements()
 
   # Returns the elements in this set as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
+  toArray: -> @elements()?.toArray() or []
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -334,10 +331,7 @@ class IntMap
   items: -> @root?.elements()
 
   # Returns the elements in this set as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
+  toArray: -> @items()?.toArray() or []
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -487,10 +481,7 @@ class HashSet
   elements: -> @root?.elements()
 
   # Returns the elements in this set as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
+  toArray: -> @elements()?.toArray() or []
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -569,10 +560,7 @@ class HashMap
   items: -> @root?.elements()
 
   # Returns the elements in this set as an array.
-  toArray: ->
-    tmp = []
-    this.each (key) -> tmp.push(key)
-    tmp
+  toArray: -> @items()?.toArray() or []
 
   # Retrieves the value associated with the given key, or nil if the
   # key is not present.
