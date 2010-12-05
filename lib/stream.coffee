@@ -129,6 +129,11 @@ Stream.from = (start) -> new Stream(start, -> Stream.from(start + 1))
 
 Stream.range = (start, end) -> Stream.from(start).take(end - start + 1)
 
+Stream.fromArray = (a) ->
+  step = (s, i) ->
+    if i > 0 then recur -> step(new Stream(a[i-1], -> s), i-1) else s
+  resolve step(null, a.length)
+
 
 # --------------------------------------------------------------------
 # Exporting.

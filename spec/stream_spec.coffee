@@ -26,6 +26,27 @@ describe "A Stream made of the numbers 1 and 2", ->
   it "should print as '1,2' when converted to an array", ->
     expect(stream.toArray().toString()).toEqual "1,2"
 
+describe "A Stream made from the array ['a', 's', 'd', 'f']", ->
+  stream = Stream.fromArray(['a', 's', 'd', 'f'])
+
+  it "should have size 4", ->
+    expect(stream.size()).toBe 4
+
+  it "should start with an 'a'", ->
+    expect(stream.first).toBe 'a'
+
+  it "should end with an 'f'", ->
+    expect(stream.last()).toBe 'f'
+
+  it "should have an 's' at the second position", ->
+    expect(stream.get(1)).toBe 's'
+
+  it "should have an 'd' at the third position", ->
+    expect(stream.get(2)).toBe 'd'
+
+  it "should print as 'a,s,d,f' when converted to an array", ->
+    expect(stream.toArray().toString()).toEqual "a,s,d,f"
+
 describe "A stream implementing the recursion formula for Fibonacci numbers", ->
   stream = new Stream(0, -> new Stream(1, -> stream.rest().plus stream))
 
