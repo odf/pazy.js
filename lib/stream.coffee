@@ -79,7 +79,7 @@ class Stream
 
   concat: (other) -> @concatl(=> other)
 
-  flatten: -> @first.concatl(=> if @rest() then @rest().flatten())
+  flatten: -> if @first then @first.concatl(=> if @rest() then @rest().flatten())
 
   flat_map: (func) -> @map(func).flatten()
 
