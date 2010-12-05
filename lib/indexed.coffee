@@ -226,6 +226,29 @@ class ArrayNode
 
 
 # --------------------------------------------------------------------
+# A common base class for all collection wrappers.
+# --------------------------------------------------------------------
+
+class Collection
+  # The constructor takes a root node, defaulting to empty.
+  constructor: (@root) ->
+    @root ?= EmptyNode
+    @size = @root.size
+    @isEmpty = @size == 0
+    @entries = @root?.elements
+
+  # If called with a block, iterates over the elements in this set;
+  # otherwise, returns this set (this mimics Ruby enumerables).
+  each: (func) -> if func? then @entries?.each(func) else this
+
+  # Returns the elements in this set as an array.
+  toArray: -> @entries?.toArray() or []
+
+  # Returns a string representation of this collection.
+  toString: -> "#{@className}(#{@root})"
+
+
+# --------------------------------------------------------------------
 # Collections with integer keys.
 # --------------------------------------------------------------------
 
@@ -247,22 +270,11 @@ class IntLeaf
 
 
 # The IntSet class.
-class IntSet
-  # The constructor creates an empty IntSet.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the elements in this set;
-  # otherwise, returns this set (this mimics Ruby enumerables).
-  each: (func) -> if func? then @elements()?.each(func) else this
+class IntSet extends Collection
+  className: "IntSet"
 
   # Returns the elements as a stream
-  elements: -> @root?.elements
-
-  # Returns the elements in this set as an array.
-  toArray: -> @elements()?.toArray() or []
+  elements: -> @entries
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -284,11 +296,8 @@ class IntSet
       newroot = newroot.without(0, key)
     if newroot != @root then new IntSet(newroot) else this
 
-  # Returns a string representation of this set.
-  toString: -> "IntSet(#{@root})"
-
-IntSet.prototype.plus  = IntSet.prototype.with
-IntSet.prototype.minus = IntSet.prototype.without
+IntSet::plus  = IntSet::with
+IntSet::minus = IntSet::without
 
 
 # A leaf node with an integer key and arbitrary value.
@@ -312,22 +321,11 @@ class IntLeafWithValue
 
 
 # The IntMap class is essentially a huge sparse array.
-class IntMap
-  # The constructor creates an empty IntMap.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the elements in this set;
-  # otherwise, returns this set (this mimics Ruby enumerables).
-  each: (func) -> if func? then @items()?.each(func) else this
+class IntMap extends Collection
+  className: "IntMap"
 
   # Returns the (key,value)-pairs as a stream
-  items: -> @root?.elements
-
-  # Returns the elements in this set as an array.
-  toArray: -> @items()?.toArray() or []
+  items: -> @entries
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -351,18 +349,8 @@ class IntMap
         newroot = newroot.without(0, key)
     if newroot != @root then new IntMap(newroot) else this
 
-  # Returns a map with the values transformed by to the function
-  # given.
-  apply: (func) ->
-    h = new HashMap()
-    this.each (key) -> h = h.with(func(key))
-    h
-
-  # Returns a string representation of this set.
-  toString: -> "IntMap(#{@root})"
-
-IntMap.prototype.plus  = IntMap.prototype.with
-IntMap.prototype.minus = IntMap.prototype.without
+IntMap::plus  = IntMap::with
+IntMap::minus = IntMap::without
 
 
 # --------------------------------------------------------------------
@@ -388,7 +376,7 @@ hashCode = (obj) ->
       try
         String(obj)
       catch ex
-        Object.prototype.toString.call(obj)
+        Object::toString.call(obj)
 
   util.reduce(stringVal, hashStep, 0)
 
@@ -460,22 +448,11 @@ class HashLeaf
 
 # The HashSet class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
-class HashSet
-  # The constructor creates an empty HashSet.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the elements in this set;
-  # otherwise, returns this set (this mimics Ruby enumerables).
-  each: (func) -> if func? then @elements()?.each(func) else this
+class HashSet extends Collection
+  className: "HashSet"
 
   # Returns the elements as a stream
-  elements: -> @root?.elements
-
-  # Returns the elements in this set as an array.
-  toArray: -> @elements()?.toArray() or []
+  elements: -> @entries
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -500,11 +477,8 @@ class HashSet
       newroot = newroot.without(0, hash, key) if newroot.get(0, hash, key)
     if newroot != @root then new HashSet(newroot) else this
 
-  # Returns a string representation of this set.
-  toString: -> "HashSet(#{@root})"
-
-HashSet.prototype.plus  = HashSet.prototype.with
-HashSet.prototype.minus = HashSet.prototype.without
+HashSet::plus  = HashSet::with
+HashSet::minus = HashSet::without
 
 
 # --------------------------------------------------------------------
@@ -538,22 +512,11 @@ class HashLeafWithValue
 
 # The HashMap class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
-class HashMap
-  # The constructor creates an empty HashSet.
-  constructor: (@root) ->
-    @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
-
-  # If called with a block, iterates over the elements in this set;
-  # otherwise, returns this set (this mimics Ruby enumerables).
-  each: (func) -> if func? then @items()?.each(func) else this
+class HashMap extends Collection
+  className: "HashMap"
 
   # Returns the (key,value)-pairs as a stream
-  items: -> @root?.elements
-
-  # Returns the elements in this set as an array.
-  toArray: -> @items()?.toArray() or []
+  items: -> @entries
 
   # Retrieves the value associated with the given key, or nil if the
   # key is not present.
@@ -579,18 +542,8 @@ class HashMap
         newroot = newroot.without(0, hash, key)
     if newroot != @root then new HashMap(newroot) else this
 
-  # Returns a map with the values transformed by to the function
-  # given.
-  apply: (func) ->
-    h = new HashMap()
-    this.each (key) -> h = h.with(func(key))
-    h
-
-  # Returns a string representation of this set.
-  toString: -> "HashMap(#{@root})"
-
-HashMap.prototype.plus  = HashMap.prototype.with
-HashMap.prototype.minus = HashMap.prototype.without
+HashMap::plus  = HashMap::with
+HashMap::minus = HashMap::without
 
 
 # --------------------------------------------------------------------
