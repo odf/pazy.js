@@ -81,7 +81,7 @@ EmptyNode = {
 
   get:     (shift, key, data) -> undefined
 
-  elements: -> null
+  elements: null
 
   with:    (shift, key, leaf) -> leaf
 
@@ -100,7 +100,7 @@ class BitmapIndexedNode
       @progeny = []
       @size    = 0
 
-  elements: -> Stream.fromArray(@progeny).flat_map (n) -> n?.elements()
+    @elements = Stream.fromArray(@progeny)?.flat_map (n) -> n?.elements
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -161,9 +161,8 @@ class BitmapIndexedNode
 # Special case of a sparse interior node which has exactly one descendant.
 class ProxyNode
   constructor: (@child_index, @progeny) ->
-    @size = @progeny.size
-
-  elements: -> @progeny.elements()
+    @size     = @progeny.size
+    @elements = @progeny.elements
 
   get: (shift, key, data) ->
     @progeny.get(shift + 5, key, data) if @child_index == util.mask(key, shift)
@@ -191,9 +190,8 @@ class ProxyNode
 # A dense interior node with room for 32 entries.
 class ArrayNode
   constructor: (progeny, i, node, @size) ->
-    @progeny = util.arrayWith(progeny, i, node)
-
-  elements: -> Stream.fromArray(@progeny).flat_map (n) -> n?.elements()
+    @progeny  = util.arrayWith(progeny, i, node)
+    @elements = Stream.fromArray(@progeny)?.flat_map (n) -> n?.elements
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -234,10 +232,9 @@ class ArrayNode
 # A leaf node containing a single integer.
 class IntLeaf
   constructor: (@key) ->
+    @elements = new Stream(@key)
 
   size: 1
-
-  elements: -> new Stream(@key)
 
   get:  (shift, key, data) -> key == @key
 
@@ -262,7 +259,7 @@ class IntSet
   each: (func) -> if func? then @elements()?.each(func) else this
 
   # Returns the elements as a stream
-  elements: -> @root?.elements()
+  elements: -> @root?.elements
 
   # Returns the elements in this set as an array.
   toArray: -> @elements()?.toArray() or []
@@ -297,10 +294,9 @@ IntSet.prototype.minus = IntSet.prototype.without
 # A leaf node with an integer key and arbitrary value.
 class IntLeafWithValue
   constructor: (@key, @value) ->
+    @elements = new Stream([@key, @value])
 
   size: 1
-
-  elements: -> new Stream([@key, @value])
 
   get:  (shift, key, data) -> @value if key == @key
 
@@ -328,7 +324,7 @@ class IntMap
   each: (func) -> if func? then @items()?.each(func) else this
 
   # Returns the (key,value)-pairs as a stream
-  items: -> @root?.elements()
+  items: -> @root?.elements
 
   # Returns the elements in this set as an array.
   toArray: -> @items()?.toArray() or []
@@ -409,10 +405,9 @@ areEqual = (obj1, obj2) ->
 # @bucket, in which all keys share a common hash value.
 class CollisionNode
   constructor: (@hash, @bucket) ->
-    @bucket = [] unless @bucket?
-    @size = @bucket.length
-
-  elements: -> Stream.fromArray(@bucket).flat_map (n) -> n?.elements()
+    @bucket   = [] unless @bucket?
+    @size     = @bucket.length
+    @elements = Stream.fromArray(@bucket)?.flat_map (n) -> n?.elements
 
   get: (shift, hash, key) ->
     leaf = util.find @bucket, (v) -> areEqual(v.key, key)
@@ -445,10 +440,9 @@ class CollisionNode
 # A leaf node contains a single key and also caches its hash value.
 class HashLeaf
   constructor: (@hash, @key) ->
+    @elements = new Stream(@key)
 
   size: 1
-
-  elements: -> new Stream(@key)
 
   get:  (shift, hash, key) -> true if areEqual(key, @key)
 
@@ -478,7 +472,7 @@ class HashSet
   each: (func) -> if func? then @elements()?.each(func) else this
 
   # Returns the elements as a stream
-  elements: -> @root?.elements()
+  elements: -> @root?.elements
 
   # Returns the elements in this set as an array.
   toArray: -> @elements()?.toArray() or []
@@ -521,10 +515,9 @@ HashSet.prototype.minus = HashSet.prototype.without
 # hash value for the key.
 class HashLeafWithValue
   constructor: (@hash, @key, @value) ->
+    @elements = new Stream([@key, @value])
 
   size: 1
-
-  elements: -> new Stream([@key, @value])
 
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
 
@@ -557,7 +550,7 @@ class HashMap
   each: (func) -> if func? then @items()?.each(func) else this
 
   # Returns the (key,value)-pairs as a stream
-  items: -> @root?.elements()
+  items: -> @root?.elements
 
   # Returns the elements in this set as an array.
   toArray: -> @items()?.toArray() or []
