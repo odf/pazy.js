@@ -20,6 +20,14 @@
 # --------------------------------------------------------------------
 
 
+if typeof(require) != 'undefined'
+  require.paths.unshift('#{__dirname}/../lib')
+  pazy = require('trampoline')
+
+recur = pazy.recur
+resolve = pazy.resolve
+
+
 class Stream
   constructor: (@first, rest) ->
     @rest = if rest?
@@ -80,49 +88,32 @@ class Stream
   toString: -> "Stream(#{@first}, ...)"
 
   # The following functions force evaluation of the complete stream or
-  # portions of the stream. Since Javascript does not optimize tail
-  # recursion, iterative implementations were chosen instead of the
-  # cleaner recursive versions in order to avoid stack overflow when
-  # streams get large.
+  # portions of the stream.
 
   drop_while: (pred) ->
-    stream = this
-    while stream and pred(stream.first)
-      stream = stream.rest()
-    stream
+    step = (s) -> if s and pred(s.first) then recur -> step(s.rest()) else s
+    resolve step(this)
 
   drop: (n) ->
-    stream = this
-    i = n
-    while stream and i > 0
-      stream = stream.rest()
-      i -= 1
-    stream
+    step = (s, n) -> if s and n > 0 then recur -> step(s.rest(), n - 1) else s
+    resolve step(this, n)
 
   each: (func) ->
-    stream = this
-    while stream
-      func(stream.first)
-      stream = stream.rest()
-    undefined
+    step = (s) -> if s then func(s.first); recur -> step(s.rest())
+    resolve step(this)
 
   reverse: ->
-    rev = null
-    @each (x) ->
-      t = rev
-      rev = new Stream(x, -> t)
-    rev
+    step = (r, s) ->
+      if s then recur -> step(new Stream(s.first, -> r), s.rest()) else r
+    resolve step(null, this)
 
   size: ->
-    count = 0
-    @each -> count += 1
-    count
+    step = (s, n) -> if s then recur -> step(s.rest(), n + 1) else n
+    resolve step(this, 0)
 
   last: ->
-    stream = this
-    while stream.rest()
-      stream = stream.rest()
-    stream.first
+    step = (s) -> if s.rest() then recur -> step(s.rest()) else s.first
+    resolve step(this)
 
   toArray: ->
     buffer = []
