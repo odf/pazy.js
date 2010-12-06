@@ -42,8 +42,8 @@ describe "A HashMap", ->
     it "should not return anything on get", ->
       expect(hash.get("first")).not.toBeDefined()
 
-    it "should still be empty when without is called", ->
-      expect(hash.without("first").size).toEqual 0
+    it "should still be empty when minus is called", ->
+      expect(hash.minus("first").size).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -53,7 +53,7 @@ describe "A HashMap", ->
 
 
   describe "containing one item", ->
-    hash = new HashMap().with(["first", 1])
+    hash = new HashMap().plus(["first", 1])
 
     it "should have size 1", ->
       expect(hash.size).toEqual 1
@@ -68,7 +68,7 @@ describe "A HashMap", ->
       expect(hash.get("second")).not.toBeDefined()
 
     it "should be empty when the item is removed", ->
-      expect(hash.without("first").isEmpty).toBe true
+      expect(hash.minus("first").isEmpty).toBe true
 
     it "should contain the key-value pair", ->
       a = hash.toArray()
@@ -79,7 +79,7 @@ describe "A HashMap", ->
       expect(hash.toString()).toEqual('HashMap(LeafNode(first, 1))')
 
     describe "the value of which is then changed", ->
-      h = hash.with(["first", "one"])
+      h = hash.plus(["first", "one"])
 
       it "should have size 1", ->
         expect(h.size).toBe 1
@@ -102,7 +102,7 @@ describe "A HashMap", ->
     key_a = new FunnyKey(1)
     key_b = new FunnyKey(33)
     key_c = new FunnyKey(5)
-    hash = new HashMap().with([key_a, "a"]).with([key_b, "b"])
+    hash = new HashMap().plus([key_a, "a"]).plus([key_b, "b"])
 
     it "should contain two elements", ->
       expect(hash.size).toBe 2
@@ -111,17 +111,17 @@ describe "A HashMap", ->
       expect(hash.get(key_c)).not.toBeDefined()
 
     it "should not change when an item not included is removed", ->
-      a = hash.without(key_c).toArray()
+      a = hash.minus(key_c).toArray()
       expect(a.length).toBe 2
       expect(a).toContain [key_a, "a"]
       expect(a).toContain [key_b, "b"]
 
     it "should not be empty when the first item is removed", ->
-      h = hash.without(key_a)
+      h = hash.minus(key_a)
       expect(h.size).toBe 1
 
     it "should be empty when all items are removed", ->
-      h = hash.without(key_a).without(key_b)
+      h = hash.minus(key_a).minus(key_b)
       expect(h.isEmpty).toBe true
 
   describe "containing three items with identical hash values", ->
@@ -129,16 +129,16 @@ describe "A HashMap", ->
     key_b = new FunnyKey(513)
     key_c = new FunnyKey(769)
     key_d = new FunnyKey(33)
-    hash = new HashMap().with([key_a, "a"], [key_b, "b"], [key_c, "c"])
+    hash = new HashMap().plus([key_a, "a"], [key_b, "b"], [key_c, "c"])
 
     it "should contain the remaining two items when one is removed", ->
-      a = hash.without(key_a).toArray()
+      a = hash.minus(key_a).toArray()
       expect(a.length).toBe 2
       expect(a).toContain [key_b, "b"]
       expect(a).toContain [key_c, "c"]
 
     it "should contain four items when one with a new hash value is added", ->
-      a = hash.with([key_d, "d"]).toArray()
+      a = hash.plus([key_d, "d"]).toArray()
       expect(a.length).toBe 4
       expect(a).toContain [key_a, "a"]
       expect(a).toContain [key_b, "b"]
@@ -148,7 +148,7 @@ describe "A HashMap", ->
   describe "containing a wild mix of items", ->
     keys  = (new FunnyKey(x * 5 + 7) for x in [0..16])
     items = ([key, key.value] for key in keys)
-    hash  = (new HashMap()).with items...
+    hash  = (new HashMap()).plus items...
 
     it "should have the right number of items", ->
       expect(hash.size).toEqual keys.length
@@ -162,7 +162,7 @@ describe "A HashMap", ->
   describe "containing lots of items", ->
     keys  = (new FunnyKey(x) for x in [0..300])
     items = ([key, key.value] for key in keys)
-    hash  = (new HashMap()).with items...
+    hash  = (new HashMap()).plus items...
 
     it "should have the correct number of items", ->
       expect(hash.size).toEqual keys.length
@@ -187,7 +187,7 @@ describe "A HashMap", ->
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
-      h = hash.without ex_keys...
+      h = hash.minus ex_keys...
 
       it "should have the correct size", ->
         expect(h.size).toEqual keys.length - ex_keys.length
@@ -209,7 +209,7 @@ describe "A HashMap", ->
 
     describe "from which some keys not included are removed", ->
       ex_keys = (new FunnyKey(x) for x in [1000..1100])
-      h = hash.without ex_keys...
+      h = hash.minus ex_keys...
 
       it "should be the same object as before", ->
         expect(h).toBe hash
@@ -230,7 +230,7 @@ describe "A HashMap", ->
         expect(h.toArray().sort(FunnyKey.sorter)).toEqual items
 
     describe "all of which are then removed", ->
-      h = hash.without keys...
+      h = hash.minus keys...
 
       it "should have size 0", ->
         expect(h.size).toEqual 0
@@ -247,7 +247,7 @@ describe "A HashMap", ->
     describe "some of which are then replaced", ->
       ex_keys = keys[0..100]
       newItems = ([k, k.value.toString()] for k in ex_keys)
-      h = hash.with newItems...
+      h = hash.plus newItems...
 
       it "should have the same size as before", ->
         expect(h.size).toBe hash.size
@@ -269,7 +269,7 @@ describe "A HashMap", ->
     describe "some of which are then overwritten with the original value", ->
       ex_keys = keys[0..100]
       newItems = ([k, k.value] for k in ex_keys)
-      h = hash.with newItems...
+      h = hash.plus newItems...
 
       it "should be the same object as before", ->
         expect(h).toBe hash

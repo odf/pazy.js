@@ -29,8 +29,8 @@ describe "An IntMap", ->
     it "should not return anything on get", ->
       expect(hash.get("first")).not.toBeDefined()
 
-    it "should still be empty when without is called", ->
-      expect(hash.without("first").size).toEqual 0
+    it "should still be empty when minus is called", ->
+      expect(hash.minus("first").size).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -40,7 +40,7 @@ describe "An IntMap", ->
 
 
   describe "containing one item", ->
-    hash = new IntMap().with([1337, 1])
+    hash = new IntMap().plus([1337, 1])
 
     it "should have size 1", ->
       expect(hash.size).toEqual 1
@@ -55,7 +55,7 @@ describe "An IntMap", ->
       expect(hash.get(4023)).not.toBeDefined()
 
     it "should be empty when the item is removed", ->
-      expect(hash.without(1337).isEmpty).toBe true
+      expect(hash.minus(1337).isEmpty).toBe true
 
     it "should contain the key-value pair", ->
       a = hash.toArray()
@@ -66,7 +66,7 @@ describe "An IntMap", ->
       expect(hash.toString()).toEqual('IntMap(LeafNode(1337, 1))')
 
     describe "the value of which is then changed", ->
-      h = hash.with([1337, "leet!"])
+      h = hash.plus([1337, "leet!"])
 
       it "should have size 1", ->
         expect(h.size).toBe 1
@@ -87,7 +87,7 @@ describe "An IntMap", ->
 
 
   describe "containing two items", ->
-    hash = new IntMap().with([1337, 'leet!']).with([4023, 'lame?'])
+    hash = new IntMap().plus([1337, 'leet!']).plus([4023, 'lame?'])
 
     it "should have size 2", ->
       expect(hash.size).toEqual 2
@@ -96,10 +96,10 @@ describe "An IntMap", ->
       expect(hash.isEmpty).toBe false
 
     it "should not be empty when the first item is removed", ->
-      expect(hash.without(1337).isEmpty).toBe false
+      expect(hash.minus(1337).isEmpty).toBe false
 
     it "should be empty when both items are removed", ->
-      expect(hash.without(4023).without(1337).isEmpty).toBe true
+      expect(hash.minus(4023).minus(1337).isEmpty).toBe true
 
     it "should return the associate values for both keys", ->
       expect(hash.get(1337)).toBe 'leet!'
@@ -115,47 +115,47 @@ describe "An IntMap", ->
       expect(a).toContain([4023, 'lame?'])
 
     it "should not change when illegal items are added", ->
-      expect(hash.with ["a", 1], [-1, 2], [0x100000000, 4]).toBe hash
-      expect(hash.with [2.34, 3], [[1], 5], [{1:2}, 6]).toBe hash
+      expect(hash.plus ["a", 1], [-1, 2], [0x100000000, 4]).toBe hash
+      expect(hash.plus [2.34, 3], [[1], 5], [{1:2}, 6]).toBe hash
 
     it "should not change when illegal items are removed", ->
-      expect(hash.without("a", -1, 2.34, 0x100000000, [1], {1:2})).toBe hash
+      expect(hash.minus("a", -1, 2.34, 0x100000000, [1], {1:2})).toBe hash
 
 
   describe "containing four items with collisions in the lower bits", ->
     keys = [0x1fffffff, 0x3fffffff, 0x5ff0ffff, 0x7ff0ffff]
     items = ([key, "0x#{key.toString(16)}"] for key in keys)
-    hash = (new IntMap()).with items...
+    hash = (new IntMap()).plus items...
 
     it "should return the associated value for all keys", ->
       expect(hash.get(key)).toBe value for [key, value] in items
 
     it "should not be empty when all items but one are removed", ->
-      expect(hash.without(keys[0..2]...).isEmpty).toBe false
+      expect(hash.minus(keys[0..2]...).isEmpty).toBe false
 
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.without(keys[0..2]...).size).toEqual 1
+      expect(hash.minus(keys[0..2]...).size).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.without(keys...).isEmpty).toBe true
+      expect(hash.minus(keys...).isEmpty).toBe true
 
 
   describe "containing four items with collisions in the higher bits", ->
     keys = [0x7ffffff1, 0x7ffffff3, 0x7fff0ff5, 0x7fff0ff7]
     items = ([key, "0x#{key.toString(16)}"] for key in keys)
-    hash = (new IntMap()).with items...
+    hash = (new IntMap()).plus items...
 
     it "should return the associated value for all keys", ->
       expect(hash.get(key)).toBe value for [key, value] in items
 
     it "should not be empty when all items but one are removed", ->
-      expect(hash.without(keys[0..2]...).isEmpty).toBe false
+      expect(hash.minus(keys[0..2]...).isEmpty).toBe false
 
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.without(keys[0..2]...).size).toEqual 1
+      expect(hash.minus(keys[0..2]...).size).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.without(keys...).isEmpty).toBe true
+      expect(hash.minus(keys...).isEmpty).toBe true
 
 
   describe "containing three items", ->
@@ -163,16 +163,16 @@ describe "An IntMap", ->
     key_b = 513
     key_c = 769
     key_d = 33
-    hash = new IntMap().with([key_a, "a"], [key_b, "b"], [key_c, "c"])
+    hash = new IntMap().plus([key_a, "a"], [key_b, "b"], [key_c, "c"])
 
     it "should contain the remaining two items when one is removed", ->
-      a = hash.without(key_a).toArray()
+      a = hash.minus(key_a).toArray()
       expect(a.length).toBe 2
       expect(a).toContain [key_b, "b"]
       expect(a).toContain [key_c, "c"]
 
     it "should contain four items when one with a new hash value is added", ->
-      a = hash.with([key_d, "d"]).toArray()
+      a = hash.plus([key_d, "d"]).toArray()
       expect(a.length).toBe 4
       expect(a).toContain [key_a, "a"]
       expect(a).toContain [key_b, "b"]
@@ -184,7 +184,7 @@ describe "An IntMap", ->
     keys  = ((x * 5 + 7) for x in [0..16])
     items = ([key, key.toString()] for key in keys)
     scrambled = (items[(i * 7) % 17] for i in [0..16])
-    hash  = (new IntMap()).with scrambled...
+    hash  = (new IntMap()).plus scrambled...
 
     it "should have the right number of items", ->
       expect(hash.size).toEqual keys.length
@@ -200,7 +200,7 @@ describe "An IntMap", ->
     keys  = [0..306]
     items = ([key, key.toString()] for key in keys)
     scrambled = (items[(i * 127) % 307] for i in [0..306])
-    hash  = (new IntMap()).with items...
+    hash  = (new IntMap()).plus items...
 
     it "should have the correct number of items", ->
       expect(hash.size).toEqual keys.length
@@ -229,7 +229,7 @@ describe "An IntMap", ->
 
     describe "some of which are then removed", ->
       ex_keys = (keys[(i * 37) % 101] for i in [0..100])
-      h = hash.without ex_keys...
+      h = hash.minus ex_keys...
 
       it "should have the correct size", ->
         expect(h.size).toEqual keys.length - ex_keys.length
@@ -251,7 +251,7 @@ describe "An IntMap", ->
 
     describe "from which some keys not included are removed", ->
       ex_keys = (keys[(i * 37) % 101 + 1000] for i in [0..100])
-      h = hash.without ex_keys...
+      h = hash.minus ex_keys...
 
       it "should be the same object as before", ->
         expect(h).toBe hash
@@ -272,7 +272,7 @@ describe "An IntMap", ->
         expect(h.toArray()).toEqual items
 
     describe "all of which are then removed", ->
-      h = hash.without keys...
+      h = hash.minus keys...
 
       it "should have size 0", ->
         expect(h.size).toEqual 0
@@ -290,7 +290,7 @@ describe "An IntMap", ->
       ex_keys = [0..100]
       newItems = ([k, "0x#{k.toString(16)}"] for k in ex_keys)
       scrambled = (newItems[(i * 41) % 101] for i in [0..100])
-      h = hash.with scrambled...
+      h = hash.plus scrambled...
 
       it "should have the same size as before", ->
         expect(h.size).toBe hash.size
@@ -311,7 +311,7 @@ describe "An IntMap", ->
 
     describe "some of which are then overwritten with the original value", ->
       scrambled = (items[(i * 41) % 101] for i in [0..100])
-      h = hash.with scrambled...
+      h = hash.plus scrambled...
 
       it "should be the same object as before", ->
         expect(h).toBe hash

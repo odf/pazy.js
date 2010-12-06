@@ -5,7 +5,7 @@
 # Phil Bagwell.
 #
 # To simplify the logic downstream, all node classes assume that
-# with() or without() are only ever called if they would result in a
+# plus() or minus() are only ever called if they would result in a
 # changed node. This has therefore to be assured by the caller, and
 # ultimately by the collection classes themselves.
 #
@@ -35,16 +35,9 @@ else
 
 # A collection of utility functions used by interior nodes.
 util = {
-  find: (a, test) ->
-    for x in a
-      return x if test(x) == true
-    undefined
+  find: (a, test) -> Stream.fromArray(a)?.select(test)?.first
 
-  reduce: (a, step, init) ->
-    result = init
-    for x in a
-      result = step(result, x)
-    result
+  reduce: (a, step, init) -> Stream.fromArray(a).accumulate(init, step).last()
 
   arrayWith: (a, i, x) ->
     (if j == i then x else a[j]) for j in [0...a.length]
@@ -83,9 +76,9 @@ EmptyNode = {
 
   elements: null
 
-  with:    (shift, key, leaf) -> leaf
+  plus:    (shift, key, leaf) -> leaf
 
-  without: (shift, key, data) -> this
+  minus: (shift, key, data) -> this
 
   toString: -> "EmptyNode"
 }
@@ -106,7 +99,7 @@ class BitmapIndexedNode
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
     @progeny[i].get(shift + 5, key, data) if (@bitmap & bit) != 0
 
-  with: (shift, key, leaf) ->
+  plus: (shift, key, leaf) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
     if (@bitmap & bit) == 0
@@ -115,25 +108,24 @@ class BitmapIndexedNode
         newArray = util.arrayWithInsertion(@progeny, i, leaf)
         new BitmapIndexedNode(@bitmap | bit, newArray, @size + 1)
       else
-        progeny = new Array(32)
-        for m in [0..31]
+        progeny = for m in [0..31]
           b = 1 << m
-          progeny[m] = @progeny[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
+          @progeny[util.indexForBit(@bitmap, b)] if (@bitmap & b) != 0
         new ArrayNode(progeny, util.mask(key, shift), leaf, @size + 1)
     else
       v = @progeny[i]
-      node = v.with(shift + 5, key, leaf)
+      node = v.plus(shift + 5, key, leaf)
       if @bitmap == (1 << i)
         new ProxyNode(i, node)
       else
         array = util.arrayWith(@progeny, i, node)
         new BitmapIndexedNode(@bitmap, array, @size + node.size - v.size)
 
-  without: (shift, key, data) ->
+  minus: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
 
     v = @progeny[i]
-    node = v.without(shift + 5, key, data)
+    node = v.minus(shift + 5, key, data)
     if node?
       newBitmap = @bitmap
       newSize   = @size + node.size - v.size
@@ -167,18 +159,18 @@ class ProxyNode
   get: (shift, key, data) ->
     @progeny.get(shift + 5, key, data) if @child_index == util.mask(key, shift)
 
-  with: (shift, key, leaf) ->
+  plus: (shift, key, leaf) ->
     i = util.mask(key, shift)
 
     if @child_index == i
-      new ProxyNode(i, @progeny.with(shift + 5, key, leaf))
+      new ProxyNode(i, @progeny.plus(shift + 5, key, leaf))
     else
       bitmap = (1 << @child_index) | (1 << i)
       array = if i < @child_index then [leaf, @progeny] else [@progeny, leaf]
       new BitmapIndexedNode(bitmap, array, @size + leaf.size)
 
-  without: (shift, key, data) ->
-    node = @progeny.without(shift + 5, key, data)
+  minus: (shift, key, data) ->
+    node = @progeny.minus(shift + 5, key, data)
     if node?.progeny?
       new ProxyNode(@child_index, node)
     else
@@ -197,20 +189,20 @@ class ArrayNode
     i = util.mask(key, shift)
     @progeny[i].get(shift + 5, key, data) if @progeny[i]?
 
-  with: (shift, key, leaf) ->
+  plus: (shift, key, leaf) ->
     i = util.mask(key, shift)
 
     if @progeny[i]?
-      node = @progeny[i].with(shift + 5, key, leaf)
+      node = @progeny[i].plus(shift + 5, key, leaf)
       newSize = @size + node.size - @progeny[i].size
       new ArrayNode(@progeny, i, node, newSize)
     else
       new ArrayNode(@progeny, i, leaf, @size + 1)
 
-  without: (shift, key, data) ->
+  minus: (shift, key, data) ->
     i = util.mask(key, shift)
 
-    node = @progeny[i].without(shift + 5, key, data)
+    node = @progeny[i].minus(shift + 5, key, data)
     if node?
       new ArrayNode(@progeny, i, node, @size - 1)
     else
@@ -241,6 +233,11 @@ class Collection
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @entries?.each(func) else this
 
+  # Generic update method with support for multiple arguments
+  update: (args, step) ->
+    newroot = util.reduce(args, step, @root)
+    if newroot != @root then new @collection(newroot) else this
+
   # Returns the elements in this set as an array.
   toArray: -> @entries?.toArray() or []
 
@@ -261,10 +258,10 @@ class IntLeaf
 
   get:  (shift, key, data) -> key == @key
 
-  with: (shift, key, leaf) ->
-    new BitmapIndexedNode().with(shift, @key, this).with(shift, key, leaf)
+  plus: (shift, key, leaf) ->
+    new BitmapIndexedNode().plus(shift, @key, this).plus(shift, key, leaf)
 
-  without: (shift, key, data) -> null
+  minus: (shift, key, data) -> null
 
   toString: -> "LeafNode(#{@key})"
 
@@ -272,6 +269,7 @@ class IntLeaf
 # The IntSet class.
 class IntSet extends Collection
   className: "IntSet"
+  collection: IntSet
 
   # Returns the elements as a stream
   elements: -> @entries
@@ -282,22 +280,21 @@ class IntSet extends Collection
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
-  with: ->
-    newroot = @root
-    for key in arguments when util.isKey(key) and not newroot.get(0, key)
-      newroot = newroot.with(0, key, new IntLeaf(key))
-    if newroot != @root then new IntSet(newroot) else this
+  plus: ->
+    @update arguments, (root, key) ->
+      if util.isKey(key) and not root.get(0, key)
+        root.plus(0, key, new IntLeaf(key))
+      else
+        root
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  without: ->
-    newroot = @root
-    for key in arguments when util.isKey(key) and newroot.get(0, key)
-      newroot = newroot.without(0, key)
-    if newroot != @root then new IntSet(newroot) else this
-
-IntSet::plus  = IntSet::with
-IntSet::minus = IntSet::without
+  minus: ->
+    @update arguments, (root, key) ->
+      if util.isKey(key) and root.get(0, key)
+        root.minus(0, key)
+      else
+        root
 
 
 # A leaf node with an integer key and arbitrary value.
@@ -309,13 +306,13 @@ class IntLeafWithValue
 
   get:  (shift, key, data) -> @value if key == @key
 
-  with: (shift, key, leaf) ->
+  plus: (shift, key, leaf) ->
     if @key == key
       leaf
     else
-      new BitmapIndexedNode().with(shift, @key, this).with(shift, key, leaf)
+      new BitmapIndexedNode().plus(shift, @key, this).plus(shift, key, leaf)
 
-  without: (shift, key, data) -> null
+  minus: (shift, key, data) -> null
 
   toString: -> "LeafNode(#{@key}, #{@value})"
 
@@ -323,6 +320,7 @@ class IntLeafWithValue
 # The IntMap class is essentially a huge sparse array.
 class IntMap extends Collection
   className: "IntMap"
+  collection: IntMap
 
   # Returns the (key,value)-pairs as a stream
   items: -> @entries
@@ -333,24 +331,21 @@ class IntMap extends Collection
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
-  with: ->
-    newroot = @root
-    for [key, value] in arguments when util.isKey(key)
-      unless areEqual(newroot.get(0, key), value)
-        newroot = newroot.with(0, key, new IntLeafWithValue(key, value))
-    if newroot != @root then new IntMap(newroot) else this
+  plus: ->
+    @update arguments, (root, [key, value]) ->
+      if util.isKey(key) and not areEqual(root.get(0, key), value)
+        root.plus(0, key, new IntLeafWithValue(key, value))
+      else
+        root
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  without: ->
-    newroot = @root
-    for key in arguments when util.isKey(key)
-      unless typeof newroot.get(0, key) == 'undefined'
-        newroot = newroot.without(0, key)
-    if newroot != @root then new IntMap(newroot) else this
-
-IntMap::plus  = IntMap::with
-IntMap::minus = IntMap::without
+  minus: ->
+    @update arguments, (root, key) ->
+      if util.isKey(key) and typeof(root.get(0, key)) != 'undefined'
+        root.minus(0, key)
+      else
+        root
 
 
 # --------------------------------------------------------------------
@@ -401,15 +396,15 @@ class CollisionNode
     leaf = util.find @bucket, (v) -> areEqual(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
-  with: (shift, hash, leaf) ->
+  plus: (shift, hash, leaf) ->
     if hash != @hash
-      new BitmapIndexedNode().with(shift, @hash, this).with(shift, hash, leaf)
+      new BitmapIndexedNode().plus(shift, @hash, this).plus(shift, hash, leaf)
     else
       newBucket = this.bucketWithout(leaf.key)
       newBucket.push leaf
       new CollisionNode(hash, newBucket)
 
-  without: (shift, hash, key) ->
+  minus: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
       when 2    then util.find @bucket, (v) -> not areEqual(v.key, key)
@@ -434,14 +429,14 @@ class HashLeaf
 
   get:  (shift, hash, key) -> true if areEqual(key, @key)
 
-  with: (shift, hash, leaf) ->
+  plus: (shift, hash, leaf) ->
     if hash == @hash
       base = new CollisionNode(hash)
     else
       base = new BitmapIndexedNode()
-    base.with(shift, @hash, this).with(shift, hash, leaf)
+    base.plus(shift, @hash, this).plus(shift, hash, leaf)
 
-  without: (shift, hash, key) -> null
+  minus: (shift, hash, key) -> null
 
   toString: -> "LeafNode(#{@key})"
 
@@ -450,6 +445,7 @@ class HashLeaf
 # for the various node classes that hold the actual information.
 class HashSet extends Collection
   className: "HashSet"
+  collection: HashSet
 
   # Returns the elements as a stream
   elements: -> @entries
@@ -460,25 +456,23 @@ class HashSet extends Collection
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
-  with: ->
-    newroot = @root
-    for key in arguments
+  plus: ->
+    @update arguments, (root, key) ->
       hash = hashCode(key)
-      unless newroot.get(0, hash, key)
-        newroot = newroot.with(0, hash, new HashLeaf(hash, key))
-    if newroot != @root then new HashSet(newroot) else this
+      if root.get(0, hash, key)
+        root
+      else
+        root.plus(0, hash, new HashLeaf(hash, key))
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  without: ->
-    newroot = @root
-    for key in arguments
+  minus: ->
+    @update arguments, (root, key) ->
       hash = hashCode(key)
-      newroot = newroot.without(0, hash, key) if newroot.get(0, hash, key)
-    if newroot != @root then new HashSet(newroot) else this
-
-HashSet::plus  = HashSet::with
-HashSet::minus = HashSet::without
+      if root.get(0, hash, key)
+        root.minus(0, hash, key)
+      else
+        root
 
 
 # --------------------------------------------------------------------
@@ -495,7 +489,7 @@ class HashLeafWithValue
 
   get:  (shift, hash, key) -> @value if areEqual(key, @key)
 
-  with: (shift, hash, leaf) ->
+  plus: (shift, hash, leaf) ->
     if areEqual(@key, leaf.key)
       leaf
     else
@@ -503,9 +497,9 @@ class HashLeafWithValue
         base = new CollisionNode(hash)
       else
         base = new BitmapIndexedNode()
-      base.with(shift, @hash, this).with(shift, hash, leaf)
+      base.plus(shift, @hash, this).plus(shift, hash, leaf)
 
-  without: (shift, hash, key) -> null
+  minus: (shift, hash, key) -> null
 
   toString: -> "LeafNode(#{@key}, #{@value})"
 
@@ -514,6 +508,7 @@ class HashLeafWithValue
 # for the various node classes that hold the actual information.
 class HashMap extends Collection
   className: "HashMap"
+  collection: HashMap
 
   # Returns the (key,value)-pairs as a stream
   items: -> @entries
@@ -524,26 +519,23 @@ class HashMap extends Collection
 
   # Returns a new map with the given key-value pair inserted, or
   # this map if it already contains that pair.
-  with: ->
-    newroot = @root
-    for [key, value] in arguments
+  plus: ->
+    @update arguments, (root, [key, value]) ->
       hash = hashCode(key)
-      unless areEqual(newroot.get(0, hash, key), value)
-        newroot = newroot.with(0, hash, new HashLeafWithValue(hash, key, value))
-    if newroot != @root then new HashMap(newroot) else this
+      if areEqual(root.get(0, hash, key), value)
+        root
+      else
+        root.plus(0, hash, new HashLeafWithValue(hash, key, value))
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  without: ->
-    newroot = @root
-    for key in arguments
+  minus: ->
+    @update arguments, (root, key) ->
       hash = hashCode(key)
-      if typeof(newroot.get(0, hash, key)) != 'undefined'
-        newroot = newroot.without(0, hash, key)
-    if newroot != @root then new HashMap(newroot) else this
-
-HashMap::plus  = HashMap::with
-HashMap::minus = HashMap::without
+      if typeof(root.get(0, hash, key)) != 'undefined'
+        root.minus(0, hash, key)
+      else
+        root
 
 
 # --------------------------------------------------------------------
