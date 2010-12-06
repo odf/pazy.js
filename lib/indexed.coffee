@@ -37,7 +37,7 @@ else
 util = {
   find: (a, test) -> Stream.fromArray(a)?.select(test)?.first
 
-  reduce: (a, step, init) -> Stream.fromArray(a).accumulate(init, step).last()
+  reduce: (a, step, init) -> Stream.fromArray(a)?.accumulate(init, step)?.last()
 
   arrayWith: (a, i, x) ->
     (if j == i then x else a[j]) for j in [0...a.length]
