@@ -29,6 +29,8 @@ resolve = pazy.resolve
 
 
 class Stream
+  #TODO @rest() returning null is no fun
+
   constructor: (@first, rest) ->
     @rest = if rest?
       => val = rest(); (@rest = -> val)()
@@ -50,9 +52,9 @@ class Stream
 
   select: (pred) ->
     if pred(@first)
-      new Stream(@first, => if @rest() then @rest().select(pred))
+      new Stream(@first, => if @rest() then @rest()?.select(pred))
     else
-      if @rest then @rest().select(pred)
+      if @rest then @rest()?.select(pred)
 
   combine: (other, op) ->
     new Stream(op(this.first, other.first), =>
