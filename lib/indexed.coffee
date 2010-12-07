@@ -242,7 +242,7 @@ class Collection
   toArray: -> @entries?.toArray() or []
 
   # Returns a string representation of this collection.
-  toString: -> "#{@className}(#{@root})"
+  toString: -> "#{@class.name}(#{@root})"
 
 
 # --------------------------------------------------------------------
@@ -269,7 +269,7 @@ class IntLeaf
 # The IntSet class.
 class IntSet extends Collection
   this::class = this
-  className: "IntSet"
+  @name = "IntSet"
 
   # Returns the elements as a stream
   elements: -> @entries
@@ -320,7 +320,7 @@ class IntLeafWithValue
 # The IntMap class is essentially a huge sparse array.
 class IntMap extends Collection
   this::class = this
-  className: "IntMap"
+  @name = "IntMap"
 
   # Returns the (key,value)-pairs as a stream
   items: -> @entries
@@ -445,7 +445,7 @@ class HashLeaf
 # for the various node classes that hold the actual information.
 class HashSet extends Collection
   this::class = this
-  className: "HashSet"
+  @name = "HashSet"
 
   # Returns the elements as a stream
   elements: -> @entries
@@ -508,7 +508,7 @@ class HashLeafWithValue
 # for the various node classes that hold the actual information.
 class HashMap extends Collection
   this::class = this
-  className: "HashMap"
+  @name = "HashMap"
 
   # Returns the (key,value)-pairs as a stream
   items: -> @entries
