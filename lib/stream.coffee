@@ -29,8 +29,6 @@ resolve = pazy.resolve
 
 
 class Stream
-  #TODO @rest() returning null is no fun
-
   constructor: (@first, rest) ->
     @rest = if rest?
       => val = rest(); (@rest = -> val)()
@@ -38,23 +36,19 @@ class Stream
       -> null
 
   take_while: (pred) ->
-    if pred(@first)
-      new Stream(@first, => if @rest() then @rest().take_while(pred))
+    new Stream(@first, => @rest()?.take_while(pred)) if pred(@first)
 
-  take: (n) ->
-    if n > 0
-      new Stream(@first, => if @rest() then @rest().take(n-1))
+  take: (n) -> new Stream(@first, => @rest()?.take(n-1)) if n > 0
 
   get: (n) -> this.drop(n).first
 
-  map: (func) ->
-    new Stream(func(@first), => if @rest() then @rest().map(func))
+  map: (func) -> new Stream(func(@first), => @rest()?.map(func))
 
   select: (pred) ->
     if pred(@first)
-      new Stream(@first, => if @rest() then @rest()?.select(pred))
+      new Stream(@first, => @rest()?.select(pred))
     else
-      if @rest then @rest()?.select(pred)
+      @rest()?.select(pred)
 
   combine: (other, op) ->
     new Stream(op(this.first, other.first), =>
@@ -69,12 +63,12 @@ class Stream
 
   accumulate: (start, op) ->
     first = op(start, @first)
-    new Stream(first, => if @rest() then @rest().accumulate(first, op))
+    new Stream(first, => @rest()?.accumulate(first, op))
 
   sums:     -> @accumulate(0, (a,b) -> a + b)
   products: -> @accumulate(1, (a,b) -> a * b)
 
-  merge: (other) -> new Stream(@first, => if other then other.merge(@rest()))
+  merge: (other) -> new Stream(@first, => other?.merge(@rest()))
 
   concatl: (next) ->
     new Stream(@first, => if @rest() then @rest().concatl(next) else next())
@@ -83,9 +77,9 @@ class Stream
 
   flatten: ->
     if @first
-      @first.concatl(=> if @rest() then @rest().flatten())
+      @first.concatl(=> @rest()?.flatten())
     else
-      if @rest() then @rest().flatten()
+      @rest()?.flatten()
 
   flat_map: (func) -> @map(func).flatten()
 
