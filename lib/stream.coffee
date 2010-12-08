@@ -20,12 +20,12 @@
 # --------------------------------------------------------------------
 
 
-if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
-  pazy = require('trampoline')
-
-recur = pazy.recur
-resolve = pazy.resolve
+{ recur, resolve } =
+  if typeof(require) != 'undefined'
+    require.paths.unshift __dirname
+    require('trampoline')
+  else
+    this.pazy
 
 
 class Stream
@@ -139,8 +139,5 @@ Stream.fromArray = (a) ->
 # Exporting.
 # --------------------------------------------------------------------
 
-if typeof(exports) == 'undefined'
-  this.pazy = {} if typeof this.pazy == 'undefined'
-  this.pazy.Stream = Stream
-else
-  exports.Stream = Stream
+exports ?= this.pazy ?= {}
+exports.Stream = Stream

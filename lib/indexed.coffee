@@ -22,11 +22,12 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
-if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
-  Stream = require('stream').Stream
-else
-  Stream = pazy.Stream
+{ Stream } =
+  if typeof(require) != 'undefined'
+    require.paths.unshift __dirname
+    require('stream')
+  else
+    this.pazy
 
 
 # --------------------------------------------------------------------
@@ -542,14 +543,9 @@ class HashMap extends Collection
 # Exporting.
 # --------------------------------------------------------------------
 
-if typeof(exports) == 'undefined'
-  this.pazy = {} if typeof this.pazy == 'undefined'
-  this.pazy.IntSet  = IntSet
-  this.pazy.IntMap  = IntMap
-  this.pazy.HashMap = HashMap
-  this.pazy.HashSet = HashSet
-else
-  exports.IntSet  = IntSet
-  exports.IntMap  = IntMap
-  exports.HashMap = HashMap
-  exports.HashSet = HashSet
+exports ?= this.pazy ?= {}
+
+exports.IntSet  = IntSet
+exports.IntMap  = IntMap
+exports.HashMap = HashMap
+exports.HashSet = HashSet

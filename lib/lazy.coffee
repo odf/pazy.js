@@ -13,16 +13,12 @@
 # --------------------------------------------------------------------
 
 
-suspend = (code) ->
+exports ?= this.pazy ?= {}
+
+exports.suspend = (code) ->
   cache = [->
     val = code()
     cache[0] = -> val
     val
   ]
   -> cache[0]()
-
-if typeof exports == 'undefined'
-  this.pazy = {} if typeof this.pazy == 'undefined'
-  this.pazy.suspend = suspend
-else
-  exports.suspend = suspend

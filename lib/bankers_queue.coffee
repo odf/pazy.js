@@ -7,11 +7,12 @@
 # --------------------------------------------------------------------
 
 
-if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
-  Stream = require('stream').Stream
-else
-  Stream = pazy.Stream
+{ Stream } =
+  if typeof(require) != 'undefined'
+    require.paths.unshift __dirname
+    require('stream')
+  else
+    this.pazy
 
 
 class Queue
@@ -39,8 +40,5 @@ class Queue
 # Exporting.
 # --------------------------------------------------------------------
 
-if typeof(exports) == 'undefined'
-  this.pazy = {} if typeof this.pazy == 'undefined'
-  this.pazy.Queue = Queue
-else
-  exports.Queue = Queue
+exports ?= this.pazy ?= {}
+exports.Queue = Queue

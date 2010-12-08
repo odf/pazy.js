@@ -13,12 +13,12 @@
 # --------------------------------------------------------------------
 
 
-if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
-  pazy = require('trampoline')
-
-recur = pazy.recur
-resolve = pazy.resolve
+{ recur, resolve } =
+  if typeof(require) != 'undefined'
+    require.paths.unshift __dirname
+    require('trampoline')
+  else
+    this.pazy
 
 
 class Sortable
@@ -64,8 +64,5 @@ class Sortable
 # Exporting.
 # --------------------------------------------------------------------
 
-if typeof(exports) == 'undefined'
-  this.pazy = {} if typeof this.pazy == 'undefined'
-  this.pazy.Sortable = Sortable
-else
-  exports.Sortable = Sortable
+exports ?= this.pazy ?= {}
+exports.Sortable = Sortable
