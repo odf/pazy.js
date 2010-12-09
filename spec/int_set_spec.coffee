@@ -10,8 +10,8 @@ describe "An IntSet", ->
 	describe "with two items the first of which is removed", ->
     hash = new IntSet().plus(37).plus(42).minus(37)
 
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+    it "should have size 1", ->
+      expect(hash.size()).toBe 1
 
     it "should not be the same object as another one constructed like it", ->
       expect(hash).not.toBe(new IntSet().plus(37).plus(42).minus(37))
@@ -21,16 +21,13 @@ describe "An IntSet", ->
     hash = new IntSet()
 
     it "should have size 0", ->
-      expect(hash.size).toEqual 0
-
-    it "should be empty", ->
-      expect(hash.isEmpty).toBe true
+      expect(hash.size()).toEqual 0
 
     it "should return false on contains", ->
       expect(hash.contains("first")).toBe false
 
     it "should still be empty when minus is called", ->
-      expect(hash.minus("first").size).toEqual 0
+      expect(hash.minus("first").size()).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -43,13 +40,10 @@ describe "An IntSet", ->
     hash = new IntSet().plus(1337)
 
     it "should have size 1", ->
-      expect(hash.size).toEqual 1
+      expect(hash.size()).toEqual 1
 
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
-
-    it "should be empty when the item is removed", ->
-      expect(hash.minus(1337).isEmpty).toBe true
+    it "should have size 0 when the item is removed", ->
+      expect(hash.minus(1337).size()).toBe 0
 
     it "should return true for the key", ->
       expect(hash.contains(1337)).toBe true
@@ -70,16 +64,13 @@ describe "An IntSet", ->
     hash = new IntSet().plus(1337).plus(4023)
 
     it "should have size 2", ->
-      expect(hash.size).toEqual 2
-
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toEqual 2
 
     it "should not be empty when the first item is removed", ->
-      expect(hash.minus(1337).isEmpty).toBe false
+      expect(hash.minus(1337).size()).toBeGreaterThan 0
 
     it "should be empty when both items are removed", ->
-      expect(hash.minus(4023).minus(1337).isEmpty).toBe true
+      expect(hash.minus(4023).minus(1337).size()).toBe 0
 
     it "should return true for both keys", ->
       expect(hash.contains(1337)).toBe true
@@ -114,14 +105,11 @@ describe "An IntSet", ->
       expect(hash.contains(key_c)).toBe true
       expect(hash.contains(key_d)).toBe true
 
-    it "should not be empty when all items but one are removed", ->
-      expect(hash.minus(key_a, key_b, key_c).isEmpty).toBe false
-
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.minus(key_a, key_b, key_c).size).toEqual 1
+      expect(hash.minus(key_a, key_b, key_c).size()).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.minus(key_a, key_b, key_c, key_d).isEmpty).toBe true
+      expect(hash.minus(key_a, key_b, key_c, key_d).size()).toBe 0
 
 
   describe "containing four items with collisions in the higher bits", ->
@@ -137,14 +125,11 @@ describe "An IntSet", ->
       expect(hash.contains(key_c)).toBe true
       expect(hash.contains(key_d)).toBe true
 
-    it "should not be empty when all items but one are removed", ->
-      expect(hash.minus(key_a, key_b, key_c).isEmpty).toBe false
-
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.minus(key_a, key_b, key_c).size).toEqual 1
+      expect(hash.minus(key_a, key_b, key_c).size()).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.minus(key_a, key_b, key_c, key_d).isEmpty).toBe true
+      expect(hash.minus(key_a, key_b, key_c, key_d).size()).toBe 0
 
 
   describe "containing three items", ->
@@ -173,7 +158,7 @@ describe "An IntSet", ->
     hash = (new IntSet()).plus keys...
 
     it "should have the right number of items", ->
-      expect(hash.size).toEqual keys.length
+      expect(hash.size()).toEqual keys.length
 
     it "should return true for each key", ->
       expect(hash.contains(key)).toBe true for key in keys
@@ -184,10 +169,7 @@ describe "An IntSet", ->
     hash = (new IntSet()).plus keys...
 
     it "should have the correct number of keys", ->
-      expect(hash.size).toEqual keys.length
-
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toEqual keys.length
 
     it "should return true for each key", ->
       expect(hash.contains(key)).toBe true for key in keys
@@ -199,10 +181,10 @@ describe "An IntSet", ->
       expect(hash.toArray()).toEqual(keys)
 
     it "should have the first key as its first element", ->
-      expect(hash.elements().first).toEqual(keys[0])
+      expect(hash.elements().first()).toEqual(keys[0])
 
     it "should have the second key as its second element", ->
-      expect(hash.elements().rest().first).toEqual(keys[1])
+      expect(hash.elements().rest().first()).toEqual(keys[1])
 
     it "should have the last key as its last element", ->
       expect(hash.elements().last()).toEqual(keys[300])
@@ -212,13 +194,10 @@ describe "An IntSet", ->
       h = hash.minus ex_keys...
 
       it "should have the correct size", ->
-        expect(h.size).toEqual keys.length - ex_keys.length
+        expect(h.size()).toEqual keys.length - ex_keys.length
 
       it "should not be the same as the original hash", ->
         expect(h).not.toEqual hash
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
 
       it "should return true for the remaining keys", ->
         expect(h.contains(key)).toBe true for key in keys when not key in ex_keys
@@ -237,19 +216,13 @@ describe "An IntSet", ->
         expect(h).toBe hash
 
       it "should have the correct size", ->
-        expect(h.size).toEqual hash.size
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toEqual hash.size()
 
     describe "all of which are then removed", ->
       h = hash.minus keys...
 
       it "should have size 0", ->
-        expect(h.size).toEqual 0
-
-      it "should be empty", ->
-        expect(h.isEmpty).toBe true
+        expect(h.size()).toEqual 0
 
       it "should return false for the removed keys", ->
         expect(h.contains(key)).toBe false for key in keys
@@ -265,7 +238,4 @@ describe "An IntSet", ->
          expect(h).toBe hash
 
       it "should have the same size as before", ->
-        expect(h.size).toEqual hash.size
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toEqual hash.size()

@@ -26,8 +26,8 @@ class Queue
         rev = rear.reverse()
         [(if front then front.concat(rev) else rev), len_f + len_r, null, 0]
 
-    @first = @front?.first
-    @size  = @len_f + @len_r
+    @first = -> @front?.first()
+    @size  = -> @len_f + @len_r
 
   push: (x) ->
     r = @rear

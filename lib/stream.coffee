@@ -9,8 +9,7 @@
 #
 # Instead of using the convential attribute names 'car' and 'cdr' or
 # 'head' and 'tail', we use 'first' for the first element and 'rest'
-# for the rest of the stream. Note that 'first' is a value whereas
-# 'rest' and 'last' are functions.
+# for the rest of the stream.
 #
 # Some methods such as 'each' or 'toArray' force evaluation of the
 # complete stream, which means that they will never return on infinite
@@ -29,29 +28,31 @@
 
 
 class Stream
-  constructor: (@first, rest) ->
+  constructor: (@_first, rest) ->
     @rest = if rest?
       => val = rest(); (@rest = -> val)()
     else
       -> null
 
+  first: -> @_first
+
   take_while: (pred) ->
-    new Stream(@first, => @rest()?.take_while(pred)) if pred(@first)
+    new Stream(@first(), => @rest()?.take_while(pred)) if pred(@first())
 
-  take: (n) -> new Stream(@first, => @rest()?.take(n-1)) if n > 0
+  take: (n) -> new Stream(@first(), => @rest()?.take(n-1)) if n > 0
 
-  get: (n) -> this.drop(n).first
+  get: (n) -> this.drop(n).first()
 
-  map: (func) -> new Stream(func(@first), => @rest()?.map(func))
+  map: (func) -> new Stream(func(@first()), => @rest()?.map(func))
 
   select: (pred) ->
-    if pred(@first)
-      new Stream(@first, => @rest()?.select(pred))
+    if pred(@first())
+      new Stream(@first(), => @rest()?.select(pred))
     else
       @rest()?.select(pred)
 
   combine: (other, op) ->
-    new Stream(op(this.first, other.first), =>
+    new Stream(op(this.first(), other.first()), =>
       if this.rest() and other.rest()
         this.rest().combine(other.rest(), op)
     )
@@ -62,23 +63,23 @@ class Stream
   by:    (other) -> @combine(other, (a,b) -> a / b)
 
   accumulate: (start, op) ->
-    first = op(start, @first)
+    first = op(start, @first())
     new Stream(first, => @rest()?.accumulate(first, op))
 
   sums:     -> @accumulate(0, (a,b) -> a + b)
   products: -> @accumulate(1, (a,b) -> a * b)
 
   merge: (other) ->
-    new Stream(@first, => if other then other.merge(@rest()) else @rest())
+    new Stream(@first(), => if other then other.merge(@rest()) else @rest())
 
   concatl: (next) ->
-    new Stream(@first, => if @rest() then @rest().concatl(next) else next())
+    new Stream(@first(), => if @rest() then @rest().concatl(next) else next())
 
   concat: (other) -> @concatl(=> other)
 
   flatten: ->
-    if @first
-      @first.concatl(=> @rest()?.flatten())
+    if @first()
+      @first().concatl(=> @rest()?.flatten())
     else
       @rest()?.flatten()
 
@@ -86,13 +87,13 @@ class Stream
 
   cartesian: (stream) -> @flat_map((a) -> stream.map((b) -> [a,b]))
 
-  toString: -> "Stream(#{@first}, ...)"
+  toString: -> "Stream(#{@first()}, ...)"
 
   # The following functions force evaluation of the complete stream or
   # portions of the stream.
 
   drop_while: (pred) ->
-    step = (s) -> if s and pred(s.first) then recur -> step(s.rest()) else s
+    step = (s) -> if s and pred(s.first()) then recur -> step(s.rest()) else s
     resolve step(this)
 
   drop: (n) ->
@@ -100,12 +101,12 @@ class Stream
     resolve step(this, n)
 
   each: (func) ->
-    step = (s) -> if s then func(s.first); recur -> step(s.rest())
+    step = (s) -> if s then func(s.first()); recur -> step(s.rest())
     resolve step(this)
 
   reverse: ->
     step = (r, s) ->
-      if s then recur -> step(new Stream(s.first, -> r), s.rest()) else r
+      if s then recur -> step(new Stream(s.first(), -> r), s.rest()) else r
     resolve step(null, this)
 
   size: ->
@@ -113,7 +114,7 @@ class Stream
     resolve step(this, 0)
 
   last: ->
-    step = (s) -> if s.rest() then recur -> step(s.rest()) else s.first
+    step = (s) -> if s.rest() then recur -> step(s.rest()) else s.first()
     resolve step(this)
 
   toArray: ->

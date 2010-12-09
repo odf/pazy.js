@@ -36,7 +36,7 @@
 
 # A collection of utility functions used by interior nodes.
 util = {
-  find: (a, test) -> Stream.fromArray(a)?.select(test)?.first
+  find: (a, test) -> Stream.fromArray(a)?.select(test)?.first()
 
   reduce: (a, step, init) -> Stream.fromArray(a)?.accumulate(init, step)?.last()
 
@@ -226,9 +226,9 @@ class Collection
   # The constructor takes a root node, defaulting to empty.
   constructor: (@root) ->
     @root ?= EmptyNode
-    @size = @root.size
-    @isEmpty = @size == 0
     @entries = @root?.elements
+
+  size: -> @root.size
 
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).

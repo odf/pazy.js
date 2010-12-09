@@ -10,7 +10,7 @@ describe "An IntMap", ->
     hash = new IntMap().plus([37, true]).plus([42, true]).minus(37)
 
     it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toBeGreaterThan 0
 
     it "should not be the same object as another one constructed like it", ->
       h = new IntMap().plus([37, true]).plus([42, true]).minus(37)
@@ -21,16 +21,13 @@ describe "An IntMap", ->
     hash = new IntMap()
 
     it "should have size 0", ->
-      expect(hash.size).toEqual 0
-
-    it "should be empty", ->
-      expect(hash.isEmpty).toBe true
+      expect(hash.size()).toEqual 0
 
     it "should not return anything on get", ->
       expect(hash.get("first")).not.toBeDefined()
 
     it "should still be empty when minus is called", ->
-      expect(hash.minus("first").size).toEqual 0
+      expect(hash.minus("first").size()).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -43,10 +40,7 @@ describe "An IntMap", ->
     hash = new IntMap().plus([1337, 1])
 
     it "should have size 1", ->
-      expect(hash.size).toEqual 1
-
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toEqual 1
 
     it "should retrieve the associated value for the key", ->
       expect(hash.get(1337)).toBe 1
@@ -55,7 +49,7 @@ describe "An IntMap", ->
       expect(hash.get(4023)).not.toBeDefined()
 
     it "should be empty when the item is removed", ->
-      expect(hash.minus(1337).isEmpty).toBe true
+      expect(hash.minus(1337).size()).toBe 0
 
     it "should contain the key-value pair", ->
       a = hash.toArray()
@@ -69,10 +63,7 @@ describe "An IntMap", ->
       h = hash.plus([1337, "leet!"])
 
       it "should have size 1", ->
-        expect(h.size).toBe 1
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBe 1
 
       it "should retrieve the associated value for the key", ->
         expect(h.get(1337)).toBe "leet!"
@@ -90,16 +81,13 @@ describe "An IntMap", ->
     hash = new IntMap().plus([1337, 'leet!']).plus([4023, 'lame?'])
 
     it "should have size 2", ->
-      expect(hash.size).toEqual 2
-
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toEqual 2
 
     it "should not be empty when the first item is removed", ->
-      expect(hash.minus(1337).isEmpty).toBe false
+      expect(hash.minus(1337).size()).toBeGreaterThan 0
 
     it "should be empty when both items are removed", ->
-      expect(hash.minus(4023).minus(1337).isEmpty).toBe true
+      expect(hash.minus(4023).minus(1337).size()).toBe 0
 
     it "should return the associate values for both keys", ->
       expect(hash.get(1337)).toBe 'leet!'
@@ -130,14 +118,11 @@ describe "An IntMap", ->
     it "should return the associated value for all keys", ->
       expect(hash.get(key)).toBe value for [key, value] in items
 
-    it "should not be empty when all items but one are removed", ->
-      expect(hash.minus(keys[0..2]...).isEmpty).toBe false
-
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.minus(keys[0..2]...).size).toEqual 1
+      expect(hash.minus(keys[0..2]...).size()).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.minus(keys...).isEmpty).toBe true
+      expect(hash.minus(keys...).size()).toBe 0
 
 
   describe "containing four items with collisions in the higher bits", ->
@@ -148,14 +133,11 @@ describe "An IntMap", ->
     it "should return the associated value for all keys", ->
       expect(hash.get(key)).toBe value for [key, value] in items
 
-    it "should not be empty when all items but one are removed", ->
-      expect(hash.minus(keys[0..2]...).isEmpty).toBe false
-
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.minus(keys[0..2]...).size).toEqual 1
+      expect(hash.minus(keys[0..2]...).size()).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.minus(keys...).isEmpty).toBe true
+      expect(hash.minus(keys...).size()).toBe 0
 
 
   describe "containing three items", ->
@@ -187,7 +169,7 @@ describe "An IntMap", ->
     hash  = (new IntMap()).plus scrambled...
 
     it "should have the right number of items", ->
-      expect(hash.size).toEqual keys.length
+      expect(hash.size()).toEqual keys.length
 
     it "should retrieve the associated value for each key", ->
       expect(hash.get(key)).toBe value for [key, value] in items
@@ -203,10 +185,7 @@ describe "An IntMap", ->
     hash  = (new IntMap()).plus items...
 
     it "should have the correct number of items", ->
-      expect(hash.size).toEqual keys.length
-
-    it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toEqual keys.length
 
     it "should retrieve the associated value for each key", ->
       expect(hash.get(key)).toBe value for [key, value] in items
@@ -218,10 +197,10 @@ describe "An IntMap", ->
       expect(hash.toArray()).toEqual(items)
 
     it "should have the first (key,value)-pair as its first element", ->
-      expect(hash.items().first).toEqual(items[0])
+      expect(hash.items().first()).toEqual(items[0])
 
     it "should have the second (key,value)-pair as its second element", ->
-      expect(hash.items().rest().first).toEqual(items[1])
+      expect(hash.items().rest().first()).toEqual(items[1])
 
     it "should have the last (key,value)-pair as its last element", ->
       expect(hash.items().last()).toEqual(items[306])
@@ -232,13 +211,10 @@ describe "An IntMap", ->
       h = hash.minus ex_keys...
 
       it "should have the correct size", ->
-        expect(h.size).toEqual keys.length - ex_keys.length
+        expect(h.size()).toEqual keys.length - ex_keys.length
 
       it "should not be the same as the original hash", ->
         expect(h).not.toEqual hash
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
 
       it "should retrieve the associated values for the remaining keys", ->
         expect(h.get(key)).toBe value for [key, value] in items[101..]
@@ -257,10 +233,7 @@ describe "An IntMap", ->
         expect(h).toBe hash
 
       it "should have the correct size", ->
-        expect(h.size).toEqual hash.size
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toEqual hash.size()
 
       it "should retrieve the associated values for the original keys", ->
         expect(h.get(key)).toBe value for [key, value] in items
@@ -275,10 +248,7 @@ describe "An IntMap", ->
       h = hash.minus keys...
 
       it "should have size 0", ->
-        expect(h.size).toEqual 0
-
-      it "should be empty", ->
-        expect(h.isEmpty).toBe true
+        expect(h.size()).toEqual 0
 
       it "should return nothing for the removed keys", ->
         expect(h.get(key)).not.toBeDefined() for key in keys
@@ -293,10 +263,7 @@ describe "An IntMap", ->
       h = hash.plus scrambled...
 
       it "should have the same size as before", ->
-        expect(h.size).toBe hash.size
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBe hash.size()
 
       it "should retrieve the original values for the untouched keys", ->
         expect(h.get(key)).toBe value for [key, value] in items[101..]
@@ -317,10 +284,7 @@ describe "An IntMap", ->
         expect(h).toBe hash
 
       it "should have the same size as before", ->
-        expect(h.size).toEqual hash.size
-
-      it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toEqual hash.size()
 
       it "should retrieve the original values for all keys", ->
         expect(h.get(key)).toBe value for [key, value] in items

@@ -23,7 +23,7 @@ describe "A HashMap", ->
     hash = new HashMap().plus(['A', true]).plus(['B', true]).minus('A')
 
     it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toBeGreaterThan 0
 
     it "should not be the same object as another one constructed like it", ->
       h = new HashMap().plus(['A', true]).plus(['B', true]).minus('A')
@@ -34,16 +34,16 @@ describe "A HashMap", ->
     hash = new HashMap()
 
     it "should have size 0", ->
-      expect(hash.size).toEqual 0
+      expect(hash.size()).toEqual 0
 
     it "should be empty", ->
-      expect(hash.isEmpty).toBe true
+      expect(hash.size()).toBe 0
 
     it "should not return anything on get", ->
       expect(hash.get("first")).not.toBeDefined()
 
     it "should still be empty when minus is called", ->
-      expect(hash.minus("first").size).toEqual 0
+      expect(hash.minus("first").size()).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -56,10 +56,10 @@ describe "A HashMap", ->
     hash = new HashMap().plus(["first", 1])
 
     it "should have size 1", ->
-      expect(hash.size).toEqual 1
+      expect(hash.size()).toEqual 1
 
     it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toBeGreaterThan 0
 
     it "should retrieve the associated value for the key", ->
       expect(hash.get("first")).toBe 1
@@ -68,7 +68,7 @@ describe "A HashMap", ->
       expect(hash.get("second")).not.toBeDefined()
 
     it "should be empty when the item is removed", ->
-      expect(hash.minus("first").isEmpty).toBe true
+      expect(hash.minus("first").size()).toBe 0
 
     it "should contain the key-value pair", ->
       a = hash.toArray()
@@ -82,10 +82,10 @@ describe "A HashMap", ->
       h = hash.plus(["first", "one"])
 
       it "should have size 1", ->
-        expect(h.size).toBe 1
+        expect(h.size()).toBe 1
 
       it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the associated value for the key", ->
         expect(h.get("first")).toBe "one"
@@ -105,7 +105,7 @@ describe "A HashMap", ->
     hash = new HashMap().plus([key_a, "a"]).plus([key_b, "b"])
 
     it "should contain two elements", ->
-      expect(hash.size).toBe 2
+      expect(hash.size()).toBe 2
 
     it "should not return anything when get is called with a third key", ->
       expect(hash.get(key_c)).not.toBeDefined()
@@ -118,11 +118,11 @@ describe "A HashMap", ->
 
     it "should not be empty when the first item is removed", ->
       h = hash.minus(key_a)
-      expect(h.size).toBe 1
+      expect(h.size()).toBe 1
 
     it "should be empty when all items are removed", ->
       h = hash.minus(key_a).minus(key_b)
-      expect(h.isEmpty).toBe true
+      expect(h.size()).toBe 0
 
   describe "containing three items with identical hash values", ->
     key_a = new FunnyKey(257)
@@ -151,7 +151,7 @@ describe "A HashMap", ->
     hash  = (new HashMap()).plus items...
 
     it "should have the right number of items", ->
-      expect(hash.size).toEqual keys.length
+      expect(hash.size()).toEqual keys.length
 
     it "should retrieve the associated value for each key", ->
       expect(hash.get(key)).toBe key.value for key in keys
@@ -165,10 +165,10 @@ describe "A HashMap", ->
     hash  = (new HashMap()).plus items...
 
     it "should have the correct number of items", ->
-      expect(hash.size).toEqual keys.length
+      expect(hash.size()).toEqual keys.length
 
     it "should not be empty", ->
-      expect(hash.isEmpty).toBe false
+      expect(hash.size()).toBeGreaterThan 0
 
     it "should retrieve the associated value for each key", ->
       expect(hash.get(key)).toBe key.value for key in keys
@@ -180,7 +180,7 @@ describe "A HashMap", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
     it "should return an item stream of the correct size", ->
-      expect(hash.items().size()).toEqual(hash.size)
+      expect(hash.items().size()).toEqual(hash.size())
 
     it "should return a stream with all the keys on calling elements()", ->
       expect(hash.items().toArray().sort(FunnyKey.sorter)).toEqual(items)
@@ -190,13 +190,13 @@ describe "A HashMap", ->
       h = hash.minus ex_keys...
 
       it "should have the correct size", ->
-        expect(h.size).toEqual keys.length - ex_keys.length
+        expect(h.size()).toEqual keys.length - ex_keys.length
 
       it "should not be the same as the original hash", ->
         expect(h).not.toEqual hash
 
       it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the associated values for the remaining keys", ->
         expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
@@ -215,10 +215,10 @@ describe "A HashMap", ->
         expect(h).toBe hash
 
       it "should have the correct size", ->
-        expect(h.size).toEqual hash.size
+        expect(h.size()).toEqual hash.size()
 
       it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the associated values for the original keys", ->
         expect(h.get(key)).toBe key.value for key in keys
@@ -233,10 +233,10 @@ describe "A HashMap", ->
       h = hash.minus keys...
 
       it "should have size 0", ->
-        expect(h.size).toEqual 0
+        expect(h.size()).toEqual 0
 
       it "should be empty", ->
-        expect(h.isEmpty).toBe true
+        expect(h.size()).toBe 0
 
       it "should return nothing for the removed keys", ->
         expect(h.get(key)).not.toBeDefined() for key in keys
@@ -250,10 +250,10 @@ describe "A HashMap", ->
       h = hash.plus newItems...
 
       it "should have the same size as before", ->
-        expect(h.size).toBe hash.size
+        expect(h.size()).toBe hash.size()
 
       it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the original values for the untouched keys", ->
         expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
@@ -275,10 +275,10 @@ describe "A HashMap", ->
         expect(h).toBe hash
 
       it "should have the same size as before", ->
-        expect(h.size).toEqual hash.size
+        expect(h.size()).toEqual hash.size()
 
       it "should not be empty", ->
-        expect(h.isEmpty).toBe false
+        expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the original values for all keys", ->
         expect(h.get(key)).toBe key.value for key in keys

@@ -23,10 +23,12 @@
 
 class Sortable
   constructor: (@less, size, segments) ->
-    [@size, @_segs] = if size?
+    [@_size, @_segs] = if size?
       [size, => val = segments(); (@_segs = -> val)()]
     else
       [0, -> null]
+
+  size: -> @_size
 
   plus: ->
     less = @less
@@ -40,8 +42,8 @@ class Sortable
     step = (s, args) ->
       if args.length > 0
         [x, a...] = args
-        newSegs = -> resolve addSeg([x], s._segs(), s.size)
-        recur -> step(new Sortable(less, s.size + 1, newSegs), a)
+        newSegs = -> resolve addSeg([x], s._segs(), s.size())
+        recur -> step(new Sortable(less, s.size() + 1, newSegs), a)
       else
         s
 

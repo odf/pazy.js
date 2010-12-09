@@ -15,7 +15,7 @@ describe "A Stream made of the numbers 1 and 2", ->
     expect(stream.size()).toBe 2
 
   it "should start with a 1", ->
-    expect(stream.first).toBe 1
+    expect(stream.first()).toBe 1
 
   it "should end with a 2", ->
     expect(stream.last()).toBe 2
@@ -33,7 +33,7 @@ describe "A Stream made from the array ['a', 's', 'd', 'f']", ->
     expect(stream.size()).toBe 4
 
   it "should start with an 'a'", ->
-    expect(stream.first).toBe 'a'
+    expect(stream.first()).toBe 'a'
 
   it "should end with an 'f'", ->
     expect(stream.last()).toBe 'f'
@@ -60,7 +60,7 @@ describe "A stream implementing the recursion formula for Fibonacci numbers", ->
     expect(stream.get(40)).toBe 102334155
 
   it "should have 1346269 as the first element larger than a million", ->
-    expect(stream.drop_while((n) -> n <= 1000000).first).toBe 1346269
+    expect(stream.drop_while((n) -> n <= 1000000).first()).toBe 1346269
 
   it "should have 9227465 as the last element smaller than ten millions", ->
     expect(stream.take_while((n) -> n < 10000000).last()).toBe 9227465
@@ -86,8 +86,8 @@ describe "A stream implementing the recursion formula for Fibonacci numbers", ->
       expect(pairs.take(4).toArray()).toEqual [[0,1], [1,1], [1,2], [2,3]]
 
 describe "A stream implementing a simple prime number sieve", ->
-  next   = (s) -> sieve(s.rest().select((n) -> n % s.first != 0))
-  sieve  = (s) -> new Stream(s.first, -> next(s))
+  next   = (s) -> sieve(s.rest().select((n) -> n % s.first() != 0))
+  sieve  = (s) -> new Stream(s.first(), -> next(s))
   primes = sieve(Stream.from(2))
 
   it "should start with the number 2, 3, 5, 7, 11, 13, 17, 19, 23 and 29", ->
@@ -122,7 +122,7 @@ describe "A stream containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
     expect(stream.size()).toBe 6
 
   it "should start with [1,1]", ->
-    expect(stream.first).toEqual [1,1]
+    expect(stream.first()).toEqual [1,1]
 
   it "should end with [2,3]", ->
     expect(stream.last()).toEqual [2,3]
@@ -137,7 +137,7 @@ describe "The reversal of the stream of integers from 0 to 10", ->
     expect(stream.size()).toBe 10
 
   it "should start with a 10", ->
-    expect(stream.first).toBe 10
+    expect(stream.first()).toBe 10
 
   it "should end with a 1", ->
     expect(stream.last()).toBe 1
