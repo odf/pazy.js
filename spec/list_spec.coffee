@@ -92,3 +92,10 @@ describe "A list containing the squares of the numbers from 101 to 110", ->
 
   it "should have 5 odd elements", ->
     expect(list.select((n) -> n % 2 == 1).size()).toBe 5
+
+  it "should produce the partial list 10201, 10404, 10609 on take(3)", ->
+    expect(list.take(3).toArray()).toEqual [10201, 10404, 10609]
+
+  it "should produce a list of 4 elements smaller than 11000", ->
+    expect(list.take_while((n) -> n < 11000).toArray())
+      .toEqual [10201, 10404, 10609, 10816]

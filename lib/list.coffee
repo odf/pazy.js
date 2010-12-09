@@ -20,9 +20,6 @@ class List
   first: -> @[0]
   rest: -> @[1]
 
-  @cached: (name, code) ->
-    @::[name] = -> val = code.apply(this); (@[name] = -> val)()
-
   @fromArray: (a) ->
     step = (r, n) -> if n < 0 then r else recur -> step(new List(a[n], r), n-1)
     resolve step(null, a.length - 1)
@@ -30,6 +27,17 @@ class List
   @range: (start, end) ->
     step = (r, n) -> if n < start then r else recur -> step(new List(n, r), n-1)
     resolve step(null, end)
+
+  @cached: (name, code) ->
+    @::[name] = -> val = code.apply(this); (@[name] = -> val)()
+
+  @cached 'size', ->
+    step = (s, n) -> if s then recur -> step(s[1], n + 1) else n
+    resolve step(this, 0)
+
+  @cached 'last', ->
+    step = (s) -> if s[1] then recur -> step(s[1]) else s[0]
+    resolve step(this)
 
   drop: (n) ->
     step = (s, n) -> if s and n > 0 then recur -> step(s[1], n - 1) else s
@@ -45,10 +53,14 @@ class List
     step = (s) -> if s then func(s[0]); recur -> step(s[1])
     resolve step(this)
 
+  reverse: ->
+    step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
+    resolve step(null, this)
+
   map: (func) ->
     step = (r, s) ->
       if s then recur -> step(new List(func(s[0]), r), s[1]) else r
-    resolve step(null, this.reverse())
+    (resolve step(null, this)).reverse()
 
   select: (pred) ->
     step = (r, s) ->
@@ -57,19 +69,17 @@ class List
         recur -> step(next, s[1])
       else
         r
-    resolve step(null, this.reverse())
+    (resolve step(null, this)).reverse()
 
-  @cached 'reverse', ->
-    step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
-    resolve step(null, this)
+  take: (n) ->
+    step = (r, s, n) ->
+      if s and n > 0 then recur -> step(new List(s[0], r), s[1], n-1) else r
+    (resolve step(null, this, n)).reverse()
 
-  @cached 'size', ->
-    step = (s, n) -> if s then recur -> step(s[1], n + 1) else n
-    resolve step(this, 0)
-
-  @cached 'last', ->
-    step = (s) -> if s[1] then recur -> step(s[1]) else s[0]
-    resolve step(this)
+  take_while: (func) ->
+    step = (r, s) ->
+      if s and func(s[0]) then recur -> step(new List(s[0], r), s[1]) else r
+    (resolve step(null, this)).reverse()
 
   toArray: ->
     buffer = []
