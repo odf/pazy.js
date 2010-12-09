@@ -68,7 +68,8 @@ class Stream
   sums:     -> @accumulate(0, (a,b) -> a + b)
   products: -> @accumulate(1, (a,b) -> a * b)
 
-  merge: (other) -> new Stream(@first, => other?.merge(@rest()))
+  merge: (other) ->
+    new Stream(@first, => if other then other.merge(@rest()) else @rest())
 
   concatl: (next) ->
     new Stream(@first, => if @rest() then @rest().concatl(next) else next())
