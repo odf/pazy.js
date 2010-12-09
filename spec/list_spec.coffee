@@ -99,3 +99,37 @@ describe "A list containing the squares of the numbers from 101 to 110", ->
   it "should produce a list of 4 elements smaller than 11000", ->
     expect(list.take_while((n) -> n < 11000).toArray())
       .toEqual [10201, 10404, 10609, 10816]
+
+describe "A list containing the first 10 triangle numbers", ->
+  list = List.range(1, 10).sums()
+
+  it "should have 10 elements", ->
+    expect(list.size()).toEqual 10
+
+  it "should end with 55", ->
+    expect(list.last()).toEqual 55
+
+  it "should produce the correct list when multiplied with its reverse", ->
+    test = List.fromArray([55,135,216,280,315])
+    expect(list.times(list.reverse()).equals(test.concat(test.reverse())))
+      .toBe true
+
+  it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
+        when merged with the list 1,2,3,4""", ->
+    expect(list.merge(List.range(1,4)).toArray())
+      .toEqual [1,1,3,2,6,3,10,4,15,21,28,36,45,55]
+
+describe "A list containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
+  list = List.range(1, 2).cartesian List.range(1, 3)
+
+  it "should have six elements", ->
+    expect(list.size()).toBe 6
+
+  it "should start with [1,1]", ->
+    expect(list.first()).toEqual [1,1]
+
+  it "should end with [2,3]", ->
+    expect(list.last()).toEqual [2,3]
+
+  it "should contain the expected elements", ->
+    expect(list.toArray()).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]

@@ -62,6 +62,37 @@ class List
       if s then recur -> step(new List(func(s[0]), r), s[1]) else r
     (resolve step(null, this)).reverse()
 
+  accumulate: (start, op) ->
+    step = (r, s) ->
+      if s then recur -> step(new List(op(r[0], s[0]), r), s[1]) else r
+    (resolve step(new List(start), this)).reverse()[1]
+
+  sums:     -> @accumulate(0, (a,b) -> a + b)
+  products: -> @accumulate(1, (a,b) -> a * b)
+
+  reduce: (start, op) ->
+    step = (x, s) -> if s then recur -> step(op(x, s[0]), s[1]) else x
+    resolve step(start, this)
+
+  sum:     -> @reduce(0, (a,b) -> a + b)
+  product: -> @reduce(1, (a,b) -> a * b)
+
+  combine: (other, op) ->
+    step = (r, s, t) ->
+      if s and t
+        recur -> step(new List(op(s[0], t[0]), r), s[1], t[1])
+      else
+        r
+    (resolve step(null, this, other)).reverse()
+
+  plus:  (other) -> @combine(other, (a,b) -> a + b)
+  minus: (other) -> @combine(other, (a,b) -> a - b)
+  times: (other) -> @combine(other, (a,b) -> a * b)
+  by:    (other) -> @combine(other, (a,b) -> a / b)
+
+  equals: (other) ->
+    @combine(other, (a,b) -> a == b).reduce(true, (a,b) -> a && b)
+
   select: (pred) ->
     step = (r, s) ->
       if s
@@ -80,6 +111,29 @@ class List
     step = (r, s) ->
       if s and func(s[0]) then recur -> step(new List(s[0], r), s[1]) else r
     (resolve step(null, this)).reverse()
+
+  merge: (other) ->
+    step = (r, s, t) ->
+      if s
+        recur -> step(new List(s[0], r), t, s[1])
+      else if t
+        recur -> step(new List(t[0], r), null, t[1])
+      else
+        r
+    (resolve step(null, this, other)).reverse()
+
+  concat: (other) ->
+    step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
+    resolve step(other, this.reverse())
+
+  flatten: ->
+    add = (r, s) -> if s then recur -> add new List(s[0], r), s[1] else r
+    cat = (r, s) -> if s then recur -> cat (resolve add r, s[0]), s[1] else r
+    (resolve cat null, this).reverse()
+
+  flat_map: (func) -> @map(func).flatten()
+
+  cartesian: (other) -> @flat_map((a) -> other.map((b) -> [a,b]))
 
   toArray: ->
     buffer = []
