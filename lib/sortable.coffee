@@ -4,21 +4,16 @@
 # execution time O(log n) per operation for adding an element and O(n)
 # for extracting a sorted result.
 #
-# A simple nested-pairs list of arrays is used instead of a list of
-# lists to represent the data. As a consequence, the recursive helper
-# function merge() has been replaced by an iterative version for
-# efficiency reasons.
-#
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 
-{ recur, resolve } =
-  if typeof(require) != 'undefined'
-    require.paths.unshift __dirname
-    require('trampoline')
-  else
-    this.pazy
+if typeof(require) != 'undefined'
+  require.paths.unshift __dirname
+  { recur, resolve } = require('trampoline')
+  { List }           = require('list')
+else
+  { recur, resolve, List } = this.pazy
 
 
 class Sortable
@@ -35,14 +30,14 @@ class Sortable
 
     addSeg = (seg, segs, bits) ->
       if bits % 2 > 0
-        recur -> addSeg(merge(less, seg, segs[0]), segs[1], bits >> 1)
+        recur -> addSeg(merge(less, seg, segs.first()), segs.rest(), bits >> 1)
       else
-        [seg, segs]
+        new List(seg, segs)
 
     step = (s, args) ->
       if args.length > 0
         [x, a...] = args
-        newSegs = -> resolve addSeg([x], s._segs(), s.size())
+        newSegs = -> resolve addSeg(new List(x), s._segs(), s.size())
         recur -> step(new Sortable(less, s.size() + 1, newSegs), a)
       else
         s
@@ -52,14 +47,21 @@ class Sortable
   sort: ->
     less = @less
     step = (buf, segs) ->
-      if segs? then recur -> step(merge(less, buf, segs[0]), segs[1]) else buf
-    resolve step([], @_segs())
+      if segs?
+        recur -> step(merge(less, buf, segs.first()), segs.rest())
+      else
+        buf
+    resolve step(null, @_segs())
 
   merge = (less, xs, ys) ->
-    [buf, ix, iy, lx, ly] = [[], 0, 0, xs.length, ys.length]
-    while ix < lx and iy < ly
-      if less(xs[ix], ys[iy]) then buf.push(xs[ix++]) else buf.push(ys[iy++])
-    buf.concat(xs[ix..], ys[iy..])
+    step = (r, xs, ys) ->
+      if xs and (not ys or less(xs.first(), ys.first()))
+        recur -> step(new List(xs.first(), r), xs.rest(), ys)
+      else if ys
+        recur -> step(new List(ys.first(), r), xs, ys.rest())
+      else
+        r
+    (resolve step(null, xs, ys))?.reverse()
 
 
 # --------------------------------------------------------------------
