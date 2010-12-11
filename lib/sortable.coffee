@@ -12,16 +12,13 @@ if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('trampoline')
   { List }           = require('list')
+  { Stream }         = require('stream')
 else
-  { recur, resolve, List } = this.pazy
+  { recur, resolve, List, Stream } = this.pazy
 
 
 class Sortable
-  constructor: (@less, size, segments) ->
-    [@_size, @_segs] = if size?
-      [size, => val = segments(); (@_segs = -> val)()]
-    else
-      [0, -> null]
+  constructor: (@less, @_size = 0, @_segs = null) ->
 
   size: -> @_size
 
@@ -34,34 +31,20 @@ class Sortable
       else
         new List(seg, segs)
 
-    step = (s, args) ->
-      if args.length > 0
-        [x, a...] = args
-        newSegs = -> resolve addSeg(new List(x), s._segs(), s.size())
-        recur -> step(new Sortable(less, s.size() + 1, newSegs), a)
-      else
-        s
+    if arguments.length > 0
+      List.fromArray(arguments).reduce this, (s, x) ->
+        newSegs = resolve addSeg(new Stream(x), s._segs, s.size())
+        new Sortable(less, s.size() + 1, newSegs)
+    else
+      this
 
-    resolve step(this, arguments)
-
-  sort: ->
-    less = @less
-    step = (buf, segs) ->
-      if segs?
-        recur -> step(merge(less, buf, segs.first()), segs.rest())
-      else
-        buf
-    resolve step(null, @_segs())
+  sort: -> @_segs.reduce(null, (r, s) => merge(@less, r, s))
 
   merge = (less, xs, ys) ->
-    step = (r, xs, ys) ->
-      if xs and (not ys or less(xs.first(), ys.first()))
-        recur -> step(new List(xs.first(), r), xs.rest(), ys)
-      else if ys
-        recur -> step(new List(ys.first(), r), xs, ys.rest())
-      else
-        r
-    (resolve step(null, xs, ys))?.reverse()
+    if xs and (not ys or less(xs.first(), ys.first()))
+      new Stream(xs.first(), -> merge(less, xs.rest(), ys))
+    else if ys
+      new Stream(ys.first(), -> merge(less, xs, ys.rest()))
 
 
 # --------------------------------------------------------------------
