@@ -39,11 +39,20 @@ describe "A List made from the array ['a', 's', 'd', 'f']", ->
   it "should end with an 'f'", ->
     expect(list.last()).toBe 'f'
 
-  it "should have an 's' at the second position", ->
+  it "should have an 's' at position 1", ->
     expect(list.get(1)).toBe 's'
 
-  it "should have an 'd' at the third position", ->
+  it "should have an 'd' at position 2", ->
     expect(list.get(2)).toBe 'd'
+
+  it "should not have anything at position 4", ->
+    expect(list.get(4)).toBe undefined
+
+  it "should not have anything at position -1", ->
+    expect(list.get(-1)).toBe undefined
+
+  it "should be empty when five elements are dropped", ->
+    expect(list.drop(5)).toBe null
 
   it "should print as List(a, s, d, f)", ->
     expect(list.toString()).toEqual "List(a, s, d, f)"

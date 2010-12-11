@@ -43,7 +43,7 @@ class List
     step = (s, n) -> if s and n > 0 then recur -> step(s[1], n - 1) else s
     resolve step(this, n)
 
-  get: (n) -> @drop(n)[0]
+  get: (n) -> @drop(n)?[0] if n >= 0
 
   drop_while: (pred) ->
     step = (s) -> if s and pred(s[0]) then recur -> step(s[1]) else s
