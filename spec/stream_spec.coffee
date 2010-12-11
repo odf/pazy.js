@@ -38,14 +38,23 @@ describe "A Stream made from the array ['a', 's', 'd', 'f']", ->
   it "should end with an 'f'", ->
     expect(stream.last()).toBe 'f'
 
-  it "should have an 's' at the second position", ->
+  it "should have an 's' at position 1", ->
     expect(stream.get(1)).toBe 's'
 
-  it "should have an 'd' at the third position", ->
+  it "should have an 'd' at position 2", ->
     expect(stream.get(2)).toBe 'd'
 
   it "should print as 'a,s,d,f' when converted to an array", ->
     expect(stream.toArray().toString()).toEqual "a,s,d,f"
+
+  it "should not have anything at position 4", ->
+    expect(stream.get(4)).toBe undefined
+
+  it "should not have anything at position -1", ->
+    expect(stream.get(-1)).toBe undefined
+
+  it "should be empty when five elements are dropped", ->
+    expect(stream.drop(5)).toBe null
 
 describe "A stream implementing the recursion formula for Fibonacci numbers", ->
   stream = new Stream(0, -> new Stream(1, -> stream.rest().plus stream))

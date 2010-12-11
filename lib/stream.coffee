@@ -41,7 +41,7 @@ class Stream
 
   take: (n) -> new Stream(@first(), => @rest()?.take(n-1)) if n > 0
 
-  get: (n) -> this.drop(n).first()
+  get: (n) -> this.drop(n)?.first() if n >= 0
 
   map: (func) -> new Stream(func(@first()), => @rest()?.map(func))
 
