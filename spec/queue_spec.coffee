@@ -15,5 +15,5 @@ describe "A queue with the elements 0 to 9", ->
 
   it "should have 9 as its last element", ->
     t = queue
-    t = t.rest() while t.rest()?.first()
+    t = t.rest() while t.rest()?.first()?
     expect(t.first()).toBe 9
