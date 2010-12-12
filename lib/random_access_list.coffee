@@ -24,14 +24,13 @@ class RandomAccessList
   @cached 'size', ->
     if @trees then @trees.reduce(0, (s, [w,t]) -> s + w) else 0
 
+  half = (w) -> Math.floor w/2
+
   cons: (x) ->
     new RandomAccessList(
-      if @trees?.rest()
-        [[w1, t1], [w2, t2]] = [@trees.first(), @trees.rest().first()]
-        if w1 == w2
-          new List([1+w1+w2, [x,t1,t2]], @trees.rest().rest())
-        else
-          new List([1, [x]], @trees)
+      if @trees?.rest() and @trees.get(0)[0] == @trees.get(1)[0]
+        [[w1, t1], [w2, t2]] = @trees.take(2).toArray()
+        new List([1+w1+w2, [x,t1,t2]], @trees.drop(2))
       else
         new List([1, [x]], @trees)
     )
@@ -40,13 +39,12 @@ class RandomAccessList
 
   rest: ->
     if @trees
-      [w,[x,t1,t2]] = @trees.first()
+      [w, [x, t1, t2]] = @trees.first()
       new RandomAccessList(
         if w == 1
           @trees.rest()
         else
-          wh = Math.floor w/2
-          new List([wh, t1], new List([wh, t2], @trees.rest()))
+          new List([half(w), t1], new List([half(w), t2], @trees.rest()))
       )
 
   lookup: (i) ->
@@ -54,11 +52,10 @@ class RandomAccessList
       if i == 0
         x
       else if w > 1
-        wh = Math.floor w/2
-        if i-1 < wh
-          recur -> lookupTree(wh, t1, i-1)
+        if i-1 < half(w)
+          recur -> lookupTree(half(w), t1, i-1)
         else
-          recur -> lookupTree(wh, t2, i-1-wh)
+          recur -> lookupTree(half(w), t2, i-1-half(w))
 
     step = (trees, i) ->
       if trees
@@ -75,11 +72,10 @@ class RandomAccessList
       if i == 0
         if w == 1 then [y] else [y, t1, t2]
       else
-        wh = Math.floor w/2
-        if i-1 < wh
-          [x, updateTree(wh, t1, i-1), t2]
+        if i-1 < half(w)
+          [x, updateTree(half(w), t1, i-1), t2]
         else
-          [x, t1, updateTree(wh, t2, i-1-wh)]
+          [x, t1, updateTree(half(w), t2, i-1-half(w))]
 
     step = (r, s, i) =>
       if s
