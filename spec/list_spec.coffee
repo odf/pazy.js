@@ -84,6 +84,15 @@ describe "A List made from the array ['a', 's', 'd', 'f']", ->
     it "should print as 'f,d,s,a' when converted to an array", ->
       expect(rev.toArray().toString()).toEqual "f,d,s,a"
 
+  describe "when appended to its own reverse", ->
+    test = list.reverse_concat(list)
+
+    it "should have size 8", ->
+      expect(test.size()).toBe 8
+
+    it "should contain the elements f,d,s,a,a,s,d,f in that order", ->
+      expect(test.toArray()).toEqual ['f', 'd', 's', 'a', 'a', 's', 'd', 'f']
+
 describe "A list containing the squares of the numbers from 101 to 110", ->
   list = List.range(101, 110).map((n) -> n * n)
 

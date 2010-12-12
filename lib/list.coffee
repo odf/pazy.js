@@ -126,6 +126,10 @@ class List
     step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
     resolve step(other, this.reverse())
 
+  reverse_concat: (other) ->
+    step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
+    resolve step(other, this)
+
   flatten: ->
     add = (r, s) -> if s then recur -> add new List(s[0], r), s[1] else r
     cat = (r, s) -> if s then recur -> cat (resolve add r, s[0]), s[1] else r
