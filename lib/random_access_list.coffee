@@ -27,13 +27,13 @@ class RandomAccessList
   half = (w) -> Math.floor w/2
 
   cons: (x) ->
-    new RandomAccessList(
+    [w, t, r] =
       if @trees?.rest() and @trees.get(0)[0] == @trees.get(1)[0]
         [[w1, t1], [w2, t2]] = @trees.take(2).toArray()
-        new List([1+w1+w2, [x,t1,t2]], @trees.drop(2))
+        [1+w1+w2, [x,t1,t2], @trees.drop(2)]
       else
-        new List([1, [x]], @trees)
-    )
+        [1, [x], @trees]
+    new RandomAccessList(new List([w, t], r))
 
   first: -> @trees.first()[1][0] if @trees
 
