@@ -68,20 +68,31 @@ class RandomAccessList
     resolve step(@trees, i) if i >= 0
 
   update: (i, y) ->
-    updateTree = (w, [x, t1, t2], i) ->
-      if i == 0
-        if w == 1 then [y] else [y, t1, t2]
-      else
-        if i-1 < half(w)
-          [x, updateTree(half(w), t1, i-1), t2]
+    zipUp = (r, s) ->
+      if r
+        [x, t1, t2] = r.first()
+        if t1
+          recur -> zipUp(r.rest(), [x, t1, s])
         else
-          [x, t1, updateTree(half(w), t2, i-1-half(w))]
+          recur -> zipUp(r.rest(), [x, s, t2])
+      else
+        s
+
+    updateTree = (r, w, [x, t1, t2], i) ->
+      if i == 0
+        resolve zipUp(r, if w == 1 then [y] else [y, t1, t2])
+      else
+        wh = half(w)
+        if i-1 < wh
+          recur -> updateTree(new List([x, null, t2], r), wh, t1, i-1)
+        else
+          recur -> updateTree(new List([x, t1, null], r), wh, t2, i-1-wh)
 
     step = (r, s, i) =>
       if s
         [w, t] = s.first()
         if i < w
-          newTree = updateTree(w, t, i)
+          newTree = resolve updateTree(null, w, t, i)
           new List([w, newTree], r).reverse_concat(s.rest())
         else
           recur -> step(new List(s.first(), r), s.rest(), i - w)
