@@ -50,23 +50,52 @@ class RandomAccessList
       )
 
   lookup: (i) ->
-    step = (trees, i) =>
-      if trees
-        [w, t] = trees.first()
-        if i < w then @lookupTree(w, t, i) else recur -> step(trees.rest(), i-w)
-    resolve step(@trees, i) if i >= 0
-
-  lookupTree: (w, t, i) ->
-    step = (w, [x, t1, t2], i) ->
+    lookupTree = (w, [x, t1, t2], i) ->
       if i == 0
         x
       else if w > 1
         wh = Math.floor w/2
         if i-1 < wh
-          recur -> step(wh, t1, i-1)
+          recur -> lookupTree(wh, t1, i-1)
         else
-          recur -> step(wh, t2, i-1-wh)
-    resolve step(w, t, i)
+          recur -> lookupTree(wh, t2, i-1-wh)
+
+    step = (trees, i) ->
+      if trees
+        [w, t] = trees.first()
+        if i < w
+          resolve lookupTree(w, t, i)
+        else
+          recur -> step(trees.rest(), i-w)
+
+    resolve step(@trees, i) if i >= 0
+
+  update: (i, y) ->
+    updateTree = (w, [x, t1, t2], i) ->
+      if i == 0
+        if w == 1 then [y] else [y, t1, t2]
+      else
+        wh = Math.floor w/2
+        if i-1 < wh
+          [x, updateTree(wh, t1, i-1), t2]
+        else
+          [x, t1, updateTree(wh, t2, i-1-wh)]
+
+    step = (r, s, i) =>
+      if s
+        [w, t] = s.first()
+        if i < w
+          newTree = updateTree(w, t, i)
+          new List([w, newTree], r).reverse_concat(s.rest())
+        else
+          recur -> step(new List(s.first(), r), s.rest(), i - w)
+      else
+        throw new Error("index too large")
+
+    if i >= 0
+      new RandomAccessList(resolve step(null, @trees, i))
+    else
+      throw new Error("negative index")
 
 
 # --------------------------------------------------------------------
