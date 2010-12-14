@@ -109,11 +109,13 @@ class Stream
       if s then recur -> step(new Stream(s.first(), -> r), s.rest()) else r
     resolve step(null, this)
 
-  size: ->
+  @cached: (name, f) -> @::[name] = -> x = f.apply(this); (@[name] = -> x)()
+
+  @cached 'size', ->
     step = (s, n) -> if s then recur -> step(s.rest(), n + 1) else n
     resolve step(this, 0)
 
-  last: ->
+  @cached 'last', ->
     step = (s) -> if s.rest() then recur -> step(s.rest()) else s.first()
     resolve step(this)
 
