@@ -9,9 +9,11 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Stream } = require 'stream'
+  { recur, resolve } = require 'trampoline'
+  { List }           = require 'list'
+  { Stream }         = require 'stream'
 else
-  { Stream } = this.pazy
+  { recur, resolve, List, Stream } = this.pazy
 
 
 class LongInt
@@ -40,6 +42,14 @@ class LongInt
       new LongInt(add(this.digits, other.digits), this.sign)
 
   minus: (other) ->
+    cmp = (diff, r, s) ->
+      if r and s
+        recur -> cmp(new List(r.first() - s.first(), diff), r.rest(), s.rest())
+      else if r or s
+        if r then 1 else -1
+      else
+        diff.drop_while((x) -> x == 0)?.first() or 0
+
     sub = (r, s, b = 0) ->
       if b or (r and s)
         [r_, s_] = [r or Z, s or Z]
@@ -51,12 +61,10 @@ class LongInt
 
     if this.sign != other.sign
       this.plus other.neg()
+    else if (resolve cmp(null, this.digits, other.digits)) < 0
+      new LongInt(sub(other.digits, this.digits), -this.sign)
     else
-      digits = sub(this.digits, other.digits)
-      if digits.last() < 0
-        new LongInt(sub(other.digits, this.digits), -this.sign)
-      else
-        new LongInt(digits, this.sign)
+      new LongInt(sub(this.digits, other.digits), this.sign)
 
   toString: (sep = '') ->
     rev = @digits.reverse().drop_while (d) -> d == 0
@@ -82,12 +90,15 @@ exports.LongInt = LongInt
 
 a = new LongInt(Stream.fromArray([499, 999, 999, 999]), -1)
 b = new LongInt(Stream.fromArray [501])
+c = new LongInt(Stream.fromArray [500, 999, 999, 999])
 
 console.log "a   = #{a.toString('_')}"
 console.log "b   = #{b.toString('_')}"
+console.log "c   = #{c.toString('_')}"
 console.log "a+b = #{(a.plus b).toString('_')}"
 console.log "a-b = #{(a.minus b).toString('_')}"
 console.log "a-a = #{(a.minus a).toString('_')}"
 console.log "b-a = #{(b.minus a).toString('_')}"
+console.log "a+c = #{(a.plus c).toString('_')}"
 
 ###
