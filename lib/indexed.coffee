@@ -237,13 +237,13 @@ class Collection
   # Generic update method with support for multiple arguments
   update: (args, step) ->
     newroot = util.reduce(args, step, @root)
-    if newroot != @root then new @class(newroot) else this
+    if newroot != @root then new @constructor(newroot) else this
 
   # Returns the elements in this set as an array.
   toArray: -> @entries?.toArray() or []
 
   # Returns a string representation of this collection.
-  toString: -> "#{@class.name}(#{@root})"
+  toString: -> "#{@constructor.name}(#{@root})"
 
 
 # --------------------------------------------------------------------
@@ -269,7 +269,6 @@ class IntLeaf
 
 # The IntSet class.
 class IntSet extends Collection
-  this::class = this
   @name = "IntSet"
 
   # Returns the elements as a stream
@@ -320,7 +319,6 @@ class IntLeafWithValue
 
 # The IntMap class is essentially a huge sparse array.
 class IntMap extends Collection
-  this::class = this
   @name = "IntMap"
 
   # Returns the (key,value)-pairs as a stream
@@ -445,7 +443,6 @@ class HashLeaf
 # The HashSet class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
 class HashSet extends Collection
-  this::class = this
   @name = "HashSet"
 
   # Returns the elements as a stream
@@ -508,7 +505,6 @@ class HashLeafWithValue
 # The HashMap class provides the public API and serves as a wrapper
 # for the various node classes that hold the actual information.
 class HashMap extends Collection
-  this::class = this
   @name = "HashMap"
 
   # Returns the (key,value)-pairs as a stream
