@@ -16,8 +16,7 @@ else
   { recur, resolve, List, Stream } = this.pazy
 
 
-class LongInt
-  BLEN = 3
+LongIntegerClass = (BLEN = 15) -> class LongInt
   BASE = eval "1e#{BLEN}"
   ZEROES = ('0' for i in [1..BLEN]).join ''
   Z = new Stream(0)
@@ -28,6 +27,8 @@ class LongInt
 
     [m, @sign] = if n < 0 then [-n, -1] else [n, 1]
     @digits = make_digits m
+
+  base: -> BASE
 
   create = (digits, sign) ->
     n = new LongInt()
@@ -109,4 +110,5 @@ class LongInt
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.LongInt = LongInt
+exports.LongIntegerClass = LongIntegerClass
+exports.LongInt = LongIntegerClass()
