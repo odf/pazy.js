@@ -52,7 +52,7 @@ LongIntegerClass = (BLEN = 15) -> class LongInt
     if this.sign != other.sign
       this.sign
     else
-      resolve cmp(null, this.digits, other.digits)
+      this.sign * resolve cmp(null, this.digits, other.digits)
 
   plus: (other) ->
     add = (r, s, c = 0) ->

@@ -31,6 +31,15 @@ describe """If a, b and c are long integers with base 1e3;
   it "c should print as 999_999_999_500 with '_' as the separator", ->
     expect(c.toString('_')).toEqual '999_999_999_500'
 
+  it "a should be smaller than b", ->
+    expect(a.cmp(b)).toBeLessThan 0
+
+  it "a should be smaller than -b", ->
+    expect(a.cmp(b.neg())).toBeLessThan 0
+
+  it "-a should be larger than b", ->
+    expect(a.neg().cmp(b)).toBeGreaterThan 0
+
   it "c should convert to the number 1e12 - 500", ->
     expect(c.toNumber()).toBe 1e12 - 500
 
