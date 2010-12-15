@@ -110,22 +110,3 @@ class LongInt
 
 exports ?= this.pazy ?= {}
 exports.LongInt = LongInt
-
-## Test code
-
-a = new LongInt(-999999999499)
-b = new LongInt(501)
-c = new LongInt(999999999500)
-
-console.log "a   = #{a.toString('_')}"
-console.log "b   = #{b.toString('_')}"
-console.log "c   = #{c.toString('_')}"
-console.log "c   = #{c.toNumber()} (as number)"
-console.log "a+b = #{(a.plus b).toString('_')}"
-console.log "a-b = #{(a.minus b).toString('_')}"
-console.log "a-b = #{(a.minus b).toNumber()} (as number)"
-console.log "a-a = #{(a.minus a).toString('_')}"
-console.log "b-a = #{(b.minus a).toString('_')}"
-console.log "a+c = #{(a.plus c).toString('_')}"
-
-###
