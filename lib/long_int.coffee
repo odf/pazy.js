@@ -22,9 +22,36 @@ class LongInt
   ZEROES = ('0' for i in [1..BLEN]).join ''
   Z = new Stream(0)
 
-  constructor: (@digits, @sign = 1) ->
+  constructor: (n = 0) ->
+    make_digits = (m) ->
+      if m then new Stream(m % BASE, -> make_digits(Math.floor m / BASE))
 
-  neg: -> new LongInt(@digits, -@sign)
+    [m, @sign] = if n < 0 then [-n, -1] else [n, 1]
+    @digits = make_digits m
+
+  create = (digits, sign) ->
+    n = new LongInt()
+    n.digits = digits
+    n.sign = sign
+    n
+
+  neg: -> create(@digits, -@sign)
+
+  abs: -> create(@digits, 1)
+
+  cmp: (other) ->
+    cmp = (diff, r, s) ->
+      if r and s
+        recur -> cmp(new List(r.first() - s.first(), diff), r.rest(), s.rest())
+      else if r or s
+        if r then 1 else -1
+      else
+        diff.drop_while((x) -> x == 0)?.first() or 0
+
+    if this.sign != other.sign
+      this.sign
+    else
+      resolve cmp(null, this.digits, other.digits)
 
   plus: (other) ->
     add = (r, s, c = 0) ->
@@ -39,17 +66,9 @@ class LongInt
     if this.sign != other.sign
       this.minus other.neg()
     else
-      new LongInt(add(this.digits, other.digits), this.sign)
+      create(add(this.digits, other.digits), this.sign)
 
   minus: (other) ->
-    cmp = (diff, r, s) ->
-      if r and s
-        recur -> cmp(new List(r.first() - s.first(), diff), r.rest(), s.rest())
-      else if r or s
-        if r then 1 else -1
-      else
-        diff.drop_while((x) -> x == 0)?.first() or 0
-
     sub = (r, s, b = 0) ->
       if b or (r and s)
         [r_, s_] = [r or Z, s or Z]
@@ -61,10 +80,10 @@ class LongInt
 
     if this.sign != other.sign
       this.plus other.neg()
-    else if (resolve cmp(null, this.digits, other.digits)) < 0
-      new LongInt(sub(other.digits, this.digits), -this.sign)
+    else if this.abs().cmp(other.abs()) < 0
+      create(sub(other.digits, this.digits), -this.sign)
     else
-      new LongInt(sub(this.digits, other.digits), this.sign)
+      create(sub(this.digits, other.digits), this.sign)
 
   toString: (sep = '') ->
     rev = @digits.reverse().drop_while (d) -> d == 0
@@ -78,6 +97,12 @@ class LongInt
       buf.push '0'
     buf.join('')
 
+  toNumber: ->
+    step = (n, s) ->
+      if s then recur -> step(n * BASE + s.first(), s.rest()) else n
+    rev = @digits.reverse().drop_while (d) -> d == 0
+    @sign * resolve step(0, rev)
+
 
 # --------------------------------------------------------------------
 # Exporting.
@@ -88,15 +113,17 @@ exports.LongInt = LongInt
 
 ## Test code
 
-a = new LongInt(Stream.fromArray([499, 999, 999, 999]), -1)
-b = new LongInt(Stream.fromArray [501])
-c = new LongInt(Stream.fromArray [500, 999, 999, 999])
+a = new LongInt(-999999999499)
+b = new LongInt(501)
+c = new LongInt(999999999500)
 
 console.log "a   = #{a.toString('_')}"
 console.log "b   = #{b.toString('_')}"
 console.log "c   = #{c.toString('_')}"
+console.log "c   = #{c.toNumber()} (as number)"
 console.log "a+b = #{(a.plus b).toString('_')}"
 console.log "a-b = #{(a.minus b).toString('_')}"
+console.log "a-b = #{(a.minus b).toNumber()} (as number)"
 console.log "a-a = #{(a.minus a).toString('_')}"
 console.log "b-a = #{(b.minus a).toString('_')}"
 console.log "a+c = #{(a.plus c).toString('_')}"
