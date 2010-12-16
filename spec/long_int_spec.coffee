@@ -4,9 +4,8 @@ if typeof(require) != 'undefined'
 else
   { LongInt } = pazy
 
-describe """If a, b and c are long integers with base 10000;
+describe """If a, b and c are long integers with
             a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
-  LongInt.digit_size__ 4
   a = new LongInt -1e12 + 5001
   b = new LongInt 5001
   c = new LongInt 1e12 - 5000

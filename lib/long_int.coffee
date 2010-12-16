@@ -16,20 +16,16 @@ else
   { recur, resolve, List, Stream } = this.pazy
 
 
-BASE = ZEROES = undefined
-Z = new Stream 0
-
-set_digit_size = (n) ->
-  BASE = Math.pow 10, n
-  ZEROES = ('0' for i in [1..n]).join ''
-
-even = (n) -> n % 2 == 0
-good = (n) -> b = Math.pow 10, n; 2 * b - 2 != 2 * b - 1
-set_digit_size Stream.from(1).select(even).take_while(good).last()
+BASE = Stream.from(1)
+  .select((n) -> n % 2 == 0)
+  .map((n) -> Math.pow 10, n)
+  .take_while((b) -> 2 * b - 2 != 2 * b - 1)
+  .last()
+ZEROES = BASE.toString()[1..]
 
 
 class LongInt
-  @digit_size__ = (n) -> set_digit_size(n)
+  Z = new Stream 0
 
   constructor: (n = 0) ->
     make_digits = (m) ->
