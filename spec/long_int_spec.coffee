@@ -66,3 +66,11 @@ describe """If a, b and c are long integers with
 
   it "a + c should convert to the number 1", ->
     expect(a.plus(c).toNumber()).toBe 1
+
+  it "a * a should print as 999999989998000025010001", ->
+    expect(a.times(a).toString()).toEqual "999999989998000025010001"
+
+  it """(a * a) * (a * a) should print as
+        999999979996000150060005499699940621500150020001""", ->
+    expect((a.times a).times(a.times a).toString())
+      .toEqual "999999979996000150060005499699940621500150020001"
