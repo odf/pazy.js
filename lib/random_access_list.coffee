@@ -93,7 +93,7 @@ class RandomAccessList
         [w, t] = s.first()
         if i < w
           newTree = resolve updateTree(null, w, t, i)
-          new List([w, newTree], r).reverse_concat(s.rest())
+          new List([w, newTree], r).reverseConcat(s.rest())
         else
           recur -> step(new List(s.first(), r), s.rest(), i - w)
       else

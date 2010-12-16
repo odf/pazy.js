@@ -22,7 +22,7 @@ if testing?
 else
   [BASE, HALFBASE] = Stream.from(1)
     .map((n) -> [Math.pow(10, 2 * n), Math.pow(10, n)])
-    .take_while(([b,h]) -> 2 * b - 2 != 2 * b - 1)
+    .takeWhile(([b,h]) -> 2 * b - 2 != 2 * b - 1)
     .last()
 
 ZEROES = BASE.toString()[1..]
@@ -57,7 +57,7 @@ class LongInt
       else if r or s
         if r then 1 else -1
       else
-        diff.drop_while((x) -> x == 0)?.first() or 0
+        diff.dropWhile((x) -> x == 0)?.first() or 0
 
     if this.sign != other.sign
       this.sign
@@ -111,7 +111,7 @@ class LongInt
       [lo, a1 * b1 + m1 + carry]
 
   toString: ->
-    rev = @digits.reverse().drop_while (d) -> d == 0
+    rev = @digits.reverse().dropWhile (d) -> d == 0
     buf = [rev?.first().toString()]
     rev?.rest()?.each (d) ->
       t = d.toString()
@@ -125,7 +125,7 @@ class LongInt
   toNumber: ->
     step = (n, s) ->
       if s then recur -> step(n * BASE + s.first(), s.rest()) else n
-    rev = @digits.reverse().drop_while (d) -> d == 0
+    rev = @digits.reverse().dropWhile (d) -> d == 0
     @sign * resolve step(0, rev)
 
 

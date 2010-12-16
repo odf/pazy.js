@@ -45,7 +45,7 @@ class List
 
   get: (n) -> @drop(n)?[0] if n >= 0
 
-  drop_while: (pred) ->
+  dropWhile: (pred) ->
     step = (s) -> if s and pred(s[0]) then recur -> step(s[1]) else s
     resolve step(this)
 
@@ -107,7 +107,7 @@ class List
       if s and n > 0 then recur -> step(new List(s[0], r), s[1], n-1) else r
     (resolve step(null, this, n)).reverse()
 
-  take_while: (func) ->
+  takeWhile: (func) ->
     step = (r, s) ->
       if s and func(s[0]) then recur -> step(new List(s[0], r), s[1]) else r
     (resolve step(null, this)).reverse()
@@ -126,7 +126,7 @@ class List
     step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
     resolve step(other, this.reverse())
 
-  reverse_concat: (other) ->
+  reverseConcat: (other) ->
     step = (r, s) -> if s then recur -> step(new List(s[0], r), s[1]) else r
     resolve step(other, this)
 
@@ -135,9 +135,9 @@ class List
     cat = (r, s) -> if s then recur -> cat (resolve add r, s[0]), s[1] else r
     (resolve cat null, this).reverse()
 
-  flat_map: (func) -> @map(func).flatten()
+  flatMap: (func) -> @map(func).flatten()
 
-  cartesian: (other) -> @flat_map((a) -> other.map((b) -> [a,b]))
+  cartesian: (other) -> @flatMap((a) -> other.map((b) -> [a,b]))
 
   toArray: ->
     buffer = []

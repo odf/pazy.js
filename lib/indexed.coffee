@@ -94,7 +94,7 @@ class BitmapIndexedNode
       @progeny = []
       @size    = 0
 
-    @elements = Stream.fromArray(@progeny)?.flat_map (n) -> n?.elements
+    @elements = Stream.fromArray(@progeny)?.flatMap (n) -> n?.elements
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -184,7 +184,7 @@ class ProxyNode
 class ArrayNode
   constructor: (progeny, i, node, @size) ->
     @progeny  = util.arrayWith(progeny, i, node)
-    @elements = Stream.fromArray(@progeny)?.flat_map (n) -> n?.elements
+    @elements = Stream.fromArray(@progeny)?.flatMap (n) -> n?.elements
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -389,7 +389,7 @@ class CollisionNode
   constructor: (@hash, @bucket) ->
     @bucket   = [] unless @bucket?
     @size     = @bucket.length
-    @elements = Stream.fromArray(@bucket)?.flat_map (n) -> n?.elements
+    @elements = Stream.fromArray(@bucket)?.flatMap (n) -> n?.elements
 
   get: (shift, hash, key) ->
     leaf = util.find @bucket, (v) -> areEqual(v.key, key)

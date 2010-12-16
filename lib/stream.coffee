@@ -36,8 +36,8 @@ class Stream
 
   first: -> @_first
 
-  take_while: (pred) ->
-    new Stream(@first(), => @rest()?.take_while(pred)) if pred(@first())
+  takeWhile: (pred) ->
+    new Stream(@first(), => @rest()?.takeWhile(pred)) if pred(@first())
 
   take: (n) -> new Stream(@first(), => @rest()?.take(n-1)) if n > 0
 
@@ -83,16 +83,16 @@ class Stream
     else
       @rest()?.flatten()
 
-  flat_map: (func) -> @map(func).flatten()
+  flatMap: (func) -> @map(func).flatten()
 
-  cartesian: (stream) -> @flat_map((a) -> stream.map((b) -> [a,b]))
+  cartesian: (stream) -> @flatMap((a) -> stream.map((b) -> [a,b]))
 
   toString: -> "Stream(#{@first()}, ...)"
 
   # The following functions force evaluation of the complete stream or
   # portions of the stream.
 
-  drop_while: (pred) ->
+  dropWhile: (pred) ->
     step = (s) -> if s and pred(s.first()) then recur -> step(s.rest()) else s
     resolve step(this)
 

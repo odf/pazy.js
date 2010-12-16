@@ -85,7 +85,7 @@ describe "A List made from the array ['a', 's', 'd', 'f']", ->
       expect(rev.toArray().toString()).toEqual "f,d,s,a"
 
   describe "when appended to its own reverse", ->
-    test = list.reverse_concat(list)
+    test = list.reverseConcat(list)
 
     it "should have size 8", ->
       expect(test.size()).toBe 8
@@ -106,7 +106,7 @@ describe "A list containing the squares of the numbers from 101 to 110", ->
     expect(list.size()).toBe 10
 
   it "should have 6 elements larger than 11000", ->
-    expect(list.drop_while((n) -> n <= 11000).size()).toBe 6
+    expect(list.dropWhile((n) -> n <= 11000).size()).toBe 6
 
   it "should have 5 odd elements", ->
     expect(list.select((n) -> n % 2 == 1).size()).toBe 5
@@ -115,7 +115,7 @@ describe "A list containing the squares of the numbers from 101 to 110", ->
     expect(list.take(3).toArray()).toEqual [10201, 10404, 10609]
 
   it "should produce a list of 4 elements smaller than 11000", ->
-    expect(list.take_while((n) -> n < 11000).toArray())
+    expect(list.takeWhile((n) -> n < 11000).toArray())
       .toEqual [10201, 10404, 10609, 10816]
 
 describe "A list containing the first 10 triangle numbers", ->

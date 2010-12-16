@@ -69,10 +69,10 @@ describe "A stream implementing the recursion formula for Fibonacci numbers", ->
     expect(stream.get(40)).toBe 102334155
 
   it "should have 1346269 as the first element larger than a million", ->
-    expect(stream.drop_while((n) -> n <= 1000000).first()).toBe 1346269
+    expect(stream.dropWhile((n) -> n <= 1000000).first()).toBe 1346269
 
   it "should have 9227465 as the last element smaller than ten millions", ->
-    expect(stream.take_while((n) -> n < 10000000).last()).toBe 9227465
+    expect(stream.takeWhile((n) -> n < 10000000).last()).toBe 9227465
 
   it "should have 0, 2, 8, 34, 144, 610 and 2584 as the first even elements", ->
     result = [0, 2, 8, 34, 144, 610, 2584]
@@ -86,7 +86,7 @@ describe "A stream implementing the recursion formula for Fibonacci numbers", ->
     expect(stream.rest().products().take(7).toArray()).toEqual result
 
   it "should have 45 elements under a billion", ->
-    expect(stream.take_while((n) -> n < 1000000000).size()).toBe 45
+    expect(stream.takeWhile((n) -> n < 1000000000).size()).toBe 45
 
   describe "when combined into pairs of consecutive entries", ->
     pairs = stream.combine(stream.rest(), (a, b) -> [a, b])
@@ -103,7 +103,7 @@ describe "A stream implementing a simple prime number sieve", ->
     expect(primes.take(10).toArray()).toEqual [2,3,5,7,11,13,17,19,23,29]
 
   it "should have 997 as the largest element under 1000", ->
-    expect(primes.take_while((n) -> n < 1000).last()).toBe 997
+    expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
   describe "when merged with the fibonacci numbers startin at 2", ->
     fib = new Stream(0, -> new Stream(1, -> fib.rest().plus fib))
