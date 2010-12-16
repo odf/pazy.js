@@ -15,12 +15,16 @@ if typeof(require) != 'undefined'
 else
   { recur, resolve, List, Stream } = this.pazy
 
+#testing = true
 
-BASE = Stream.from(1)
-  .select((n) -> n % 2 == 0)
-  .map((n) -> Math.pow 10, n)
-  .take_while((b) -> 2 * b - 2 != 2 * b - 1)
-  .last()
+if testing?
+  [BASE, HALFBASE] = [10000, 100]
+else
+  [BASE, HALFBASE] = Stream.from(1)
+    .map((n) -> [Math.pow(10, 2 * n), Math.pow(10, n)])
+    .take_while(([b,h]) -> 2 * b - 2 != 2 * b - 1)
+    .last()
+
 ZEROES = BASE.toString()[1..]
 
 
@@ -91,6 +95,20 @@ class LongInt
       create(sub(other.digits, this.digits), -this.sign)
     else
       create(sub(this.digits, other.digits), this.sign)
+
+  split = (n) -> [n % HALFBASE, Math.floor n / HALFBASE]
+
+  multiply_digits = (a, b) ->
+    if b < BASE / a
+      [a * b, 0]
+    else
+      [a0, a1] = split a
+      [b0, b1] = split b
+      [m0, m1] = split a0 * b1 + b0 * a1
+
+      tmp = a0 * b0 + m0 * HALFBASE
+      [lo, carry] = if tmp < BASE then [tmp, 0] else [tmp - BASE, 1]
+      [lo, a1 * b1 + m1 + carry]
 
   toString: ->
     rev = @digits.reverse().drop_while (d) -> d == 0
