@@ -50,7 +50,7 @@ util = {
     a[j] for j in [0...a.length] when j != i
 
 
-  isKey: (n) -> typeof(n) == "number" and (0x80000000 > n >= 0) and (n % 1 == 0)
+  isKey: (n) -> typeof(n) == "number" and (0x100000000 > n >= 0) and (n % 1 == 0)
 
   mask: (key, shift) -> (key >> (27 - shift)) & 0x1f
 
@@ -351,7 +351,7 @@ class IntMap extends Collection
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
-hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) % 0x80000000
+hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) & 0xffffffff
 
 hashCode = (obj) ->
   if obj? and typeof(obj.hashCode) == "function"

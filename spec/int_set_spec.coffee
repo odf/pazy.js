@@ -92,24 +92,27 @@ describe "An IntSet", ->
       expect(hash.minus("a", -1, 2.34, 0x100000000, [1], {1:2})).toBe hash
 
 
-  describe "containing four items with collisions in the lower bits", ->
-    key_a = 0x1fffffff
-    key_b = 0x3fffffff
-    key_c = 0x5ff0ffff
-    key_d = 0x7ff0ffff
-    hash = new IntSet().plus(key_a, key_b, key_c, key_d)
+  describe "containing eight items with collisions in the lower bits", ->
+    keys = [
+      0x1fffffff
+      0x3fffffff
+      0x5ff0ffff
+      0x7ff0ffff
+      0x9fffffff
+      0xbfffffff
+      0xdff0ffff
+      0xfff0ffff
+    ]
+    hash = new IntSet().plus keys...
 
     it "should return true for all keys", ->
-      expect(hash.contains(key_a)).toBe true
-      expect(hash.contains(key_b)).toBe true
-      expect(hash.contains(key_c)).toBe true
-      expect(hash.contains(key_d)).toBe true
+      expect(hash.contains(key)).toBe true for key in keys
 
     it "should have size 1 when all items but one are removed", ->
-      expect(hash.minus(key_a, key_b, key_c).size()).toEqual 1
+      expect(hash.minus((keys[i] for i in [0..6])...).size()).toEqual 1
 
     it "should be empty when all items are removed", ->
-      expect(hash.minus(key_a, key_b, key_c, key_d).size()).toBe 0
+      expect(hash.minus(keys...).size()).toBe 0
 
 
   describe "containing four items with collisions in the higher bits", ->
