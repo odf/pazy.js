@@ -18,9 +18,9 @@ else
 
 
 class Sortable
-  constructor: (@less, @_size = 0, @_segs = null) ->
+  constructor: (@less, @size__ = 0, @segs = null) ->
 
-  size: -> @_size
+  size: -> @size__
 
   plus: ->
     less = @less
@@ -33,12 +33,12 @@ class Sortable
 
     if arguments.length > 0
       List.fromArray(arguments).reduce this, (s, x) ->
-        newSegs = resolve addSeg(new Stream(x), s._segs, s.size())
+        newSegs = resolve addSeg(new Stream(x), s.segs, s.size())
         new Sortable(less, s.size() + 1, newSegs)
     else
       this
 
-  sort: -> @_segs.reduce(null, (r, s) => merge(@less, r, s))
+  sort: -> @segs.reduce(null, (r, s) => merge(@less, r, s))
 
   merge = (less, xs, ys) ->
     if xs and (not ys or less(xs.first(), ys.first()))

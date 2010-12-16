@@ -13,5 +13,5 @@
 
 exports ?= this.pazy ?= {}
 
-exports.recur   = (code) -> { _recur: code }
-exports.resolve = (val) -> val = val._recur() while val?._recur; val
+exports.recur   = (code) -> { recur__: code }
+exports.resolve = (val) -> val = val.recur__() while val?.recur__; val

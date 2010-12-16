@@ -28,13 +28,13 @@
 
 
 class Stream
-  constructor: (@_first, rest) ->
+  constructor: (@first__, rest) ->
     @rest = if rest?
       => val = rest(); (@rest = -> val)()
     else
       -> null
 
-  first: -> @_first
+  first: -> @first__
 
   takeWhile: (pred) ->
     new Stream(@first(), => @rest()?.takeWhile(pred)) if pred(@first())
