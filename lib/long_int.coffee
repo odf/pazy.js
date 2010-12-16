@@ -16,10 +16,20 @@ else
   { recur, resolve, List, Stream } = this.pazy
 
 
-LongIntegerClass = (BLEN = 15) -> class LongInt
-  BASE = eval "1e#{BLEN}"
-  ZEROES = ('0' for i in [1..BLEN]).join ''
-  Z = new Stream(0)
+BASE = ZEROES = undefined
+Z = new Stream 0
+
+set_digit_size = (n) ->
+  BASE = Math.pow 10, n
+  ZEROES = ('0' for i in [1..n]).join ''
+
+even = (n) -> n % 2 == 0
+good = (n) -> b = Math.pow 10, n; 2 * b - 2 != 2 * b - 1
+set_digit_size Stream.from(1).select(even).take_while(good).last()
+
+
+class LongInt
+  @digit_size__ = (n) -> set_digit_size(n)
 
   constructor: (n = 0) ->
     make_digits = (m) ->
@@ -86,12 +96,12 @@ LongIntegerClass = (BLEN = 15) -> class LongInt
     else
       create(sub(this.digits, other.digits), this.sign)
 
-  toString: (sep = '') ->
+  toString: ->
     rev = @digits.reverse().drop_while (d) -> d == 0
     buf = [rev?.first().toString()]
     rev?.rest()?.each (d) ->
       t = d.toString()
-      buf.push "#{sep}#{ZEROES[t.length..]}#{t}"
+      buf.push "#{ZEROES[t.length..]}#{t}"
     if rev
       buf.unshift '-' if @sign < 0
     else
@@ -110,5 +120,4 @@ LongIntegerClass = (BLEN = 15) -> class LongInt
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.LongIntegerClass = LongIntegerClass
-exports.LongInt = LongIntegerClass()
+exports.LongInt = LongInt
