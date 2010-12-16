@@ -5,26 +5,26 @@ else
   { LongInt } = pazy
 
 describe """If a, b and c are long integers with base 10000;
-            a = -1e12 + 501, b = 501 and c = 1e12 - 500""", ->
+            a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
   LongInt.digit_size__ 4
-  a = new LongInt -1e12 + 501
-  b = new LongInt 501
-  c = new LongInt 1e12 - 500
+  a = new LongInt -1e12 + 5001
+  b = new LongInt 5001
+  c = new LongInt 1e12 - 5000
 
-  it "a should print as -999999999499", ->
-    expect(a.toString()).toEqual '-999999999499'
+  it "a should print as -999999994999", ->
+    expect(a.toString()).toEqual '-999999994999'
 
-  it "a should convert to the number -1e12 + 501", ->
-    expect(a.toNumber()).toBe -1e12 + 501
+  it "a should convert to the number -1e12 + 5001", ->
+    expect(a.toNumber()).toBe -1e12 + 5001
 
-  it "b should print as 501", ->
-    expect(b.toString()).toEqual '501'
+  it "b should print as 5001", ->
+    expect(b.toString()).toEqual '5001'
 
-  it "a should convert to the number 501", ->
-    expect(b.toNumber()).toBe 501
+  it "a should convert to the number 5001", ->
+    expect(b.toNumber()).toBe 5001
 
-  it "c should print as 999999999500", ->
-    expect(c.toString()).toEqual '999999999500'
+  it "c should print as 999999995000", ->
+    expect(c.toString()).toEqual '999999995000'
 
   it "a should be smaller than b", ->
     expect(a.cmp(b)).toBeLessThan 0
@@ -35,14 +35,14 @@ describe """If a, b and c are long integers with base 10000;
   it "-a should be larger than b", ->
     expect(a.neg().cmp(b)).toBeGreaterThan 0
 
-  it "c should convert to the number 1e12 - 500", ->
-    expect(c.toNumber()).toBe 1e12 - 500
+  it "c should convert to the number 1e12 - 5000", ->
+    expect(c.toNumber()).toBe 1e12 - 5000
 
-  it "a + b should print as -999999998998", ->
-    expect(a.plus(b).toString()).toEqual '-999999998998'
+  it "a + b should print as -999999989998", ->
+    expect(a.plus(b).toString()).toEqual '-999999989998'
 
-  it "a + b should convert to the number -1e12 + 1002", ->
-    expect(a.plus(b).toNumber()).toBe -1e12 + 1002
+  it "a + b should convert to the number -1e12 + 10002", ->
+    expect(a.plus(b).toNumber()).toBe -1e12 + 10002
 
   it "a - b should print as -1000000000000", ->
     expect(a.minus(b).toString()).toEqual '-1000000000000'
