@@ -6,6 +6,7 @@
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
+# -- Importing
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
@@ -15,9 +16,13 @@ if typeof(require) != 'undefined'
 else
   { recur, resolve, List, Stream } = this.pazy
 
-#quicktest = true
+# -- Call with '--test' for some quick-and-dirty testing
 
-if quicktest?
+quicktest = process?.argv[0] == '--test'
+
+# -- Setting the number base (maximal digit value - 1) and its square root
+
+if quicktest
   [BASE, HALFBASE] = [10000, 100]
 else
   [BASE, HALFBASE] = Stream.from(1)
@@ -25,12 +30,62 @@ else
     .takeWhile(([b,h]) -> 2 * b - 2 != 2 * b - 1)
     .last()
 
-ZEROES = BASE.toString()[1..]
+# -- Useful constants
 
+ZEROES = BASE.toString()[1..]
+Z = new Stream 0
+
+# -- Internal helper functions that operate on (streams of) digits/limbs
+
+add = (r, s, c = 0) ->
+  if c or (r and s)
+    [r_, s_] = [r or Z, s or Z]
+    x = r_.first() + s_.first() + c
+    [digit, carry] = if x >= BASE then [x - BASE, 1] else [x, 0]
+    new Stream(digit, -> add(r_.rest(), s_.rest(), carry))
+  else
+    s or r
+
+sub = (r, s, b = 0) ->
+  if b or (r and s)
+    [r_, s_] = [r or Z, s or Z]
+    x = r_.first() - s_.first() - b
+    [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
+    new Stream(digit, -> sub(r_.rest(), s_.rest(), borrow))
+  else
+    s or r
+
+split = (n) -> [n % HALFBASE, Math.floor n / HALFBASE]
+
+digitTimesDigit = (a, b) ->
+  if b < BASE / a
+    [a * b, 0]
+  else
+    [a0, a1] = split a
+    [b0, b1] = split b
+    [m0, m1] = split a0 * b1 + b0 * a1
+
+    tmp = a0 * b0 + m0 * HALFBASE
+    [lo, carry] = if tmp < BASE then [tmp, 0] else [tmp - BASE, 1]
+    [lo, a1 * b1 + m1 + carry]
+
+streamTimesDigit = (s, d, c = 0) ->
+  if c or s
+    s_ = s or Z
+    [lo, hi] = digitTimesDigit(d, s_.first())
+    new Stream(lo + c, -> streamTimesDigit(s_.rest(), d, hi))
+
+mul = (r, a, b) ->
+  if a
+    t = add(r, streamTimesDigit(b, a.first())) or Z
+    new Stream(t.first(), -> mul(t.rest(), a.rest(), b))
+  else
+    r
+
+
+# -- The glorious LongInt class
 
 class LongInt
-  Z = new Stream 0
-
   constructor: (n = 0) ->
     make_digits = (m) ->
       if m then new Stream(m % BASE, -> make_digits(Math.floor m / BASE))
@@ -51,9 +106,9 @@ class LongInt
   abs: -> create(@digits, 1)
 
   cmp: (other) ->
-    cmp = (diff, r, s) ->
+    step = (diff, r, s) ->
       if r and s
-        recur -> cmp(new List(r.first() - s.first(), diff), r.rest(), s.rest())
+        recur -> step(new List(r.first() - s.first(), diff), r.rest(), s.rest())
       else if r or s
         if r then 1 else -1
       else
@@ -62,16 +117,7 @@ class LongInt
     if this.sign != other.sign
       this.sign
     else
-      this.sign * resolve cmp(null, this.digits, other.digits)
-
-  add = (r, s, c = 0) ->
-    if c or (r and s)
-      [r_, s_] = [r or Z, s or Z]
-      x = r_.first() + s_.first() + c
-      [digit, carry] = if x >= BASE then [x - BASE, 1] else [x, 0]
-      new Stream(digit, -> add(r_.rest(), s_.rest(), carry))
-    else
-      s or r
+      this.sign * resolve step(null, this.digits, other.digits)
 
   plus: (other) ->
     if this.sign != other.sign
@@ -80,15 +126,6 @@ class LongInt
       create(add(this.digits, other.digits), this.sign)
 
   minus: (other) ->
-    sub = (r, s, b = 0) ->
-      if b or (r and s)
-        [r_, s_] = [r or Z, s or Z]
-        x = r_.first() - s_.first() - b
-        [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
-        new Stream(digit, -> sub(r_.rest(), s_.rest(), borrow))
-      else
-        s or r
-
     if this.sign != other.sign
       this.plus other.neg()
     else if this.abs().cmp(other.abs()) < 0
@@ -96,35 +133,8 @@ class LongInt
     else
       create(sub(this.digits, other.digits), this.sign)
 
-  split = (n) -> [n % HALFBASE, Math.floor n / HALFBASE]
-
-  digitTimesDigit = (a, b) ->
-    if b < BASE / a
-      [a * b, 0]
-    else
-      [a0, a1] = split a
-      [b0, b1] = split b
-      [m0, m1] = split a0 * b1 + b0 * a1
-
-      tmp = a0 * b0 + m0 * HALFBASE
-      [lo, carry] = if tmp < BASE then [tmp, 0] else [tmp - BASE, 1]
-      [lo, a1 * b1 + m1 + carry]
-
-  streamTimesDigit = (s, d, c = 0) ->
-    if c or s
-      s_ = s or Z
-      [lo, hi] = digitTimesDigit(d, s_.first())
-      new Stream(lo + c, -> streamTimesDigit(s_.rest(), d, hi))
-
   times: (other) ->
-    mul = (s, r) ->
-      if r
-        t = add(s, streamTimesDigit(other.digits, r.first())) or Z
-        new Stream(t.first(), -> mul(t.rest(), r.rest()))
-      else
-        s
-
-    create mul(null, this.digits), this.sign * other.sign
+    create mul(null, this.digits, other.digits), this.sign * other.sign
 
   toString: ->
     rev = @digits.reverse().dropWhile (d) -> d == 0
@@ -152,7 +162,7 @@ class LongInt
 exports ?= this.pazy ?= {}
 exports.LongInt = LongInt
 
-if quicktest?
+if quicktest
   n = new LongInt(-99999999)
   console.log n.toString()
   console.log n.times(n).toString()
