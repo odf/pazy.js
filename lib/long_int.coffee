@@ -64,14 +64,16 @@ add = (r, s, c = 0) ->
   else
     s or r
 
-sub = (r, s, b = 0) ->
-  if b or (r and s)
-    [r_, s_] = [r or ZERO, s or ZERO]
-    x = r_.first() - s_.first() - b
-    [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
-    new Stream(digit, -> sub(r_.rest(), s_.rest(), borrow))
-  else
-    s or r
+sub = (r, s) ->
+  step = (r, s, b = 0) ->
+    if b or (r and s)
+      [r_, s_] = [r or ZERO, s or ZERO]
+      x = r_.first() - s_.first() - b
+      [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
+      new Stream(digit, -> step(r_.rest(), s_.rest(), borrow))
+    else
+      s or r
+  cleanup step(r, s)
 
 split = (n) -> [n % HALFBASE, Math.floor n / HALFBASE]
 
@@ -106,7 +108,7 @@ divmod = (r, s) ->
     d = s.last() + 1
     f = (Math.floor n / d) or (if cmp(h, s) >= 0 then 1 else 0)
     log "divmod step(#{dump(q)}, #{dump(h)}, #{dump(t)}, #{shift}) -- f = #{f}"
-    [q_, h_] = [add(q, new Stream(f)), cleanup(sub(h, streamTimesDigit(s, f)))]
+    [q_, h_] = [add(q, new Stream(f)), sub(h, streamTimesDigit(s, f))]
 
     if f and not shift
       recur -> step(q_, h_, t, shift)
@@ -164,9 +166,9 @@ class LongInt
     if this.sign != other.sign
       this.plus other.neg()
     else if this.abs().cmp(other.abs()) < 0
-      create(cleanup(sub(other.digits, this.digits)), -this.sign)
+      create(sub(other.digits, this.digits), -this.sign)
     else
-      create(cleanup(sub(this.digits, other.digits)), this.sign)
+      create(sub(this.digits, other.digits), this.sign)
 
   times: (other) ->
     create mul(null, this.digits, other.digits), this.sign * other.sign
