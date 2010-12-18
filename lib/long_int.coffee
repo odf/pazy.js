@@ -101,29 +101,23 @@ mul = (r, a, b) ->
     r
 
 divmod = (r, s) ->
-  log "divmod(#{dump(r)}, #{dump(s)})"
   step = (q, h, t, shift) ->
-    log "step(#{dump(q)}, #{dump(h)}, #{dump(t)}, #{shift})"
-    n = h.last() * if shift then BASE else 1
+    n = (h?.last() * if shift then BASE else 1) or 0
     d = s.last() + 1
-    f = Math.floor n / d
-    log "  n = #{n}, d = #{d}, f = #{f}"
-    [q_, h_] = if f
-      [add(q, new Stream(f)), cleanup(sub(h, streamTimesDigit(s, f)))]
-    else
-      [q, h]
-    log "  [q_, h_] = [#{dump(q_)},#{dump(h_)}]"
-    if cmp(h_, s) >= 0
-      log "  f += 1"
-      [q_, h_] = [add(q_, ONE), cleanup(sub(h_, s))]
-      log "  [q_, h_] = [#{dump(q_)},#{dump(h_)}]"
+    f = (Math.floor n / d) or (if cmp(h, s) >= 0 then 1 else 0)
+    log "divmod step(#{dump(q)}, #{dump(h)}, #{dump(t)}, #{shift}) -- f = #{f}"
+    [q_, h_] = [add(q, new Stream(f)), cleanup(sub(h, streamTimesDigit(s, f)))]
 
-    if shift
+    if f and not shift
+      recur -> step(q_, h_, t, shift)
+    else if shift
       recur -> step(q_, h_, t, false)
     else if t
-      x = h_.get(if shift then s.size() else s.size()-1)
-      recur ->
-        step(new Stream(0, -> q_), new Stream(t.first(), -> h_), t.rest(), !!x)
+      recur -> step(
+        new Stream(0, -> q_),
+        new Stream(t.first(), -> h_),
+        t.rest(),
+        h_.last() != 0)
     else
       log "  returning [#{dump(q_)},#{dump(h_)}]"
       [q_, h_]
@@ -225,8 +219,17 @@ exports.LongInt = LongInt
 
 if quicktest
   one = new LongInt 1
-  a = new LongInt -9950
+  a = new LongInt 9950
   a2 = a.times a
   a3 = a2.times a
   a3inc = a3.plus(one)
+  a3dec = a3.minus(one)
   log "(#{a}**3 + 1) / #{a}**2 = #{a3inc.div(a2)} (#{a3inc.mod(a2)})"
+  log ""
+  log "(#{a}**3 - 1) / #{a}**2 = #{a3dec.div(a2)} (#{a3dec.mod(a2)})"
+  log ""
+
+  b = new LongInt 111111111
+  c = new LongInt 37
+  log "#{b} / #{c} = #{b.div c} (#{b.mod c})"
+  log ""
