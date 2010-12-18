@@ -9,6 +9,7 @@ describe """If a, b and c are long integers with
   a = new LongInt -1e12 + 5001
   b = new LongInt 5001
   c = new LongInt 1e12 - 5000
+  one = new LongInt 1
 
   it "a should print as -999999994999", ->
     expect(a.toString()).toEqual '-999999994999'
@@ -74,3 +75,24 @@ describe """If a, b and c are long integers with
         999999979996000150060005499699940621500150020001""", ->
     expect((a.times a).times(a.times a).toString())
       .toEqual "999999979996000150060005499699940621500150020001"
+
+  it "(c * c * c) / (c * c) should print as c", ->
+    expect(c.times(c).times(c).div(c.times(c)).toString()).toEqual c.toString()
+
+  it "(c * c * c) % (c * c) should print as 0", ->
+    expect(c.times(c).times(c).mod(c.times(c)).toString()).toEqual "0"
+
+  it "(c * c * c + 1) / (c * c) should print as c", ->
+    expect(c.times(c).times(c).plus(one).div(c.times(c)).toString())
+      .toEqual c.toString()
+
+  it "(c * c * c + 1) % (c * c) should print as 1", ->
+    expect(c.times(c).times(c).plus(one).mod(c.times(c)).toString()).toEqual "1"
+
+  it "(c * c * c - 1) / (c * c) should print as c - 1", ->
+    expect(c.times(c).times(c).minus(one).div(c.times(c)).toString())
+      .toEqual c.minus(one).toString()
+
+  it "(c * c * c - 1) % (c * c) should print as c * c - 1", ->
+    expect(c.times(c).times(c).minus(one).mod(c.times(c)).toString())
+      .toEqual c.times(c).minus(one).toString()
