@@ -25,9 +25,11 @@ quicktest = process?.argv[0] == '--test'
 if quicktest
   [BASE, HALFBASE] = [10000, 100]
 
-  dump = (s) -> "[#{if s then s.toArray() else ''}]"
+  rdump = (s) -> "#{if s then s.toArray().join('|') else '[]'}"
+  dump = (s) -> rdump s?.reverse()
   log = (str) -> console.log str
 else
+  rdump = (s) ->
   dump = (s) ->
   log = (str) ->
 
@@ -106,27 +108,22 @@ div = (r, s) ->
   f = Math.floor BASE / (s.last() + 1)
   [r_, s_] = (streamTimesDigit(x, f) for x in [r, s])
   log "div(#{dump r}, #{dump s}): premultiplying by #{f}, divisor ~> #{dump s_}"
+  [m, d] = [s_.size(), s_.last() + 1]
 
-  step = (q, h, t, shift) ->
-    n = (h?.last() * if shift then BASE else 1) or 0
-    d = s_.last() + 1
+  step = (q, h, t) ->
+    n = (h?.last() * if h?.size() > m then BASE else 1) or 0
     f = (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
-    log "  step(#{dump q}, #{dump h}, #{dump t}, #{shift}) -- f = #{f}"
-    [q_, h_] = [add(q, new Stream(f)), sub(h, streamTimesDigit(s_, f))]
+    log "  step(#{dump q}, #{dump h}, #{rdump t}) -- f = #{f}"
 
-    if f and not shift
-      recur -> step(q_, h_, t, shift)
-    else if shift
-      recur -> step(q_, h_, t, false)
+    if f
+      recur -> step(add(q, new Stream(f)), sub(h, streamTimesDigit(s_, f)), t)
     else if t
-      [qn, hn] = [new Stream(0, -> q_), new Stream(t.first(), -> h_)]
-      recur -> step(qn, hn, t.rest(), h_.last() != 0)
+      recur -> step(new Stream(0, -> q), new Stream(t.first(), -> h), t.rest())
     else
-      log "  returning #{dump q_}"
-      q_
+      log "  returning #{dump cleanup q}"
+      cleanup q
 
-  m = r_.size() - s_.size()
-  resolve step(null, r_.drop(m), r_.take(m)?.reverse(), false)
+  resolve step(null, null, r_.reverse())
 
 
 # -- The glorious LongInt class
