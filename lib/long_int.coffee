@@ -102,30 +102,31 @@ mul = (r, a, b) ->
   else
     r
 
-divmod = (r, s) ->
+div = (r, s) ->
+  f = Math.floor BASE / (s.last() + 1)
+  [r_, s_] = (streamTimesDigit(x, f) for x in [r, s])
+  log "div(#{dump r}, #{dump s}): premultiplying by #{f}, divisor ~> #{dump s_}"
+
   step = (q, h, t, shift) ->
     n = (h?.last() * if shift then BASE else 1) or 0
-    d = s.last() + 1
-    f = (Math.floor n / d) or (if cmp(h, s) >= 0 then 1 else 0)
-    log "divmod step(#{dump(q)}, #{dump(h)}, #{dump(t)}, #{shift}) -- f = #{f}"
-    [q_, h_] = [add(q, new Stream(f)), sub(h, streamTimesDigit(s, f))]
+    d = s_.last() + 1
+    f = (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
+    log "  step(#{dump q}, #{dump h}, #{dump t}, #{shift}) -- f = #{f}"
+    [q_, h_] = [add(q, new Stream(f)), sub(h, streamTimesDigit(s_, f))]
 
     if f and not shift
       recur -> step(q_, h_, t, shift)
     else if shift
       recur -> step(q_, h_, t, false)
     else if t
-      recur -> step(
-        new Stream(0, -> q_),
-        new Stream(t.first(), -> h_),
-        t.rest(),
-        h_.last() != 0)
+      [qn, hn] = [new Stream(0, -> q_), new Stream(t.first(), -> h_)]
+      recur -> step(qn, hn, t.rest(), h_.last() != 0)
     else
-      log "  returning [#{dump(q_)},#{dump(h_)}]"
-      [q_, h_]
+      log "  returning #{dump q_}"
+      q_
 
-  m = r.size() - s.size()
-  resolve step(null, r.drop(m), r.take(m)?.reverse(), false)
+  m = r_.size() - s_.size()
+  resolve step(null, r_.drop(m), r_.take(m)?.reverse(), false)
 
 
 # -- The glorious LongInt class
@@ -180,16 +181,9 @@ class LongInt
     else if d == 0
       new LongInt(this.sign * other.sign)
     else
-      create(divmod(this.digits, other.digits)[0], this.sign * other.sign)
+      create(div(this.digits, other.digits), this.sign * other.sign)
 
-  mod: (other) ->
-    d = this.abs().cmp other.abs()
-    if d < 0
-      this
-    else if d == 0
-      ZERO
-    else
-      create(divmod(this.digits, other.digits)[1], this.sign)
+  mod: (other) -> this.minus(this.div(other).times(other))
 
   toString: ->
     zeroes = BASE.toString()[1..]
@@ -231,7 +225,7 @@ if quicktest
   log "(#{a}**3 - 1) / #{a}**2 = #{a3dec.div(a2)} (#{a3dec.mod(a2)})"
   log ""
 
-  b = new LongInt 111111111
+  b = new LongInt 111111112
   c = new LongInt 37
   log "#{b} / #{c} = #{b.div c} (#{b.mod c})"
   log ""
