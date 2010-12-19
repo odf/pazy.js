@@ -58,9 +58,17 @@ describe "A LongInt", ->
 
   it "can be taken to an integer power", ->
     expect(a.pow(5).toString()).toEqual '286797197645258138803977054387424399'
+    expect(a.pow(4).toString()).toEqual '23230573032496482275618623681'
 
   it "can be taken to a LongInt power", ->
-    expect(a.pow(5).toString()).toEqual '286797197645258138803977054387424399'
+    expect(a.pow(new LongInt 5).toString())
+      .toEqual '286797197645258138803977054387424399'
+    expect(a.pow(new LongInt 4).toString())
+      .toEqual '23230573032496482275618623681'
+
+  it "can be taken the square root of", ->
+    expect(a.sqrt().toString()).toEqual '3513'
+    expect(a.pow(4).sqrt().toString()).toEqual a.pow(2).toString()
 
 
 describe """If a, b and c are long integers with

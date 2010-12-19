@@ -22,15 +22,13 @@ quicktest = process?.argv[0] == '--test'
 
 # -- Setting the number base (maximal digit value - 1) and its square root
 
+rdump = (s) -> "#{if s then s.toArray().join('|') else '[]'}"
+dump = (s) -> rdump s?.reverse()
+
 if quicktest
   [BASE, HALFBASE] = [10000, 100]
-
-  rdump = (s) -> "#{if s then s.toArray().join('|') else '[]'}"
-  dump = (s) -> rdump s?.reverse()
   log = (str) -> console.log str
 else
-  rdump = (s) ->
-  dump = (s) ->
   log = (str) ->
 
   [BASE, HALFBASE] = Stream.from(1)
@@ -129,15 +127,24 @@ div = (r, s) ->
   resolve step(null, null, r_.reverse())
 
 pow = (r, s) ->
-  step = (p, s) ->
+  step = (p, r, s) ->
     if s
       if s.first() % 2 == 1
-        recur -> step(mul(p, r), sub(s, ONE))
+        recur -> step(mul(p, r), r, sub(s, ONE))
       else
-        recur -> step(mul(p, p), div(s, TWO))
+        recur -> step(p, mul(r, r), div(s, TWO))
     else
       p
-  resolve step(ONE, s)
+  resolve step(ONE, r, s)
+
+sqrt = (s) ->
+  step = (r) ->
+    rn = div(add(r, div(s, r)), TWO)
+    if cmp(r, rn)
+      recur -> step(rn)
+    else
+      rn
+  resolve step(s.take((s.size() + 1) >> 1))
 
 
 # -- The glorious LongInt class
@@ -237,6 +244,12 @@ class LongInt
       create(pow(this.digits__, other.digits__), this.sign())
     else
       throw new Error('exponent must not be negative')
+
+  @operator ['sqrt'], 1, ->
+    if @sign() > 0
+      create sqrt this.digits__
+    else
+      throw new Error('number must not be negative')
 
 
 # --------------------------------------------------------------------
