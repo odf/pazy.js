@@ -41,7 +41,8 @@ else
 # -- Useful constants
 
 ZERO = new Stream 0
-ONE = new Stream 1
+ONE  = new Stream 1
+TWO  = new Stream 2
 
 # -- Internal helper functions that operate on (streams of) digits/limbs
 
@@ -97,12 +98,14 @@ streamTimesDigit = (s, d, c = 0) ->
     [lo, hi] = digitTimesDigit(d, s_.first())
     new Stream(lo + c, -> streamTimesDigit(s_.rest(), d, hi))
 
-mul = (r, a, b) ->
-  if a
-    t = add(r, streamTimesDigit(b, a.first())) or ZERO
-    new Stream(t.first(), -> mul(t.rest(), a.rest(), b))
-  else
-    r
+mul = (a, b) ->
+  step = (r, a, b) ->
+    if a
+      t = add(r, streamTimesDigit(b, a.first())) or ZERO
+      new Stream(t.first(), -> step(t.rest(), a.rest(), b))
+    else
+      r
+  step null, a, b
 
 div = (r, s) ->
   f = Math.floor BASE / (s.last() + 1)
@@ -124,6 +127,17 @@ div = (r, s) ->
       cleanup q
 
   resolve step(null, null, r_.reverse())
+
+pow = (r, s) ->
+  step = (p, s) ->
+    if s
+      if s.first() % 2 == 1
+        recur -> step(mul(p, r), sub(s, ONE))
+      else
+        recur -> step(mul(p, p), div(s, TWO))
+    else
+      p
+  resolve step(ONE, s)
 
 
 # -- The glorious LongInt class
@@ -204,7 +218,7 @@ class LongInt
       create(sub(this.digits__, other.digits__), this.sign())
 
   @operator ['times', '*'], 2, (other) ->
-    create mul(null, this.digits__, other.digits__), this.sign() * other.sign()
+    create mul(this.digits__, other.digits__), this.sign() * other.sign()
 
   @operator ['div', '/'], 2, (other) ->
     d = this.abs().cmp other.abs()
@@ -217,6 +231,12 @@ class LongInt
 
   @operator ['mod', '%'], 2, (other) ->
     this.minus(this.div(other).times(other))
+
+  @operator ['pow', '**'], 2, (other) ->
+    if other.sign() > 0
+      create(pow(this.digits__, other.digits__), this.sign())
+    else
+      throw new Error('exponent must not be negative')
 
 
 # --------------------------------------------------------------------

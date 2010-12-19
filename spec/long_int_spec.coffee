@@ -56,6 +56,12 @@ describe "A LongInt", ->
   it "can be taken modulo another LongInt", ->
     expect(a.mod(new LongInt 343).toString()).toEqual '80'
 
+  it "can be taken to an integer power", ->
+    expect(a.pow(5).toString()).toEqual '286797197645258138803977054387424399'
+
+  it "can be taken to a LongInt power", ->
+    expect(a.pow(5).toString()).toEqual '286797197645258138803977054387424399'
+
 
 describe """If a, b and c are long integers with
             a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
