@@ -129,69 +129,39 @@ div = (r, s) ->
 # -- The glorious LongInt class
 
 class LongInt
+  @base: -> BASE
+
   constructor: (n = 0) ->
     make_digits = (m) ->
       if m then new Stream(m % BASE, -> make_digits(Math.floor m / BASE))
 
-    [m, @sign] = if n < 0 then [-n, -1] else [n, 1]
-    @digits = make_digits m
-
-  base: -> BASE
+    [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
+    @digits__ = make_digits m
 
   create = (digits, sign) ->
     n = new LongInt()
-    n.digits = digits
-    n.sign = sign
+    n.digits__ = digits
+    n.sign__ = sign
     n
 
-  neg: -> create(@digits, -@sign)
-
-  abs: -> create(@digits, 1)
-
-  cmp: (other) ->
-    if this.sign != other.sign
-      this.sign
+  convert = (x) ->
+    if x instanceof @constructor
+      x
+    else if typeof x == 'number'
+      new LongInt x
     else
-      this.sign * cmp(this.digits, other.digits)
-
-  plus: (other) ->
-    if this.sign != other.sign
-      this.minus other.neg()
-    else
-      create(add(this.digits, other.digits), this.sign)
-
-  minus: (other) ->
-    if this.sign != other.sign
-      this.plus other.neg()
-    else if this.abs().cmp(other.abs()) < 0
-      create(sub(other.digits, this.digits), -this.sign)
-    else
-      create(sub(this.digits, other.digits), this.sign)
-
-  times: (other) ->
-    create mul(null, this.digits, other.digits), this.sign * other.sign
-
-  div: (other) ->
-    d = this.abs().cmp other.abs()
-    if d < 0
-      new LongInt(0)
-    else if d == 0
-      new LongInt(this.sign * other.sign)
-    else
-      create(div(this.digits, other.digits), this.sign * other.sign)
-
-  mod: (other) -> this.minus(this.div(other).times(other))
+      throw new Error("#{x} is not a number")
 
   toString: ->
     zeroes = BASE.toString()[1..]
 
-    rev = @digits?.reverse()?.dropWhile (d) -> d == 0
+    rev = @digits__?.reverse()?.dropWhile (d) -> d == 0
     buf = [rev?.first().toString()]
     rev?.rest()?.each (d) ->
       t = d.toString()
       buf.push "#{zeroes[t.length..]}#{t}"
     if rev
-      buf.unshift '-' if @sign < 0
+      buf.unshift '-' if @sign() < 0
     else
       buf.push '0'
     buf.join('')
@@ -199,8 +169,54 @@ class LongInt
   toNumber: ->
     step = (n, s) ->
       if s then recur -> step(n * BASE + s.first(), s.rest()) else n
-    rev = @digits?.reverse()?.dropWhile (d) -> d == 0
-    @sign * resolve step(0, rev)
+    rev = @digits__?.reverse()?.dropWhile (d) -> d == 0
+    @sign() * resolve step(0, rev)
+
+  @operator: (names, arity, code) ->
+    f = (args...) -> code.apply(this, convert x for x in args[...arity-1])
+    @::[name] = f for name in names
+    null
+
+  @operator ['neg', '-'], 1, -> create(@digits__, -@sign())
+
+  @operator ['abs'], 1, -> create(@digits__, 1)
+
+  @operator ['sign'], 1, -> @sign__
+
+  @operator ['cmp', '<=>'], 2, (other) ->
+    if this.sign() != other.sign()
+      this.sign()
+    else
+      this.sign() * cmp(this.digits__, other.digits__)
+
+  @operator ['plus', '+'], 2, (other) ->
+    if this.sign() != other.sign()
+      this.minus other.neg()
+    else
+      create(add(this.digits__, other.digits__), this.sign())
+
+  @operator ['minus', '-'], 2, (other) ->
+    if this.sign() != other.sign()
+      this.plus other.neg()
+    else if this.abs().cmp(other.abs()) < 0
+      create(sub(other.digits__, this.digits__), -this.sign())
+    else
+      create(sub(this.digits__, other.digits__), this.sign())
+
+  @operator ['times', '*'], 2, (other) ->
+    create mul(null, this.digits__, other.digits__), this.sign() * other.sign()
+
+  @operator ['div', '/'], 2, (other) ->
+    d = this.abs().cmp other.abs()
+    if d < 0
+      new LongInt(0)
+    else if d == 0
+      new LongInt(this.sign() * other.sign())
+    else
+      create(div(this.digits__, other.digits__), this.sign() * other.sign())
+
+  @operator ['mod', '%'], 2, (other) ->
+    this.minus(this.div(other).times(other))
 
 
 # --------------------------------------------------------------------
@@ -211,18 +227,14 @@ exports ?= this.pazy ?= {}
 exports.LongInt = LongInt
 
 if quicktest
-  one = new LongInt 1
   a = new LongInt 9950
-  a2 = a.times a
-  a3 = a2.times a
-  a3inc = a3.plus(one)
-  a3dec = a3.minus(one)
-  log "(#{a}**3 + 1) / #{a}**2 = #{a3inc.div(a2)} (#{a3inc.mod(a2)})"
+  a2 = a['*'] a
+  a3 = a2['*'] a
+  log "(#{a}**3 + 1) / #{a}**2 = #{a3.plus(1).div a2} (#{a3.plus(1).mod a2})"
   log ""
-  log "(#{a}**3 - 1) / #{a}**2 = #{a3dec.div(a2)} (#{a3dec.mod(a2)})"
+  log "(#{a}**3 - 1) / #{a}**2 = #{a3.minus(1).div a2} (#{a3.minus(1).mod a2})"
   log ""
 
   b = new LongInt 111111112
-  c = new LongInt 37
-  log "#{b} / #{c} = #{b.div c} (#{b.mod c})"
+  log "#{b} / 37 = #{b.div 37} (#{b.mod 37})"
   log ""

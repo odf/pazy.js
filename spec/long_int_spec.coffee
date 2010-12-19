@@ -4,6 +4,59 @@ if typeof(require) != 'undefined'
 else
   { LongInt } = pazy
 
+
+describe "A LongInt", ->
+  a = new LongInt 12345679
+
+  it "can have its sign changed", ->
+    expect(a.neg().toString()).toEqual '-12345679'
+
+  it "can have its absolute value taken", ->
+    expect(a.abs().toString()).toEqual '12345679'
+    expect(a.neg().abs().toString()).toEqual '12345679'
+
+  it "can have its sign determined", ->
+    expect(a.sign()).toBe 1
+    expect(a.neg().sign()).toBe -1
+
+  it "can be compared with an integer", ->
+    expect(a.cmp(12345680)).toBeLessThan 0
+
+  it "can be compared with another LongInt", ->
+    expect(a.cmp(new LongInt 12345680)).toBeLessThan 0
+
+  it "can have an integer added to it", ->
+    expect(a.plus(87654320).toString()).toEqual '99999999'
+
+  it "can have another LongInt added to it", ->
+    expect(a.plus(new LongInt 87654320).toString()).toEqual '99999999'
+
+  it "can have an integer subtracted from it", ->
+    expect(a.minus(4445).toString()).toEqual '12341234'
+
+  it "can have another LongInt subtracted from it", ->
+    expect(a.minus(new LongInt 4445).toString()).toEqual '12341234'
+
+  it "can be multiplied with an integer", ->
+    expect(a.times(9000000009).toString()).toEqual '111111111111111111'
+
+  it "can be multiplied with another LongInt", ->
+    expect(a.times(new LongInt 9000000009).toString())
+      .toEqual '111111111111111111'
+
+  it "can be divided by an integer", ->
+    expect(a.div(343).toString()).toEqual '35993'
+
+  it "can be divided by another LongInt", ->
+    expect(a.div(new LongInt 343).toString()).toEqual '35993'
+
+  it "can be taken modulo an integer", ->
+    expect(a.mod(343).toString()).toEqual '80'
+
+  it "can be taken modulo another LongInt", ->
+    expect(a.mod(new LongInt 343).toString()).toEqual '80'
+
+
 describe """If a, b and c are long integers with
             a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
   a = new LongInt -1e12 + 5001
