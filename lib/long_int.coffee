@@ -138,13 +138,14 @@ pow = (r, s) ->
   resolve step(ONE, r, s)
 
 sqrt = (s) ->
-  step = (r) ->
-    rn = div(add(r, div(s, r)), TWO)
-    if cmp(r, rn)
-      recur -> step(rn)
-    else
-      rn
-  resolve step(s.take((s.size() + 1) >> 1))
+  n = s.size()
+  if n == 1
+    new Stream Math.floor Math.sqrt s.first()
+  else
+    step = (r) ->
+      rn = div(add(r, div(s, r)), TWO)
+      if cmp(r, rn) then recur -> step(rn) else rn
+    resolve step s.take n >> 1
 
 
 # -- The glorious LongInt class
