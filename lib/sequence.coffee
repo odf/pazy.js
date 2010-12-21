@@ -1,147 +1,153 @@
-{ recur, resolve } =
-  if typeof(require) != 'undefined'
-    require.paths.unshift __dirname
-    require('trampoline')
-  else
-    this.pazy
+if typeof(require) != 'undefined'
+  require.paths.unshift __dirname
+  { recur, resolve } = require('trampoline')
+else
+  { recur, resolve } = this.pazy
 
 
-extend = (base, mixin) -> base[key] = val for key, val of mixin
+lazyCons = (first, rest) ->
+  new Sequence {
+    first: -> first
+    rest:  -> rest()
+  }
 
-sequence = (seq) -> sequence.construct seq
-
-extend sequence, {
-  construct: (seq) ->
-    if seq instanceof Array
-      n = seq.length
-      partial = (i) => if i < n then @lazyCons seq[i], -> partial(i+1) else null
-      partial(0)
-    else if typeof seq.first == 'function' and typeof seq.rest == 'function'
-      seq
-    else if typeof seq.toSequence == 'function'
-      seq.toSequence()
-    else
-      throw new Error "argument #{seq} does not convert to a sequence"
-
-  lazyCons: (first, rest) ->
+streamCons = (first, rest) ->
+  new Sequence {
     first: -> first
     rest:  -> val = rest(); (@rest = -> val)()
+  }
 
-  take: (seq, n) ->
-    if seq and n > 0
-      @lazyCons seq.first(), => @take seq.rest(), n-1
+
+class Sequence
+  constructor: (source) ->
+    if source instanceof Array
+      n = source.length
+      partial = (i) =>
+        if i < n then lazyCons source[i], -> partial(i+1) else null
+      @first = -> source[0]
+      @rest  = -> partial(1)
+    else if typeof source.toSequence == 'function'
+      seq = source.toSequence()
+      @first = seq.first
+      @rest  = seq.rest
+    else
+      @first = source.first
+      @rest  = source.rest
+
+  take: (n) ->
+    if n > 0
+      lazyCons @first(), => @rest()?.take n-1
     else
       null
 
-  takeWhile: (seq, pred) ->
-    if seq and pred(seq.first())
-      @lazyCons seq.first(), => @takeWhile seq.rest(), pred
+  takeWhile: (pred) ->
+    if pred(@first())
+      lazyCons @first(), => @rest()?.takeWhile pred
     else
       null
 
-  drop: (seq, n) ->
+  drop: (n) ->
     step = (s, n) -> if s and n > 0 then recur -> step(s.rest(), n - 1) else s
-    resolve step(seq, n)
+    resolve step this, n
 
-  dropWhile: (seq, pred) ->
+  dropWhile: (pred) ->
     step = (s) -> if s and pred s.first() then recur -> step s.rest() else s
-    resolve step seq
+    resolve step this
 
-  get: (seq, n) -> @drop(seq, n)?.first() if n >= 0
+  get: (n) -> @drop(n)?.first() if n >= 0
 
-  select: (seq, pred) ->
-    if seq
-      if pred seq.first()
-        @lazyCons seq.first(), => @select seq.rest(), pred
-      else
-        @select @dropWhile(seq.rest(), (x) -> not pred x), pred
+  select: (pred) ->
+    if pred @first()
+      lazyCons @first(), => @rest()?.select pred
+    else if @rest()
+      @rest().dropWhile((x) -> not pred x)?.select pred
     else
       null
 
-  map: (seq, func) ->
-    if seq
-      @lazyCons func(seq.first()), => @map seq.rest(), func
+  find: (pred) -> @select(pred)?.first()
+
+  forall: (pred) -> not @find (x) -> not pred x
+
+  map: (func) -> lazyCons func(@first()), => @rest()?.map func
+
+  accumulate: (start, op) ->
+    first = op start, @first()
+    lazyCons first, => @rest()?.accumulate first, op
+
+  sums:     -> @accumulate(0, (a,b) -> a + b)
+  products: -> @accumulate(1, (a,b) -> a * b)
+
+  reduce: (start, op) -> @accumulate(start, op).last()
+
+  sum:     -> @reduce(0, (a,b) -> a + b)
+  product: -> @reduce(1, (a,b) -> a * b)
+
+  combine: (other, op) ->
+    lazyCons op(this.first(), other.first()), =>
+      if this.rest() and other.rest()
+        this.rest().combine other.rest(), op
+
+  plus:  (other) -> @combine(other, (a,b) -> a + b)
+  minus: (other) -> @combine(other, (a,b) -> a - b)
+  times: (other) -> @combine(other, (a,b) -> a * b)
+  by:    (other) -> @combine(other, (a,b) -> a / b)
+
+  equals: (other) ->
+    @combine(other, (a,b) -> a == b).reduce true, (a,b) -> a && b
+
+  merge: (other) ->
+    lazyCons @first(), => if other then other.merge @rest() else @rest()
+
+  lazyConcat: (next) ->
+    lazyCons @first(), => if @rest() then @rest().lazyConcat(next) else next()
+
+  concat: (other) -> @lazyConcat -> other
+
+  flatten: ->
+    if @first()
+      @first().lazyConcat => @rest()?.flatten()
+    else if @rest()
+      @rest().dropWhile((x) -> not x.first()).flatten()
     else
       null
 
-  combine: (seq, other, op) ->
-    if seq and other
-      @lazyCons op(seq.first(), other.first()), =>
-        @combine seq.rest(), other.rest(), op
-    else
-      null
+  flatMap: (func) -> @map(func).flatten()
 
-  plus:  (seq, other) -> @combine seq, other, (a,b) -> a + b
-  minus: (seq, other) -> @combine seq, other, (a,b) -> a - b
-  times: (seq, other) -> @combine seq, other, (a,b) -> a * b
-  by:    (seq, other) -> @combine seq, other, (a,b) -> a / b
+  cartesian: (other) -> @flatMap (a) -> other.map (b) -> [a,b]
 
-  accumulate: (seq, start, op) ->
-    if seq
-      first = op start, seq.first()
-      @lazyCons first, => @accumulate seq.rest(), first, op
-    else
-      null
+  toString: -> "Sequence(#{@first()}, ...)"
 
-  sums:     (seq) -> @accumulate(seq, 0, (a,b) -> a + b)
-  products: (seq) -> @accumulate(seq, 1, (a,b) -> a * b)
-
-  merge: (seq, other) ->
-    if seq
-      @lazyCons seq.first(), => @merge other, seq.rest()
-    else
-      other
-
-  lazyConcat: (seq, next) ->
-    if seq
-      @lazyCons seq.first(), => @lazyConcat seq.rest(), next
-    else
-      next()
-
-  concat: (seq, other) -> @lazyConcat seq, -> other
-
-  flatten: (seq) ->
-    if seq
-      if seq.first()
-        @lazyConcat seq.first(), => @flatten seq.rest()
-      else
-        @flatten @dropWhile(seq.rest(), (x) -> not x.first())
-    else
-      null
-
-  flatMap: (seq, func) -> @flatten @map seq, func
-
-  cartesian: (seq, other) -> @flatMap seq, (a) => @map other, (b) -> [a,b]
-
-  toString: (seq) ->
-    if seq then "(#{seq.first()}, ...)" else "()"
-
-  toArray: (seq) ->
+  toArray: ->
     buffer = []
-    @each seq, (x) -> buffer.push(x)
+    @each (x) -> buffer.push x
     buffer
 
-  each: (seq, func) ->
+  each: (func) ->
     step = (s) -> if s then func(s.first()); recur -> step(s.rest())
-    resolve step(seq)
+    resolve step this
 
-  reverse: (seq) ->
+  reverse: ->
     step = (r, s) =>
-      if s then recur => step(@lazyCons(s.first(), -> r), s.rest()) else r
-    resolve step(null, seq)
+      if s then recur => step lazyCons(s.first(), -> r), s.rest() else r
+    resolve step null, this
 
-  size: (seq) ->
+  stored: -> streamCons @first(), => @rest().stored()
+
+  @memo: (name, f) -> @::[name] = -> x = f.apply(this); (@[name] = -> x)()
+
+  @memo 'size', ->
     step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
-    resolve step seq, 0
+    resolve step this, 0
 
-  last: (seq) ->
+  @memo 'last', ->
     step = (s) -> if s.rest() then recur -> step s.rest() else s.first()
-    resolve step seq
+    resolve step this
 
-  from: (start) -> @lazyCons start, => @from start+1
+  @make: lazyCons
 
-  range: (start, end) -> @take @from(start), end - start + 1
-}
+  @from: (start) -> lazyCons start, => @from start+1
+
+  @range: (start, end) -> @from(start).take end - start + 1
 
 
 # --------------------------------------------------------------------
@@ -149,6 +155,4 @@ extend sequence, {
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.sequence = sequence
-
-console.log sequence.map sequence.range(101, 110), (n) -> n * n
+exports.Sequence = Sequence
