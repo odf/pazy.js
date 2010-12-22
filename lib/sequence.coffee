@@ -1,3 +1,10 @@
+# --------------------------------------------------------------------
+# A sequence class vaguely inspired by Clojure's sequences.
+#
+# Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# --------------------------------------------------------------------
+
+
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('trampoline')
@@ -21,27 +28,70 @@ class Sequence
       @first = source.first
       @rest  = source.rest
 
-  take: (n) ->
-    if n > 0
-      Sequence.conj @first(), => @rest()?.take n-1
+  @conj: (first, rest, mode) ->
+    r = rest() if mode == 'forced'
+    new Sequence {
+      first: -> first
+      rest:
+        switch mode
+          when 'stored' then -> val = rest(); (@rest = -> val)()
+          when 'forced' then -> r
+          else               -> rest()
+    }
+
+  @from: (start) -> Sequence.conj start, => @from start+1
+
+  @range: (start, end) -> @take__ @from(start), end - start + 1
+
+  @::S = this
+
+  @memo: (name, f) ->
+    @[name]        = (seq) -> f.call(this, new Sequence(seq))
+    @["#{name}__"] = (seq) -> f.call(this, seq)
+    @::[name]      = -> x = f.call(@S, this); (@[name] = -> x)()
+
+  @method: (name, f) ->
+    @[name]        = (seq, args...) -> f.call(this, new Sequence(seq), args...)
+    @["#{name}__"] = (seq, args...) -> f.call(this, seq, args...)
+    @::[name]      = (args...) -> f.call(@S, this, args...)
+
+  @operator: (name, f) ->
+    @[name]        = (seq, other, args...) ->
+      f(new Sequence(seq), new Sequence(other), args...)
+    @["#{name}__"] = (seq, other, args...) ->
+      f.call(this, seq, other, args...)
+    @::[name]      = (other, args...) ->
+      f.call(@S, this, new Sequence(other), args...)
+
+  @memo 'size', (seq) ->
+    step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
+    resolve step seq, 0
+
+  @memo 'last', (seq) ->
+    step = (s) -> if s.rest() then recur -> step s.rest() else s.first()
+    resolve step seq
+
+  @method 'take', (seq, n) ->
+    if seq and n > 0
+      Sequence.conj seq.first(), => @take__ seq.rest(), n-1
     else
       null
 
-  takeWhile: (pred) ->
-    if pred(@first())
-      Sequence.conj @first(), => @rest()?.takeWhile pred
+  @method 'takeWhile', (seq, pred) ->
+    if seq and pred(seq.first())
+      Sequence.conj seq.first(), => @takeWhile__ seq.rest(), pred
     else
       null
 
-  drop: (n) ->
+  @method 'drop', (seq, n) ->
     step = (s, n) -> if s and n > 0 then recur -> step(s.rest(), n - 1) else s
-    resolve step this, n
+    resolve step seq, n
 
-  dropWhile: (pred) ->
+  @method 'dropWhile', (seq, pred) ->
     step = (s) -> if s and pred s.first() then recur -> step s.rest() else s
-    resolve step this
+    resolve step seq
 
-  get: (n) -> @drop(n)?.first() if n >= 0
+  @method 'get', (seq, n) => @drop__(seq, n)?.first() if n >= 0
 
   select: (pred) ->
     if pred @first()
@@ -121,31 +171,6 @@ class Sequence
   stored: -> Sequence.conj @first(), (=> @rest()?.stored()), 'stored'
 
   forced: -> Sequence.conj @first(), (=> @rest()?.forced()), 'forced'
-
-  @memo: (name, f) -> @::[name] = -> x = f.apply(this); (@[name] = -> x)()
-
-  @memo 'size', ->
-    step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
-    resolve step this, 0
-
-  @memo 'last', ->
-    step = (s) -> if s.rest() then recur -> step s.rest() else s.first()
-    resolve step this
-
-  @conj: (first, rest, mode) ->
-    r = rest() if mode == 'forced'
-    new Sequence {
-      first: -> first
-      rest:
-        switch mode
-          when 'stored' then -> val = rest(); (@rest = -> val)()
-          when 'forced' then -> r
-          else               -> rest()
-    }
-
-  @from: (start) -> Sequence.conj start, => @from start+1
-
-  @range: (start, end) -> @from(start).take end - start + 1
 
 
 # --------------------------------------------------------------------
