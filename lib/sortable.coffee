@@ -11,10 +11,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('trampoline')
-  { List }           = require('list')
-  { Stream }         = require('stream')
+  { Sequence }       = require('sequence')
 else
-  { recur, resolve, List, Stream } = this.pazy
+  { recur, resolve, Sequence } = this.pazy
 
 
 class Sortable
@@ -29,11 +28,11 @@ class Sortable
       if bits % 2 > 0
         recur -> addSeg(merge(less, seg, segs.first()), segs.rest(), bits >> 1)
       else
-        new List(seg, segs)
+        Sequence.conj seg, (-> segs), 'forced'
 
     if arguments.length > 0
-      List.fromArray(arguments).reduce this, (s, x) ->
-        newSegs = resolve addSeg(new Stream(x), s.segs, s.size())
+      Sequence.reduce arguments, this, (s, x) ->
+        newSegs = resolve addSeg(Sequence.conj(x), s.segs, s.size())
         new Sortable(less, s.size() + 1, newSegs)
     else
       this
@@ -42,9 +41,9 @@ class Sortable
 
   merge = (less, xs, ys) ->
     if xs and (not ys or less(xs.first(), ys.first()))
-      new Stream(xs.first(), -> merge(less, xs.rest(), ys))
+      Sequence.conj xs.first(), (-> merge(less, xs.rest(), ys)), 'stored'
     else if ys
-      new Stream(ys.first(), -> merge(less, xs, ys.rest()))
+      Sequence.conj ys.first(), (-> merge(less, xs, ys.rest())), 'stored'
 
 
 # --------------------------------------------------------------------

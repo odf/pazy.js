@@ -8,10 +8,9 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Stream } = require('stream')
-  { List }   = require('list')
+  { Sequence } = require('sequence')
 else
-  { Stream, List } = this.pazy
+  { Sequence } = this.pazy
 
 
 class Queue
@@ -25,10 +24,14 @@ class Queue
       @front = @rear = @schedule = null
 
   rotate = (f, r, a) ->
-    a1 = new Stream(r.first(), -> a)
-    if f then new Stream(f.first(), -> rotate(f.rest(), r.rest(), a1)) else a1
+    a1 = Sequence.conj r.first(), (-> a), 'stored'
+    if f
+      Sequence.conj f.first(), (-> rotate f.rest(), r.rest(), a1), 'stored'
+    else
+      a1
 
-  push: (x) -> new Queue(@front, new List(x, @rear), @schedule)
+  push: (x) ->
+    new Queue(@front, Sequence.conj(x, (=> @rear), 'stored'), @schedule)
 
   first: -> @front?.first()
 
