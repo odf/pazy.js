@@ -16,9 +16,7 @@
 exports ?= this.pazy ?= {}
 
 exports.suspend = (code) ->
-  cache = [->
-    val = code()
-    cache[0] = -> val
+  val = null
+  ->
+    [val, code] = [code(); null] if code
     val
-  ]
-  -> cache[0]()
