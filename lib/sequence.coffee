@@ -93,64 +93,102 @@ class Sequence
 
   @method 'get', (seq, n) => @drop__(seq, n)?.first() if n >= 0
 
-  select: (pred) ->
-    if pred @first()
-      Sequence.conj @first(), => @rest()?.select pred
-    else if @rest()
-      @rest().dropWhile((x) -> not pred x)?.select pred
+  @method 'select', (seq, pred) ->
+    if seq and pred seq.first()
+      Sequence.conj seq.first(), => @select__ seq.rest(), pred
+    else if seq and seq.rest()
+      @select__ @dropWhile__(seq.rest(), (x) -> not pred x), pred
     else
       null
 
-  find: (pred) -> @select(pred)?.first()
+  @method 'find', (seq, pred) -> (@select__ seq, pred)?.first()
 
-  forall: (pred) -> not @find (x) -> not pred x
+  @method 'forall', (seq, pred) -> not @select__ seq, (x) -> not pred x
 
-  map: (func) -> Sequence.conj func(@first()), => @rest()?.map func
-
-  accumulate: (start, op) ->
-    first = op start, @first()
-    Sequence.conj first, => @rest()?.accumulate first, op
-
-  sums:     -> @accumulate(0, (a,b) -> a + b)
-  products: -> @accumulate(1, (a,b) -> a * b)
-
-  reduce: (start, op) -> @accumulate(start, op).last()
-
-  sum:     -> @reduce(0, (a,b) -> a + b)
-  product: -> @reduce(1, (a,b) -> a * b)
-
-  combine: (other, op) ->
-    Sequence.conj op(this.first(), other.first()), =>
-      if this.rest() and other.rest()
-        this.rest().combine other.rest(), op
-
-  plus:  (other) -> @combine(other, (a,b) -> a + b)
-  minus: (other) -> @combine(other, (a,b) -> a - b)
-  times: (other) -> @combine(other, (a,b) -> a * b)
-  by:    (other) -> @combine(other, (a,b) -> a / b)
-
-  equals: (other) ->
-    @combine(other, (a,b) -> a == b).reduce true, (a,b) -> a && b
-
-  merge: (other) ->
-    Sequence.conj @first(), => if other then other.merge @rest() else @rest()
-
-  lazyConcat: (next) ->
-    Sequence.conj @first(), => if @rest() then @rest().lazyConcat(next) else next()
-
-  concat: (other) -> @lazyConcat -> other
-
-  flatten: ->
-    if @first()
-      @first().lazyConcat => @rest()?.flatten()
-    else if @rest()
-      @rest().dropWhile((x) -> not x.first()).flatten()
+  @method 'map', (seq, func) ->
+    if seq
+      Sequence.conj func(seq.first()), => @map__ seq.rest(), func
     else
       null
 
-  flatMap: (func) -> @map(func).flatten()
+  @method 'accumulate', (seq, start, op) ->
+    if seq
+      first = op start, seq.first()
+      Sequence.conj first, => @accumulate__ seq.rest(), first, op
+    else
+      null
 
-  cartesian: (other) -> @flatMap (a) -> other.map (b) -> [a,b]
+  @method 'sums',     (seq) -> @accumulate__ seq, 0, (a,b) -> a + b
+  @method 'products', (seq) -> @accumulate__ seq, 1, (a,b) -> a * b
+
+  @method 'reduce', (seq, start, op) -> @accumulate__(seq, start, op).last()
+
+  @method 'sum',     (seq) -> @reduce__ seq, 0, (a,b) -> a + b
+  @method 'product', (seq) -> @reduce__ seq, 1, (a,b) -> a * b
+
+  @operator 'combine', (seq, other, op) ->
+    if seq and other
+      Sequence.conj op(seq.first(), other.first()), =>
+        if seq.rest() and other.rest()
+          @combine__ seq.rest(), other.rest(), op
+    else
+      null
+
+  @operator 'plus',  (seq, other) -> @combine__ seq, other, (a,b) -> a + b
+  @operator 'minus', (seq, other) -> @combine__ seq, other, (a,b) -> a - b
+  @operator 'times', (seq, other) -> @combine__ seq, other, (a,b) -> a * b
+  @operator 'div',   (seq, other) -> @combine__ seq, other, (a,b) -> a / b
+
+  @operator 'equals', (seq, other) ->
+    @combine__(seq, other, (a,b) -> a == b).reduce true, (a,b) -> a && b
+
+  @operator 'interleave', (seq, other) ->
+    if seq
+      Sequence.conj seq.first(), => @interleave__ other, seq.rest()
+    else
+      other
+
+  lazyConcat = (seq, next) ->
+    if seq
+      Sequence.conj seq.first(), -> lazyConcat seq.rest(), next
+    else
+      next()
+
+  @operator 'concat', (seq, other) -> lazyConcat seq, -> other
+
+  @method 'flatten', (seq) ->
+    if seq and seq.first()
+      lazyConcat new Sequence(seq.first()), => @flatten__ seq.rest()
+    else if seq and seq.rest()
+      @flatten__ @dropWhile__ seq.rest(), (x) -> not x.first()
+    else
+      null
+
+  @method 'flatMap', (seq, func) -> @flatten__ @map__ seq, func
+
+  @operator 'cartesian', (seq, other) ->
+    @flatMap__ seq, (a) => @map__ other, (b) -> [a,b]
+
+  @method 'each', (seq, func) ->
+    step = (s) -> if s then func(s.first()); recur -> step s.rest()
+    resolve step seq
+
+  @method 'reverse', (seq) ->
+    step = (r, s) =>
+      if s then recur => step Sequence.conj(s.first(), -> r), s.rest() else r
+    resolve step null, seq
+
+  @method 'stored', (seq) ->
+    if seq
+      Sequence.conj seq.first(), (=> @stored__ seq.rest()), 'stored'
+    else
+      null
+
+  @method 'forced', (seq) ->
+    if seq
+      Sequence.conj seq.first(), (=> @forced__ seq.rest()), 'forced'
+    else
+      null
 
   toString: -> "Sequence(#{@first()}, ...)"
 
@@ -158,19 +196,6 @@ class Sequence
     buffer = []
     @each (x) -> buffer.push x
     buffer
-
-  each: (func) ->
-    step = (s) -> if s then func(s.first()); recur -> step(s.rest())
-    resolve step this
-
-  reverse: ->
-    step = (r, s) =>
-      if s then recur => step Sequence.conj(s.first(), -> r), s.rest() else r
-    resolve step null, this
-
-  stored: -> Sequence.conj @first(), (=> @rest()?.stored()), 'stored'
-
-  forced: -> Sequence.conj @first(), (=> @rest()?.forced()), 'forced'
 
 
 # --------------------------------------------------------------------

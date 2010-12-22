@@ -132,8 +132,8 @@ describe "A sequence containing the first 10 triangle numbers", ->
     expect(s.times(s.reverse()).equals(t.concat(t.reverse()))).toBe true
 
   it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
-        when merged with the sequence 1,2,3,4""", ->
-    expect(s.merge(Sequence.range(1,4)).toArray())
+        when interleaved with the sequence 1,2,3,4""", ->
+    expect(s.interleave(Sequence.range(1,4)).toArray())
       .toEqual [1,1,3,2,6,3,10,4,15,21,28,36,45,55]
 
 describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
@@ -201,9 +201,9 @@ describe "The sequence of prime numbers", ->
   it "should have 997 as the largest element under 1000", ->
     expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
-  describe "when merged with the fibonacci numbers startin at 2", ->
+  describe "when interleaved with the fibonacci numbers startin at 2", ->
     fib = Sequence.conj 0, -> Sequence.conj 1, -> fib.rest().plus fib
-    seq = primes.merge fib.drop 3
+    seq = primes.interleave fib.drop 3
 
     it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
       expect(seq.take(12).toArray()).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
