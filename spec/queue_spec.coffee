@@ -1,14 +1,14 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { List } = require('list')
-  { Queue }  = require('queue')
+  { Sequence } = require('sequence')
+  { Queue }    = require('queue')
 else
-  { List } = pazy
-  { Queue }  = pazy
+  { Sequence } = pazy
+  { Queue }    = pazy
 
 
 describe "A queue with the elements 0 to 9", ->
-  queue = List.range(0, 9).reduce(new Queue(), (q, x) -> q.push(x))
+  queue = Sequence.reduce [0..9], new Queue(), (q, x) -> q.push(x)
 
   it "should start with a 0", ->
     expect(queue.first()).toBe 0
