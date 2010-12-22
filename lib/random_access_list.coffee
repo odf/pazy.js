@@ -14,13 +14,9 @@ if typeof(require) != 'undefined'
 else
   { recur, resolve, Sequence } = this.pazy
 
-class List
-  constructor: (car, cdr) ->
-    @[0] = car
-    @[1] = cdr
-
-  first: -> @[0]
-  rest: -> @[1]
+list = (car, cdr) ->
+  first: -> car
+  rest:  -> cdr
 
 
 class RandomAccessList
@@ -41,7 +37,7 @@ class RandomAccessList
         [1+w1+w2, [x,t1,t2], @trees.rest().rest()]
       else
         [1, [x], @trees]
-    new RandomAccessList(new List([w, t], r))
+    new RandomAccessList(list([w, t], r))
 
   first: -> @trees.first()[1][0] if @trees
 
@@ -52,7 +48,7 @@ class RandomAccessList
         if w == 1
           @trees.rest()
         else
-          new List([half(w), t1], new List([half(w), t2], @trees.rest()))
+          list([half(w), t1], list([half(w), t2], @trees.rest()))
       )
 
   lookup: (i) ->
@@ -92,18 +88,18 @@ class RandomAccessList
       else
         wh = half(w)
         if i-1 < wh
-          recur -> updateTree(new List([x, null, t2], r), wh, t1, i-1)
+          recur -> updateTree(list([x, null, t2], r), wh, t1, i-1)
         else
-          recur -> updateTree(new List([x, t1, null], r), wh, t2, i-1-wh)
+          recur -> updateTree(list([x, t1, null], r), wh, t2, i-1-wh)
 
     step = (r, s, i) =>
       if s
         [w, t] = s.first()
         if i < w
           newTree = resolve updateTree(null, w, t, i)
-          Sequence.reverse(new List([w, newTree], r)).concat(s.rest()).forced()
+          Sequence.reverse(list([w, newTree], r)).concat(s.rest()).forced()
         else
-          recur -> step(new List(s.first(), r), s.rest(), i - w)
+          recur -> step(list(s.first(), r), s.rest(), i - w)
       else
         throw new Error("index too large")
 

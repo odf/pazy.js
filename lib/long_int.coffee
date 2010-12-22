@@ -11,10 +11,10 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require 'trampoline'
-  { List }           = require 'list'
+  { Sequence }       = require 'sequence'
   { Stream }         = require 'stream'
 else
-  { recur, resolve, List, Stream } = this.pazy
+  { recur, resolve, Sequence, Stream } = this.pazy
 
 # -- Call with '--test' for some quick-and-dirty testing
 
@@ -42,6 +42,12 @@ ZERO = new Stream 0
 ONE  = new Stream 1
 TWO  = new Stream 2
 
+# -- Constructs a simple list
+
+list = (car, cdr) ->
+  first: -> car
+  rest:  -> cdr
+
 # -- Internal helper functions that operate on (streams of) digits/limbs
 
 cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
@@ -49,11 +55,11 @@ cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 cmp = (r, s) ->
   step = (diff, r, s) ->
     if r and s
-      recur -> step(new List(r.first() - s.first(), diff), r.rest(), s.rest())
+      recur -> step(list(r.first() - s.first(), diff), r.rest(), s.rest())
     else if r or s
       if r then 1 else -1
     else
-      diff.dropWhile((x) -> x == 0)?.first() or 0
+      Sequence.dropWhile(diff, ((x) -> x == 0))?.first() or 0
   resolve step null, r, s
 
 add = (r, s, c = 0) ->
