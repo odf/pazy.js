@@ -5,25 +5,12 @@ else
   { recur, resolve } = this.pazy
 
 
-lazyCons = (first, rest) ->
-  new Sequence {
-    first: -> first
-    rest:  -> rest()
-  }
-
-streamCons = (first, rest) ->
-  new Sequence {
-    first: -> first
-    rest:  -> val = rest(); (@rest = -> val)()
-  }
-
-
 class Sequence
   constructor: (source) ->
     if source instanceof Array
       n = source.length
       partial = (i) =>
-        if i < n then lazyCons source[i], -> partial(i+1) else null
+        if i < n then Sequence.conj source[i], -> partial(i+1) else null
       @first = -> source[0]
       @rest  = -> partial(1)
     else if typeof source.toSequence == 'function'
@@ -36,13 +23,13 @@ class Sequence
 
   take: (n) ->
     if n > 0
-      lazyCons @first(), => @rest()?.take n-1
+      Sequence.conj @first(), => @rest()?.take n-1
     else
       null
 
   takeWhile: (pred) ->
     if pred(@first())
-      lazyCons @first(), => @rest()?.takeWhile pred
+      Sequence.conj @first(), => @rest()?.takeWhile pred
     else
       null
 
@@ -58,7 +45,7 @@ class Sequence
 
   select: (pred) ->
     if pred @first()
-      lazyCons @first(), => @rest()?.select pred
+      Sequence.conj @first(), => @rest()?.select pred
     else if @rest()
       @rest().dropWhile((x) -> not pred x)?.select pred
     else
@@ -68,11 +55,11 @@ class Sequence
 
   forall: (pred) -> not @find (x) -> not pred x
 
-  map: (func) -> lazyCons func(@first()), => @rest()?.map func
+  map: (func) -> Sequence.conj func(@first()), => @rest()?.map func
 
   accumulate: (start, op) ->
     first = op start, @first()
-    lazyCons first, => @rest()?.accumulate first, op
+    Sequence.conj first, => @rest()?.accumulate first, op
 
   sums:     -> @accumulate(0, (a,b) -> a + b)
   products: -> @accumulate(1, (a,b) -> a * b)
@@ -83,7 +70,7 @@ class Sequence
   product: -> @reduce(1, (a,b) -> a * b)
 
   combine: (other, op) ->
-    lazyCons op(this.first(), other.first()), =>
+    Sequence.conj op(this.first(), other.first()), =>
       if this.rest() and other.rest()
         this.rest().combine other.rest(), op
 
@@ -96,10 +83,10 @@ class Sequence
     @combine(other, (a,b) -> a == b).reduce true, (a,b) -> a && b
 
   merge: (other) ->
-    lazyCons @first(), => if other then other.merge @rest() else @rest()
+    Sequence.conj @first(), => if other then other.merge @rest() else @rest()
 
   lazyConcat: (next) ->
-    lazyCons @first(), => if @rest() then @rest().lazyConcat(next) else next()
+    Sequence.conj @first(), => if @rest() then @rest().lazyConcat(next) else next()
 
   concat: (other) -> @lazyConcat -> other
 
@@ -128,10 +115,12 @@ class Sequence
 
   reverse: ->
     step = (r, s) =>
-      if s then recur => step lazyCons(s.first(), -> r), s.rest() else r
+      if s then recur => step Sequence.conj(s.first(), -> r), s.rest() else r
     resolve step null, this
 
-  stored: -> streamCons @first(), => @rest().stored()
+  stored: -> Sequence.conj @first(), (=> @rest()?.stored()), 'stored'
+
+  forced: -> Sequence.conj @first(), (=> @rest()?.forced()), 'forced'
 
   @memo: (name, f) -> @::[name] = -> x = f.apply(this); (@[name] = -> x)()
 
@@ -143,9 +132,18 @@ class Sequence
     step = (s) -> if s.rest() then recur -> step s.rest() else s.first()
     resolve step this
 
-  @make: lazyCons
+  @conj: (first, rest, mode) ->
+    r = rest() if mode == 'forced'
+    new Sequence {
+      first: -> first
+      rest:
+        switch mode
+          when 'stored' then -> val = rest(); (@rest = -> val)()
+          when 'forced' then -> r
+          else               -> rest()
+    }
 
-  @from: (start) -> lazyCons start, => @from start+1
+  @from: (start) -> Sequence.conj start, => @from start+1
 
   @range: (start, end) -> @from(start).take end - start + 1
 

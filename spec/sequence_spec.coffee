@@ -152,7 +152,7 @@ describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
     expect(s.toArray()).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
 
 describe "A sequence implementing the Fibonacci numbers", ->
-  s = (Sequence.make 0, -> Sequence.make 1, -> s.rest().plus s).stored()
+  s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().plus s).stored()
 
   it "should print as 'Sequence(0, ...)'", ->
     expect(s.toString()).toEqual "Sequence(0, ...)"
@@ -202,8 +202,52 @@ describe "The sequence of prime numbers", ->
     expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
   describe "when merged with the fibonacci numbers startin at 2", ->
-    fib = Sequence.make 0, -> Sequence.make 1, -> fib.rest().plus fib
+    fib = Sequence.conj 0, -> Sequence.conj 1, -> fib.rest().plus fib
     seq = primes.merge fib.drop 3
 
     it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
       expect(seq.take(12).toArray()).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
+
+describe "A forced sequence", ->
+  log = []
+  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x).forced()
+
+  it "should be executed completely before members are accessed", ->
+    expect(log).toEqual [0..9]
+
+  it "should contain the right values", ->
+    expect(s.toArray()).toEqual (x * x for x in [0..9])
+
+  it "should never be executed again", ->
+    expect(s.size()).toEqual 10
+    expect(log).toEqual [0..9]
+
+describe "A stored sequence", ->
+  log = []
+  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x).stored()
+
+  it "should only have the first member evaluated up front", ->
+    expect(log).toEqual [0]
+
+  it "should contain the right values", ->
+    expect(s.toArray()).toEqual (x * x for x in [0..9])
+
+  it "should not be executed more than once", ->
+    expect(s.last()).toEqual 81
+    expect(s.size()).toEqual 10
+    expect(log).toEqual [0..9]
+
+describe "A default sequence", ->
+  log = []
+  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x)
+
+  it "should only have the first member evaluated up front", ->
+    expect(log).toEqual [0]
+
+  it "should contain the right values", ->
+    expect(s.toArray()).toEqual (x * x for x in [0..9])
+
+  it "should be executed each time it is accessed", ->
+    expect(s.last()).toEqual 81
+    expect(s.size()).toEqual 10
+    expect(log.length).toBeGreaterThan 10
