@@ -10,9 +10,17 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('trampoline')
-  { List }           = require('list')
+  { Sequence }       = require('sequence')
 else
-  { recur, resolve, List } = this.pazy
+  { recur, resolve, Sequence } = this.pazy
+
+class List
+  constructor: (car, cdr) ->
+    @[0] = car
+    @[1] = cdr
+
+  first: -> @[0]
+  rest: -> @[1]
 
 
 class RandomAccessList
@@ -22,15 +30,15 @@ class RandomAccessList
     @::[name] = -> val = code.apply(this); (@[name] = -> val)()
 
   @cached 'size', ->
-    if @trees then @trees.reduce(0, (s, [w,t]) -> s + w) else 0
+    if @trees then Sequence.reduce(@trees, 0, (s, [w,t]) -> s + w) else 0
 
   half = (w) -> Math.floor w/2
 
   cons: (x) ->
     [w, t, r] =
-      if @trees?.rest() and @trees.get(0)[0] == @trees.get(1)[0]
-        [[w1, t1], [w2, t2]] = @trees.take(2).toArray()
-        [1+w1+w2, [x,t1,t2], @trees.drop(2)]
+      if @trees?.rest() and @trees.first()[0] == @trees.rest().first()[0]
+        [[w1, t1], [w2, t2]] = [@trees.first(), @trees.rest().first()]
+        [1+w1+w2, [x,t1,t2], @trees.rest().rest()]
       else
         [1, [x], @trees]
     new RandomAccessList(new List([w, t], r))
@@ -93,7 +101,7 @@ class RandomAccessList
         [w, t] = s.first()
         if i < w
           newTree = resolve updateTree(null, w, t, i)
-          new List([w, newTree], r).reverseConcat(s.rest())
+          Sequence.reverse(new List([w, newTree], r)).concat(s.rest()).forced()
         else
           recur -> step(new List(s.first(), r), s.rest(), i - w)
       else
