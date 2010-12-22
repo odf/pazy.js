@@ -13,22 +13,22 @@ else
 
 
 class Sequence
-  constructor: (source) ->
-    if source instanceof Array
-      n = source.length
-      partial = (i) =>
-        if i < n then Sequence.conj source[i], -> partial(i+1) else null
-      @first = -> source[0]
-      @rest  = -> partial(1)
-    else if typeof source.toSequence == 'function'
-      seq = source.toSequence()
+  constructor: (src) ->
+    if typeof src.sequence == 'function'
+      seq = src.sequence()
       @first = seq.first
       @rest  = seq.rest
-    else
-      @first = source.first
-      @rest  = source.rest
+    else if typeof src.first == 'function' and typeof src.rest == 'function'
+      @first = src.first
+      @rest  = src.rest
+    else if typeof src.length == 'number'
+      n = src.length
+      partial = (i) =>
+        if i < n then Sequence.conj src[i], -> partial(i+1) else null
+      @first = -> src[0]
+      @rest  = -> partial(1)
 
-  @conj: (first, rest, mode) ->
+  @conj: (first, rest = (-> null), mode = null) ->
     r = rest() if mode == 'forced'
     new Sequence {
       first: -> first
