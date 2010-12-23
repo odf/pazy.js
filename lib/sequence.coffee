@@ -14,7 +14,8 @@ else
 class Sequence
   constructor: (src) ->
     if not src?
-      throw new Error('use null for the empty sequence')
+      @first = ->
+      @rest  = -> null
     else if typeof src.sequence == 'function'
       seq = src.sequence()
       @first = -> seq.first()
@@ -29,7 +30,7 @@ class Sequence
       @first = -> src[0]
       @rest  = -> partial(1)
     else
-      throw new Error('cannot make a sequence from #{src}')
+      throw new Error("cannot make a sequence from #{src}")
 
   @conj: (first, rest = (-> null), mode = null) ->
     r = rest() if mode == 'forced'
@@ -47,7 +48,11 @@ class Sequence
 
   @::S = this
 
-  make = (seq) -> seq and new Sequence(seq)
+  make = (seq) ->
+    if seq and (res = new Sequence(seq)) and typeof res.first() != 'undefined'
+      res
+    else
+      null
 
   @memo: (name, f) ->
     @[name]        = (seq) -> f.call(this, make(seq))
@@ -159,7 +164,7 @@ class Sequence
 
   @method 'flatten', (seq) ->
     if seq and seq.first()
-      lazyConcat new Sequence(seq.first()), => @flatten__ seq.rest()
+      lazyConcat make(seq.first()), => @flatten__ seq.rest()
     else if seq and seq.rest()
       @flatten__ @dropWhile__ seq.rest(), (x) -> not x.first()
     else
