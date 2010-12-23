@@ -11,7 +11,6 @@ if typeof(require) != 'undefined'
 else
   { recur, resolve } = this.pazy
 
-
 class Sequence
   constructor: (src) ->
     if not src?
@@ -34,14 +33,13 @@ class Sequence
 
   @conj: (first, rest = (-> null), mode = null) ->
     r = rest() if mode == 'forced'
-    new Sequence {
+    new Sequence
       first: -> first
       rest:
         switch mode
           when 'stored' then -> val = rest(); (@rest = -> val)()
           when 'forced' then -> r
           else               -> rest()
-    }
 
   @from: (start) -> Sequence.conj start, => @from start+1
 
@@ -193,12 +191,24 @@ class Sequence
     else
       null
 
-  toString: -> "Sequence(#{@first()}, ...)"
+  @method 'into', (seq, target) ->
+    if not target?
+      @reduce__ seq, null, (s, item) -> Sequence.conj item, -> s
+    else if typeof target.plus == 'function'
+      @reduce__ seq, target, (s, item) -> s.plus item
+    else if typeof target.length == 'number'
+      a = (x for x in target)
+      @each__ seq, (x) -> a.push x
+      a
+    else
+      throw new Error('cannot inject into #{target}')
 
-  toArray: ->
-    buffer = []
-    @each (x) -> buffer.push x
-    buffer
+  toString: (limit = 10) ->
+    [s, more] = if limit > 0
+      [@take(limit), @get(limit)?]
+    else
+      [this, false]
+    '(' + s.into([]).join(', ') + if more then ', ...)' else ')'
 
 
 # --------------------------------------------------------------------

@@ -9,7 +9,7 @@ describe "A sequence made of the numbers 1 and 2", ->
   s = new Sequence [1, 2]
 
   it "should have the elements 1 and 2 in that order", ->
-    expect(s.toArray()).toEqual [1,2]
+    expect(s.into []).toEqual [1,2]
 
   it "should have size 2", ->
     expect(s.size()).toBe 2
@@ -20,11 +20,11 @@ describe "A sequence made of the numbers 1 and 2", ->
   it "should end with a 2", ->
     expect(s.last()).toBe 2
 
-  it "should print as 'Sequence(1, ...)'", ->
-    expect(s.toString()).toEqual "Sequence(1, ...)"
+  it "should print as '(1, 2)'", ->
+    expect(s.toString()).toEqual "(1, 2)"
 
   it "should print as '1,2' when converted to an array", ->
-    expect(s.toArray().toString()).toEqual "1,2"
+    expect(s.into([]).toString()).toEqual "1,2"
 
 
 describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
@@ -54,11 +54,11 @@ describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
   it "should be empty when five elements are dropped", ->
     expect(s.drop 5).toBe null
 
-  it "should print as Sequence(a, ...)", ->
-    expect(s.toString()).toEqual "Sequence(a, ...)"
+  it "should print as (a, s, d, f)", ->
+    expect(s.toString()).toEqual "(a, s, d, f)"
 
   it "should print as 'a,s,d,f' when converted to an array", ->
-    expect(s.toArray().toString()).toEqual "a,s,d,f"
+    expect(s.into([]).toString()).toEqual "a,s,d,f"
 
   describe "when reversed", ->
     r = s.reverse()
@@ -78,11 +78,11 @@ describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
     it "should have an 's' at the third position", ->
       expect(r.get 2).toBe 's'
 
-    it "should print as Sequence(f, ...)", ->
-      expect(r.toString()).toEqual "Sequence(f, ...)"
+    it "should print as (f, d, s, a)", ->
+      expect(r.toString()).toEqual "(f, d, s, a)"
 
     it "should print as 'f,d,s,a' when converted to an array", ->
-      expect(r.toArray().toString()).toEqual "f,d,s,a"
+      expect(r.into([]).toString()).toEqual "f,d,s,a"
 
   describe "when appended to its own reverse", ->
     t = s.reverse().concat s
@@ -91,7 +91,7 @@ describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
       expect(t.size()).toBe 8
 
     it "should contain the elements f,d,s,a,a,s,d,f in that order", ->
-      expect(t.toArray()).toEqual ['f', 'd', 's', 'a', 'a', 's', 'd', 'f']
+      expect(t.into []).toEqual ['f', 'd', 's', 'a', 'a', 's', 'd', 'f']
 
 describe "A sequence containing the squares of the numbers from 101 to 110", ->
   s = Sequence.range(101, 110).map (n) -> n * n
@@ -112,10 +112,10 @@ describe "A sequence containing the squares of the numbers from 101 to 110", ->
     expect(s.select((n) -> n % 2 == 1).size()).toBe 5
 
   it "should produce the partial seq 10201, 10404, 10609 on take(3)", ->
-    expect(s.take(3).toArray()).toEqual [10201, 10404, 10609]
+    expect(s.take(3).into []).toEqual [10201, 10404, 10609]
 
   it "should produce a sequence of 4 elements smaller than 11000", ->
-    expect(s.takeWhile((n) -> n < 11000).toArray())
+    expect(s.takeWhile((n) -> n < 11000).into [])
       .toEqual [10201, 10404, 10609, 10816]
 
 describe "A sequence containing the first 10 triangle numbers", ->
@@ -133,7 +133,7 @@ describe "A sequence containing the first 10 triangle numbers", ->
 
   it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
         when interleaved with the sequence 1,2,3,4""", ->
-    expect(s.interleave(Sequence.range(1,4)).toArray())
+    expect(s.interleave(Sequence.range(1,4)).into [])
       .toEqual [1,1,3,2,6,3,10,4,15,21,28,36,45,55]
 
 describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
@@ -149,16 +149,16 @@ describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
     expect(s.last()).toEqual [2,3]
 
   it "should contain the expected elements", ->
-    expect(s.toArray()).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
+    expect(s.into []).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
 
 describe "A sequence implementing the Fibonacci numbers", ->
   s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().plus s).stored()
 
-  it "should print as 'Sequence(0, ...)'", ->
-    expect(s.toString()).toEqual "Sequence(0, ...)"
+  it "should print as '(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)'", ->
+    expect(s.toString()).toEqual "(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)"
 
   it "should start with the numbers 0, 1, 1, 2, 3, 5, 8, 13, 21 and 34", ->
-    expect(s.take(10).toArray()).toEqual [0,1,1,2,3,5,8,13,21,34]
+    expect(s.take(10).into []).toEqual [0,1,1,2,3,5,8,13,21,34]
 
   it "should have 102334155 at position 40", ->
     expect(s.get(40)).toBe 102334155
@@ -171,14 +171,14 @@ describe "A sequence implementing the Fibonacci numbers", ->
 
   it "should have 0, 2, 8, 34, 144, 610 and 2584 as the first even elements", ->
     result = [0, 2, 8, 34, 144, 610, 2584]
-    expect(s.select((n) -> n % 2 == 0).take(7).toArray()).toEqual result
+    expect(s.select((n) -> n % 2 == 0).take(7).into []).toEqual result
 
   it "should have the first partial sums 0, 1, 2, 4, 7, 12, 20 and 33", ->
-    expect(s.sums().take(8).toArray()).toEqual [0,1,2,4,7,12,20,33]
+    expect(s.sums().take(8).into []).toEqual [0,1,2,4,7,12,20,33]
 
   it "should have the first partial products 1, 1, 2, 6, 30, 240 and 3120", ->
     result = [1, 1, 2, 6, 30, 240, 3120]
-    expect(s.rest().products().take(7).toArray()).toEqual result
+    expect(s.rest().products().take(7).into []).toEqual result
 
   it "should have 45 elements under a billion", ->
     expect(s.takeWhile((n) -> n < 1000000000).size()).toBe 45
@@ -187,7 +187,7 @@ describe "A sequence implementing the Fibonacci numbers", ->
     pairs = s.combine(s.rest(), (a, b) -> [a, b])
 
     it "should start with the pairs (0,1), (1,1), (1,2) and (2,3)", ->
-      expect(pairs.take(4).toArray()).toEqual [[0,1], [1,1], [1,2], [2,3]]
+      expect(pairs.take(4).into []).toEqual [[0,1], [1,1], [1,2], [2,3]]
 
 describe "The sequence of prime numbers", ->
   isPrime = (n) ->
@@ -196,7 +196,7 @@ describe "The sequence of prime numbers", ->
   primes = Sequence.from(2).select(isPrime).stored()
 
   it "should start with the number 2, 3, 5, 7, 11, 13, 17, 19, 23 and 29", ->
-    expect(primes.take(10).toArray()).toEqual [2,3,5,7,11,13,17,19,23,29]
+    expect(primes.take(10).into []).toEqual [2,3,5,7,11,13,17,19,23,29]
 
   it "should have 997 as the largest element under 1000", ->
     expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
@@ -206,7 +206,7 @@ describe "The sequence of prime numbers", ->
     seq = primes.interleave fib.drop 3
 
     it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
-      expect(seq.take(12).toArray()).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
+      expect(seq.take(12).into []).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
 
 describe "A forced sequence", ->
   log = []
@@ -216,7 +216,7 @@ describe "A forced sequence", ->
     expect(log).toEqual [0..9]
 
   it "should contain the right values", ->
-    expect(s.toArray()).toEqual (x * x for x in [0..9])
+    expect(s.into []).toEqual (x * x for x in [0..9])
 
   it "should never be executed again", ->
     expect(s.size()).toEqual 10
@@ -230,7 +230,7 @@ describe "A stored sequence", ->
     expect(log).toEqual [0]
 
   it "should contain the right values", ->
-    expect(s.toArray()).toEqual (x * x for x in [0..9])
+    expect(s.into []).toEqual (x * x for x in [0..9])
 
   it "should not be executed more than once", ->
     expect(s.last()).toEqual 81
@@ -245,7 +245,7 @@ describe "A default sequence", ->
     expect(log).toEqual [0]
 
   it "should contain the right values", ->
-    expect(s.toArray()).toEqual (x * x for x in [0..9])
+    expect(s.into []).toEqual (x * x for x in [0..9])
 
   it "should be executed each time it is accessed", ->
     expect(s.last()).toEqual 81
