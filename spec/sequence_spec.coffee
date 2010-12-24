@@ -251,3 +251,9 @@ describe "A default sequence", ->
     expect(s.last()).toEqual 81
     expect(s.size()).toEqual 10
     expect(log.length).toBeGreaterThan 10
+
+describe "An array of arrays, with empty ones and nulls mixed in", ->
+  a = [[1,2,3],[],[4],null,[5,6],[7,[8,9]]]
+
+  it "should produce the correct result when flattened", ->
+    expect(Sequence.flatten(a).into []).toEqual [1,2,3,4,5,6,7,[8,9]]

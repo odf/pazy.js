@@ -46,28 +46,28 @@ class Sequence
 
   @range: (start, end) -> @take__ @from(start), end - start + 1
 
-  @::S = this
-
   make = (seq) ->
-    if seq and (res = new Sequence(seq)) and typeof res.first() != 'undefined'
-      res
-    else
-      null
+    if seq and (res = new Sequence(seq)) and not res.empty() then res else null
+
+  @::S__ = this
 
   @memo: (name, f) ->
     @[name]        = (seq) -> f.call(this, make(seq))
     @["#{name}__"] = (seq) -> f.call(this, seq)
-    @::[name]      =       -> x = f.call(@S, this); (@[name] = -> x)()
+    @::[name]      =       -> x = f.call(@S__, this); (@[name] = -> x)()
 
   @method: (name, f) ->
     @[name]        = (seq, args...) -> f.call(this, make(seq), args...)
     @["#{name}__"] = (seq, args...) -> f.call(this, seq, args...)
-    @::[name]      = (args...)      -> f.call(@S, this, args...)
+    @::[name]      = (args...)      -> f.call(@S__, this, args...)
 
   @operator: (name, f) ->
     @[name]        = (seq, other, args...) -> f(make(seq), make(other), args...)
     @["#{name}__"] = (seq, other, args...) -> f.call(this, seq, other, args...)
-    @::[name]      = (other, args...) -> f.call(@S, this, make(other), args...)
+    @::[name]      = (other, args...) -> f.call(@S__, this, make(other), args...)
+
+  @method 'empty', (seq) ->
+    not seq? or typeof seq.first() == 'undefined'
 
   @memo 'size', (seq) ->
     step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
@@ -166,7 +166,7 @@ class Sequence
     if seq and seq.first()
       lazyConcat make(seq.first()), => @flatten__ seq.rest()
     else if seq and seq.rest()
-      @flatten__ @dropWhile__ seq.rest(), (x) -> not x.first()
+      @flatten__ @dropWhile__(seq.rest(), (x) -> not make(x)?.first())
     else
       null
 
