@@ -9,7 +9,7 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require('trampoline')
+  { recur, resolve } = require('functional')
   { Sequence }       = require('sequence')
 else
   { recur, resolve, Sequence } = this.pazy

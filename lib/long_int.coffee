@@ -10,7 +10,7 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require 'trampoline'
+  { recur, resolve } = require 'functional'
   { Sequence }       = require 'sequence'
   { Stream }         = require 'stream'
 else
@@ -173,7 +173,7 @@ class LongInt
     n
 
   convert = (x) ->
-    if x instanceof @constructor
+    if x instanceof LongInt
       x
     else if typeof x == 'number'
       new LongInt x
