@@ -231,7 +231,7 @@ describe "A HashSet", ->
         expect(h.size()).toBeGreaterThan 0
 
       it "should return true for the remaining keys", ->
-        expect(h.contains(key)).toBe true for key in keys when not key in ex_keys
+        expect(h.contains(key)).toBe true for key in keys when key not in ex_keys
 
       it "should return false for the removed keys", ->
         expect(h.contains(key)).toBe false for key in ex_keys

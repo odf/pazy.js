@@ -199,7 +199,7 @@ describe "A HashMap", ->
         expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the associated values for the remaining keys", ->
-        expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
+        expect(h.get(key)).toBe key.value for key in keys when key not in ex_keys
 
       it "should not return anything for the removed keys", ->
         expect(h.get(key)).not.toBeDefined() for key in ex_keys
@@ -256,7 +256,7 @@ describe "A HashMap", ->
         expect(h.size()).toBeGreaterThan 0
 
       it "should retrieve the original values for the untouched keys", ->
-        expect(h.get(key)).toBe key.value for key in keys when not key in ex_keys
+        expect(h.get(key)).toBe key.value for key in keys when key not in ex_keys
 
       it "should return the new values for the modified keys", ->
         expect(h.get(key)).toBe key.value.toString() for key in ex_keys
