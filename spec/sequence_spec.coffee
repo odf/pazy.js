@@ -5,6 +5,125 @@ else
   { Sequence } = this.pazy
 
 
+describe "An empty sequence created with the new operator", ->
+  s = new Sequence(null)
+
+  it "should have no first element", ->
+    expect(s.first()).toBe undefined
+
+  it "should have rest null", ->
+    expect(s.rest()).toBe null
+
+  it "should be empty", ->
+    expect(s.empty()).toBe true
+
+  it "should have length 0", ->
+    expect(s.size()).toBe 0
+
+  it "should return undefined when asked for its last element", ->
+    expect(s.last()).toBe undefined
+
+  it "should return null when asked for its leading two-element sublist", ->
+    expect(s.take 2).toBe null
+
+  it "should return null when takeWhile is applied", ->
+    expect(s.takeWhile (x) -> true).toBe null
+
+  it "should return null when asked to drop zero elements", ->
+    expect(s.drop 0).toBe null
+
+  it "should return null when asked to drop two elements", ->
+    expect(s.drop 2).toBe null
+
+  it "should return null when dropWhile is applied", ->
+    expect(s.dropWhile (x) -> false).toBe null
+
+  it "should return undefined when asked to grab any element by an index", ->
+    expect(s.get i).toBe undefined for i in [-1..2]
+
+  it "should return null when anything is selected", ->
+    expect(s.select (x) -> true).toBe null
+
+  it "should return undefined on find", ->
+    expect(s.find (x) -> true).toBe undefined
+
+  it "should return true on forall", ->
+    expect(s.forall (x) -> true).toBe true
+
+  it "should return null on map", ->
+    expect(s.map (x) -> x * x).toBe null
+
+  it "should return null on accumulate", ->
+    expect(s.accumulate (s, x) -> s * x).toBe null
+
+  it "should return null on sums", ->
+    expect(s.sums()).toBe null
+
+  it "should return 0 on sum", ->
+    expect(s.sum()).toBe 0
+
+  it "should return 0 on product", ->
+    expect(s.product()).toBe 1
+
+  it "should return null when combined with another sequence", ->
+    expect(s.combine [1..5], (a, b) -> a + b).toBe null
+
+  it "should return null when added to another sequence", ->
+    expect(s.add [1..5]).toBe null
+
+  it "should test equal to any other empty sequence", ->
+    expect(s.equals null).toBe true
+    expect(s.equals new Sequence()).toBe true
+    expect(s.equals []).toBe true
+
+  it "should reproduce any sequence it is interleaved with", ->
+    expect(s.interleave([1..5]).into []).toEqual [1..5]
+    expect(Sequence.interleave([1..5], s).into []).toEqual [1..5]
+
+  it "should reproduce any sequence it is concatenated with", ->
+    expect(s.concat([1..5]).into []).toEqual [1..5]
+    expect(Sequence.concat([1..5], s).into []).toEqual [1..5]
+
+  it "should return null on flatten", ->
+    expect(s.flatten()).toEqual null
+
+  it "should be skipped over when flattening", ->
+    expect(Sequence.flatten([[1,2], s, [3,4], s, [5,6]]).into []).toEqual [1..6]
+
+  it "should have null as its cartesian product with any other sequence", ->
+    expect(s.cartesian [1..5]).toBe null
+
+  it "should not pass any elements into a function applied via each", ->
+    log = []
+    s.each (x) -> log.push x
+    expect(log).toEqual []
+
+  it "should return null when reversed", ->
+    expect(s.reverse()).toBe null
+
+  it "should return null on stored", ->
+    expect(s.stored()).toBe null
+
+  it "should return null on forced", ->
+    expect(s.forced()).toBe null
+
+  it "should leave any empty sequences empty when injected into them", ->
+    class List
+      constructor: (car, cdr) ->
+        @first = -> car
+        @rest  = -> cdr
+        empty = typeof(car) == 'undefined'
+        @empty = -> empty
+      plus:  (x) -> new List(x, this)
+
+    expect(s.into []).toEqual []
+    expect(s.into null).toBe null
+    expect(s.into(new List()).empty()).toBe true
+
+  it "should print as ()", ->
+    expect(s.toString()).toEqual '()'
+
+
 describe "A sequence made of the numbers 1 and 2", ->
   s = new Sequence [1, 2]
 
@@ -129,7 +248,7 @@ describe "A sequence containing the first 10 triangle numbers", ->
 
   it "should produce the correct sequence when multiplied with its reverse", ->
     t = new Sequence [55,135,216,280,315]
-    expect(s.times(s.reverse()).equals(t.concat(t.reverse()))).toBe true
+    expect(s.mul(s.reverse()).equals(t.concat(t.reverse()))).toBe true
 
   it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
         when interleaved with the sequence 1,2,3,4""", ->
@@ -152,7 +271,7 @@ describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
     expect(s.into []).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
 
 describe "A sequence implementing the Fibonacci numbers", ->
-  s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().plus s).stored()
+  s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().add s).stored()
 
   it "should print as '(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)'", ->
     expect(s.toString()).toEqual "(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)"
@@ -202,7 +321,7 @@ describe "The sequence of prime numbers", ->
     expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
   describe "when interleaved with the fibonacci numbers startin at 2", ->
-    fib = Sequence.conj 0, -> Sequence.conj 1, -> fib.rest().plus fib
+    fib = Sequence.conj 0, -> Sequence.conj 1, -> fib.rest().add fib
     seq = primes.interleave fib.drop 3
 
     it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->

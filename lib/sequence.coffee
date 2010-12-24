@@ -62,7 +62,8 @@ class Sequence
     @::[name]      = (args...)      -> f.call(@S__, this, args...)
 
   @operator: (name, f) ->
-    @[name]        = (seq, other, args...) -> f(make(seq), make(other), args...)
+    @[name]        = (seq, other, args...) ->
+                       f.call(this, make(seq), make(other), args...)
     @["#{name}__"] = (seq, other, args...) -> f.call(this, seq, other, args...)
     @::[name]      = (other, args...) -> f.call(@S__, this, make(other), args...)
 
@@ -71,38 +72,40 @@ class Sequence
 
   @memo 'size', (seq) ->
     step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
-    resolve step seq, 0
+    if @empty__ seq then 0 else resolve step seq, 0
 
   @memo 'last', (seq) ->
     step = (s) -> if s.rest() then recur -> step s.rest() else s.first()
-    resolve step seq
+    resolve step seq unless @empty__ seq
 
   @method 'take', (seq, n) ->
-    if seq and n > 0
-      Sequence.conj seq.first(), => @take__ seq.rest(), n-1
-    else
+    if @empty__(seq) or n <= 0
       null
+    else
+      Sequence.conj seq.first(), => @take__ seq.rest(), n-1
 
   @method 'takeWhile', (seq, pred) ->
-    if seq and pred(seq.first())
-      Sequence.conj seq.first(), => @takeWhile__ seq.rest(), pred
-    else
+    if @empty__(seq) or not pred(seq.first())
       null
+    else
+      Sequence.conj seq.first(), => @takeWhile__ seq.rest(), pred
 
   @method 'drop', (seq, n) ->
     step = (s, n) -> if s and n > 0 then recur -> step(s.rest(), n - 1) else s
-    resolve step seq, n
+    if @empty__(seq) then null else resolve step seq, n
 
   @method 'dropWhile', (seq, pred) ->
     step = (s) -> if s and pred s.first() then recur -> step s.rest() else s
-    resolve step seq
+    if @empty__(seq) then null else resolve step seq
 
   @method 'get', (seq, n) => @drop__(seq, n)?.first() if n >= 0
 
   @method 'select', (seq, pred) ->
-    if seq and pred seq.first()
+    if @empty__ seq
+      null
+    else if pred seq.first()
       Sequence.conj seq.first(), => @select__ seq.rest(), pred
-    else if seq and seq.rest()
+    else if seq.rest()
       @select__ @dropWhile__(seq.rest(), (x) -> not pred x), pred
     else
       null
@@ -112,47 +115,51 @@ class Sequence
   @method 'forall', (seq, pred) -> not @select__ seq, (x) -> not pred x
 
   @method 'map', (seq, func) ->
-    if seq
-      Sequence.conj func(seq.first()), => @map__ seq.rest(), func
-    else
+    if @empty__ seq
       null
+    else
+      Sequence.conj func(seq.first()), => @map__ seq.rest(), func
 
   @method 'accumulate', (seq, start, op) ->
-    if seq
+    if @empty__ seq
+      null
+    else
       first = op start, seq.first()
       Sequence.conj first, => @accumulate__ seq.rest(), first, op
-    else
-      null
 
   @method 'sums',     (seq) -> @accumulate__ seq, 0, (a,b) -> a + b
   @method 'products', (seq) -> @accumulate__ seq, 1, (a,b) -> a * b
 
-  @method 'reduce', (seq, start, op) -> @accumulate__(seq, start, op).last()
+  @method 'reduce', (seq, start, op) ->
+    if @empty__ seq
+      start
+    else
+      @accumulate__(seq, start, op).last()
 
   @method 'sum',     (seq) -> @reduce__ seq, 0, (a,b) -> a + b
   @method 'product', (seq) -> @reduce__ seq, 1, (a,b) -> a * b
 
   @operator 'combine', (seq, other, op) ->
-    if seq and other
+    if @empty__ seq or @empty__ other
+      null
+    else
       Sequence.conj op(seq.first(), other.first()), =>
         if seq.rest() and other.rest()
           @combine__ seq.rest(), other.rest(), op
-    else
-      null
 
-  @operator 'plus',  (seq, other) -> @combine__ seq, other, (a,b) -> a + b
-  @operator 'minus', (seq, other) -> @combine__ seq, other, (a,b) -> a - b
-  @operator 'times', (seq, other) -> @combine__ seq, other, (a,b) -> a * b
-  @operator 'div',   (seq, other) -> @combine__ seq, other, (a,b) -> a / b
+  @operator 'add', (seq, other) -> @combine__ seq, other, (a,b) -> a + b
+  @operator 'sub', (seq, other) -> @combine__ seq, other, (a,b) -> a - b
+  @operator 'mul', (seq, other) -> @combine__ seq, other, (a,b) -> a * b
+  @operator 'div', (seq, other) -> @combine__ seq, other, (a,b) -> a / b
 
   @operator 'equals', (seq, other) ->
-    @combine__(seq, other, (a,b) -> a == b).reduce true, (a,b) -> a && b
+    @reduce__ @combine__(seq, other, (a,b) -> a == b), true, (a,b) -> a && b
 
   @operator 'interleave', (seq, other) ->
-    if seq
-      Sequence.conj seq.first(), => @interleave__ other, seq.rest()
-    else
+    if @empty__ seq
       other
+    else
+      Sequence.conj seq.first(), => @interleave__ other, seq.rest()
 
   lazyConcat = (seq, next) ->
     if seq
@@ -160,12 +167,18 @@ class Sequence
     else
       next()
 
-  @operator 'concat', (seq, other) -> lazyConcat seq, -> other
+  @operator 'concat', (seq, other) ->
+    if @empty__ seq
+      other
+    else
+      lazyConcat seq, -> other
 
   @method 'flatten', (seq) ->
-    if seq and seq.first()
+    if @empty__ seq
+      null
+    else if seq.first()
       lazyConcat make(seq.first()), => @flatten__ seq.rest()
-    else if seq and seq.rest()
+    else if seq.rest()
       @flatten__ @dropWhile__(seq.rest(), (x) -> not make(x)?.first())
     else
       null
@@ -177,24 +190,24 @@ class Sequence
 
   @method 'each', (seq, func) ->
     step = (s) -> if s then func(s.first()); recur -> step s.rest()
-    resolve step seq
+    resolve step seq unless @empty__ seq
 
   @method 'reverse', (seq) ->
     step = (r, s) =>
       if s then recur => step Sequence.conj(s.first(), -> r), s.rest() else r
-    resolve step null, seq
+    if @empty__ seq then null else resolve step null, seq
 
   @method 'stored', (seq) ->
-    if seq
-      Sequence.conj seq.first(), (=> @stored__ seq.rest()), 'stored'
-    else
+    if @empty__ seq
       null
+    else
+      Sequence.conj seq.first(), (=> @stored__ seq.rest()), 'stored'
 
   @method 'forced', (seq) ->
-    if seq
-      Sequence.conj seq.first(), (=> @forced__ seq.rest()), 'forced'
-    else
+    if @empty__ seq
       null
+    else
+      Sequence.conj seq.first(), (=> @forced__ seq.rest()), 'forced'
 
   @method 'into', (seq, target) ->
     if not target?
@@ -213,7 +226,7 @@ class Sequence
       [@take(limit), @get(limit)?]
     else
       [this, false]
-    '(' + s.into([]).join(', ') + if more then ', ...)' else ')'
+    '(' + Sequence.into(s, []).join(', ') + if more then ', ...)' else ')'
 
 
 # --------------------------------------------------------------------
