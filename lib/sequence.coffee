@@ -25,10 +25,16 @@ class Sequence
       @rest  = -> src.rest()
     else if typeof src.length == 'number'
       n = src.length
-      partial = (i) =>
+      partial = (i) ->
+        i += 1 while i < n and typeof(src[i]) == 'undefined'
         if i < n then Sequence.conj src[i], -> partial(i+1) else null
-      @first = -> src[0]
-      @rest  = -> partial(1)
+      dummy = partial(0)
+      if dummy
+        @first = -> dummy.first()
+        @rest  = -> dummy.rest()
+      else
+        @first = ->
+        @rest  = -> null
     else
       throw new Error("cannot make a sequence from #{src}")
 

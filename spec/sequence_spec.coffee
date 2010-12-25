@@ -356,7 +356,7 @@ describe "A stored sequence", ->
     expect(s.size()).toEqual 10
     expect(log).toEqual [0..9]
 
-describe "A default sequence", ->
+describe "A sequence with default semantics", ->
   log = []
   s = Sequence.range(0, 9).map((x) -> log.push(x); x * x)
 
@@ -376,3 +376,11 @@ describe "An array of arrays, with empty ones and nulls mixed in", ->
 
   it "should produce the correct result when flattened", ->
     expect(Sequence.flatten(a).into []).toEqual [1,2,3,4,5,6,7,[8,9]]
+
+describe "An array with some holes in it", ->
+  a = [0..3]
+  a[6] = 6
+  delete a[0]
+
+  it "should be compacted when turned into a sequence", ->
+    expect(Sequence.into a, []).toEqual [1,2,3,6]
