@@ -56,8 +56,8 @@ describe "An IntMap", ->
       expect(a.length).toEqual 1
       expect(a).toContain([1337, 1])
 
-    it "should print as IntMap(LeafNode(1337, 1))", ->
-      expect(hash.toString()).toEqual('IntMap(LeafNode(1337, 1))')
+    it "should print as IntMap(1337 ~> 1)", ->
+      expect(hash.toString()).toEqual('IntMap(1337 ~> 1)')
 
     describe "the value of which is then changed", ->
       h = hash.plus([1337, "leet!"])

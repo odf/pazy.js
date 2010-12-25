@@ -22,12 +22,11 @@
 # You must not remove this notice, or any other, from this software.
 # --------------------------------------------------------------------
 
-{ Stream } =
-  if typeof(require) != 'undefined'
-    require.paths.unshift __dirname
-    require('stream')
-  else
-    this.pazy
+if typeof(require) != 'undefined'
+  require.paths.unshift __dirname
+  { Sequence } = require('sequence')
+else
+  { Sequence } = this.pazy
 
 
 # --------------------------------------------------------------------
@@ -36,10 +35,6 @@
 
 # A collection of utility functions used by interior nodes.
 util = {
-  find: (a, test) -> Stream.fromArray(a)?.select(test)?.first()
-
-  reduce: (a, step, init) -> Stream.fromArray(a)?.accumulate(init, step)?.last()
-
   arrayWith: (a, i, x) ->
     (if j == i then x else a[j]) for j in [0...a.length]
 
@@ -88,13 +83,13 @@ EmptyNode = {
 # A sparse interior node using a bitmap to indicate which of the
 # indices 0..31 are in use.
 class BitmapIndexedNode
-  constructor: (@bitmap, @progeny, @size) ->
-    unless @bitmap?
-      @bitmap  = 0
-      @progeny = []
-      @size    = 0
+  constructor: (bitmap, progeny, size) ->
+    [@bitmap, @progeny, @size] = if arguments.length == 0
+      [0, [], 0]
+    else
+      [bitmap, progeny, size]
 
-    @elements = Stream.fromArray(@progeny)?.flatMap (n) -> n?.elements
+    @elements = Sequence.flatMap @progeny, (n) -> n?.elements
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -148,7 +143,18 @@ class BitmapIndexedNode
     else
       new BitmapIndexedNode(newBitmap, newArray, newSize)
 
-  toString: -> "BitmapIndexedNode(#{@progeny.join(", ")})"
+  toString: (prefix = '') ->
+    pre = prefix + ' '
+    buf = []
+    for m in [0..31]
+      b = 1 << m
+      if (@bitmap & b) != 0
+        buf.push @progeny[util.indexForBit(@bitmap, b)].toString(pre)
+    if buf.length == 1
+      '{' + buf[0] + '}'
+    else
+      buf.unshift ''
+      '{' + buf.join('\n' + pre) + '}'
 
 
 # Special case of a sparse interior node which has exactly one descendant.
@@ -177,14 +183,17 @@ class ProxyNode
     else
       node
 
-  toString: -> "ProxyNode(#{@progeny})"
+  toString: (prefix = '') -> '.' + @progeny.toString(prefix + ' ')
 
 
 # A dense interior node with room for 32 entries.
 class ArrayNode
   constructor: (progeny, i, node, @size) ->
     @progeny  = util.arrayWith(progeny, i, node)
-    @elements = Stream.fromArray(@progeny)?.flatMap (n) -> n?.elements
+    @elements = Sequence.select(@progeny, (x) -> x).flatMap (n) -> n.elements
+
+    #TODO - why does this not work:
+    #@elements = Sequence.flatMap @progeny, (n) -> n?.elements
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -209,14 +218,20 @@ class ArrayNode
     else
       remaining = (j for j in [1...@progeny.length] when j != i and @progeny[j])
       if remaining.length <= 4
-        bitmap = util.reduce(remaining, ((b, j) -> b | (1 << j)), 0)
+        bitmap = Sequence.reduce(remaining, 0, (b, j) -> b | (1 << j))
         array  = (@progeny[j] for j in remaining)
         new BitmapIndexedNode(bitmap, array, @size - 1)
       else
         new ArrayNode(@progeny, i, null, @size - 1)
 
-  toString: -> "ArrayNode(#{(x for x in @progeny when x?).join(", ")})"
-
+  toString: (prefix = '') ->
+    pre = prefix + ' '
+    buf = (x.toString(pre) for x in @progeny when x?)
+    if buf.length == 1
+      '[' + buf[0] + ']'
+    else
+      buf.unshift ''
+      '[' + buf.join('\n' + pre) + ']'
 
 # --------------------------------------------------------------------
 # A common base class for all collection wrappers.
@@ -236,11 +251,11 @@ class Collection
 
   # Generic update method with support for multiple arguments
   update: (args, step) ->
-    newroot = util.reduce(args, step, @root)
+    newroot = Sequence.reduce(args, @root, step)
     if newroot != @root then new @constructor(newroot) else this
 
   # Returns the elements in this set as an array.
-  toArray: -> @entries?.toArray() or []
+  toArray: -> Sequence.into @entries, []
 
   # Returns a string representation of this collection.
   toString: -> "#{@constructor.name}(#{@root})"
@@ -253,7 +268,7 @@ class Collection
 # A leaf node containing a single integer.
 class IntLeaf
   constructor: (@key) ->
-    @elements = new Stream(@key)
+    @elements = Sequence.conj @key
 
   size: 1
 
@@ -264,14 +279,14 @@ class IntLeaf
 
   minus: (shift, key, data) -> null
 
-  toString: -> "LeafNode(#{@key})"
+  toString: -> "#{@key}"
 
 
 # The IntSet class.
 class IntSet extends Collection
   @name = "IntSet"
 
-  # Returns the elements as a stream
+  # Returns the elements as a sequence
   elements: -> @entries
 
   # Returns true or false depending on whether the given key is an
@@ -300,7 +315,7 @@ class IntSet extends Collection
 # A leaf node with an integer key and arbitrary value.
 class IntLeafWithValue
   constructor: (@key, @value) ->
-    @elements = new Stream([@key, @value])
+    @elements = Sequence.conj [@key, @value]
 
   size: 1
 
@@ -314,14 +329,14 @@ class IntLeafWithValue
 
   minus: (shift, key, data) -> null
 
-  toString: -> "LeafNode(#{@key}, #{@value})"
+  toString: -> "#{@key} ~> #{@value}"
 
 
 # The IntMap class is essentially a huge sparse array.
 class IntMap extends Collection
   @name = "IntMap"
 
-  # Returns the (key,value)-pairs as a stream
+  # Returns the (key,value)-pairs as a sequence
   items: -> @entries
 
   # Returns true or false depending on whether the given key is an
@@ -372,7 +387,7 @@ hashCode = (obj) ->
       catch ex
         Object::toString.call(obj)
 
-  util.reduce(stringVal, hashStep, 0)
+  Sequence.reduce(stringVal, 0, hashStep)
 
 areEqual = (obj1, obj2) ->
   if obj1? and typeof(obj1.equals) == "function"
@@ -389,10 +404,10 @@ class CollisionNode
   constructor: (@hash, @bucket) ->
     @bucket   = [] unless @bucket?
     @size     = @bucket.length
-    @elements = Stream.fromArray(@bucket)?.flatMap (n) -> n?.elements
+    @elements = Sequence.flatMap @bucket, (n) -> n?.elements
 
   get: (shift, hash, key) ->
-    leaf = util.find @bucket, (v) -> areEqual(v.key, key)
+    leaf = Sequence.find @bucket, (v) -> areEqual(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
   plus: (shift, hash, leaf) ->
@@ -406,10 +421,10 @@ class CollisionNode
   minus: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
-      when 2    then util.find @bucket, (v) -> not areEqual(v.key, key)
+      when 2    then Sequence.find @bucket, (v) -> not areEqual(v.key, key)
       else           new CollisionNode(hash, this.bucketWithout(key))
 
-  toString: -> "CollisionNode(#{@bucket.join(", ")})"
+  toString: -> "#{@bucket.join("|")}"
 
   bucketWithout: (key) ->
     item for item in @bucket when not areEqual(item.key, key)
@@ -422,7 +437,7 @@ class CollisionNode
 # A leaf node contains a single key and also caches its hash value.
 class HashLeaf
   constructor: (@hash, @key) ->
-    @elements = new Stream(@key)
+    @elements = Sequence.conj @key
 
   size: 1
 
@@ -437,7 +452,7 @@ class HashLeaf
 
   minus: (shift, hash, key) -> null
 
-  toString: -> "LeafNode(#{@key})"
+  toString: -> "#{@key}"
 
 
 # The HashSet class provides the public API and serves as a wrapper
@@ -445,7 +460,7 @@ class HashLeaf
 class HashSet extends Collection
   @name = "HashSet"
 
-  # Returns the elements as a stream
+  # Returns the elements as a sequence
   elements: -> @entries
 
   # Returns true or false depending on whether the given key is an
@@ -481,7 +496,7 @@ class HashSet extends Collection
 # hash value for the key.
 class HashLeafWithValue
   constructor: (@hash, @key, @value) ->
-    @elements = new Stream([@key, @value])
+    @elements = Sequence.conj [@key, @value]
 
   size: 1
 
@@ -499,7 +514,7 @@ class HashLeafWithValue
 
   minus: (shift, hash, key) -> null
 
-  toString: -> "LeafNode(#{@key}, #{@value})"
+  toString: -> "#{@key} ~> #{@value}"
 
 
 # The HashMap class provides the public API and serves as a wrapper
@@ -507,7 +522,7 @@ class HashLeafWithValue
 class HashMap extends Collection
   @name = "HashMap"
 
-  # Returns the (key,value)-pairs as a stream
+  # Returns the (key,value)-pairs as a sequence
   items: -> @entries
 
   # Retrieves the value associated with the given key, or nil if the

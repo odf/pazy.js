@@ -74,8 +74,8 @@ describe "A HashSet", ->
       expect(a.length).toEqual 1
       expect(a).toContain("first")
 
-    it "should print as HashSet(LeafNode(first))", ->
-      expect(hash.toString()).toEqual('HashSet(LeafNode(first))')
+    it "should print as HashSet(first)", ->
+      expect(hash.toString()).toEqual('HashSet(first)')
 
 
   describe "containing one item with custom hashCode() and equals()", ->
@@ -102,8 +102,8 @@ describe "A HashSet", ->
       expect(a.length).toEqual 1
       expect(a).toContain(key)
 
-    it "should print as HashSet(LeafNode(FunnyKey(33)))", ->
-      expect(hash.toString()).toEqual('HashSet(LeafNode(FunnyKey(33)))')
+    it "should print as HashSet(FunnyKey(33))", ->
+      expect(hash.toString()).toEqual('HashSet(FunnyKey(33))')
 
 
   describe "containing two items", ->
@@ -211,11 +211,11 @@ describe "A HashSet", ->
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(keys)
 
-    it "should return an element stream of the correct size", ->
+    it "should return an element sequence of the correct size", ->
       expect(hash.elements().size()).toEqual(hash.size())
 
-    it "should return a stream with all the keys on calling elements()", ->
-      expect(hash.elements().toArray().sort(FunnyKey.sorter)).toEqual(keys)
+    it "should return a sequence with all the keys on calling elements()", ->
+      expect(hash.elements().into([]).sort(FunnyKey.sorter)).toEqual(keys)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]

@@ -75,8 +75,8 @@ describe "A HashMap", ->
       expect(a.length).toEqual 1
       expect(a).toContain(["first", 1])
 
-    it "should print as HashMap(LeafNode(first, 1))", ->
-      expect(hash.toString()).toEqual('HashMap(LeafNode(first, 1))')
+    it "should print as HashMap(first ~> 1)", ->
+      expect(hash.toString()).toEqual('HashMap(first ~> 1)')
 
     describe "the value of which is then changed", ->
       h = hash.plus(["first", "one"])
@@ -179,11 +179,11 @@ describe "A HashMap", ->
     it "should contain all the items when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
-    it "should return an item stream of the correct size", ->
+    it "should return an item sequence of the correct size", ->
       expect(hash.items().size()).toEqual(hash.size())
 
-    it "should return a stream with all the keys on calling elements()", ->
-      expect(hash.items().toArray().sort(FunnyKey.sorter)).toEqual(items)
+    it "should return a sequence with all the keys on calling items()", ->
+      expect(hash.items().into([]).sort(FunnyKey.sorter)).toEqual(items)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]

@@ -56,8 +56,8 @@ describe "An IntSet", ->
       expect(a.length).toEqual 1
       expect(a).toContain(1337)
 
-    it "should print as IntSet(LeafNode(1337))", ->
-      expect(hash.toString()).toEqual('IntSet(LeafNode(1337))')
+    it "should print as IntSet(1337)", ->
+      expect(hash.toString()).toEqual('IntSet(1337)')
 
 
   describe "containing two items", ->
