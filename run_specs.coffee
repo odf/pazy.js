@@ -10,7 +10,7 @@ isVerbose = false
 showColors = true
 pattern = "_spec.coffee$"
 
-process.argv.forEach (arg) ->
+process.argv[2..].forEach (arg) ->
   switch arg
     when '--color'   then showColors = true
     when '--noColor' then showColors = false
