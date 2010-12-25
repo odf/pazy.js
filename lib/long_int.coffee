@@ -12,9 +12,8 @@ if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require 'functional'
   { Sequence }       = require 'sequence'
-  { Stream }         = require 'stream'
 else
-  { recur, resolve, Sequence, Stream } = this.pazy
+  { recur, resolve, Sequence } = this.pazy
 
 # -- Call with '--test' for some quick-and-dirty testing
 
@@ -22,7 +21,7 @@ quicktest = process?.argv[0] == '--test'
 
 # -- Setting the number base (maximal digit value - 1) and its square root
 
-rdump = (s) -> "#{if s then s.toArray().join('|') else '[]'}"
+rdump = (s) -> "#{if s then s.into([]).join('|') else '[]'}"
 dump = (s) -> rdump s?.reverse()
 
 if quicktest
@@ -31,16 +30,16 @@ if quicktest
 else
   log = (str) ->
 
-  [BASE, HALFBASE] = Stream.from(1)
+  [BASE, HALFBASE] = Sequence.from(1)
     .map((n) -> [Math.pow(10, 2 * n), Math.pow(10, n)])
     .takeWhile(([b,h]) -> 2 * b - 2 != 2 * b - 1)
     .last()
 
 # -- Useful constants
 
-ZERO = new Stream 0
-ONE  = new Stream 1
-TWO  = new Stream 2
+ZERO = Sequence.conj 0
+ONE  = Sequence.conj 1
+TWO  = Sequence.conj 2
 
 # -- Constructs a simple list
 
@@ -48,7 +47,7 @@ list = (car, cdr) ->
   first: -> car
   rest:  -> cdr
 
-# -- Internal helper functions that operate on (streams of) digits/limbs
+# -- Internal helper functions that operate on (sequences of) digits/limbs
 
 cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
@@ -67,7 +66,7 @@ add = (r, s, c = 0) ->
     [r_, s_] = [r or ZERO, s or ZERO]
     x = r_.first() + s_.first() + c
     [digit, carry] = if x >= BASE then [x - BASE, 1] else [x, 0]
-    new Stream(digit, -> add(r_.rest(), s_.rest(), carry))
+    Sequence.conj(digit, -> add(r_.rest(), s_.rest(), carry))
   else
     s or r
 
@@ -77,7 +76,7 @@ sub = (r, s) ->
       [r_, s_] = [r or ZERO, s or ZERO]
       x = r_.first() - s_.first() - b
       [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
-      new Stream(digit, -> step(r_.rest(), s_.rest(), borrow))
+      Sequence.conj(digit, -> step(r_.rest(), s_.rest(), borrow))
     else
       s or r
   cleanup step(r, s)
@@ -96,24 +95,24 @@ digitTimesDigit = (a, b) ->
     [lo, carry] = if tmp < BASE then [tmp, 0] else [tmp - BASE, 1]
     [lo, a1 * b1 + m1 + carry]
 
-streamTimesDigit = (s, d, c = 0) ->
+seqTimesDigit = (s, d, c = 0) ->
   if c or s
     s_ = s or ZERO
     [lo, hi] = digitTimesDigit(d, s_.first())
-    new Stream(lo + c, -> streamTimesDigit(s_.rest(), d, hi))
+    Sequence.conj(lo + c, -> seqTimesDigit(s_.rest(), d, hi))
 
 mul = (a, b) ->
   step = (r, a, b) ->
     if a
-      t = add(r, streamTimesDigit(b, a.first())) or ZERO
-      new Stream(t.first(), -> step(t.rest(), a.rest(), b))
+      t = add(r, seqTimesDigit(b, a.first())) or ZERO
+      Sequence.conj(t.first(), -> step(t.rest(), a.rest(), b))
     else
       r
   step null, a, b
 
 div = (r, s) ->
   f = Math.floor BASE / (s.last() + 1)
-  [r_, s_] = (streamTimesDigit(x, f) for x in [r, s])
+  [r_, s_] = (Sequence.stored seqTimesDigit(x, f) for x in [r, s])
   log "div(#{dump r}, #{dump s}): premultiplying by #{f}, divisor ~> #{dump s_}"
   [m, d] = [s_.size(), s_.last() + 1]
 
@@ -123,9 +122,10 @@ div = (r, s) ->
     log "  step(#{dump q}, #{dump h}, #{rdump t}) -- f = #{f}"
 
     if f
-      recur -> step(add(q, new Stream(f)), sub(h, streamTimesDigit(s_, f)), t)
+      recur -> step(add(q, Sequence.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
     else if t
-      recur -> step(new Stream(0, -> q), new Stream(t.first(), -> h), t.rest())
+      recur -> step(Sequence.conj(0, -> q),
+                    Sequence.conj(t.first(), -> h), t.rest())
     else
       log "  returning #{dump cleanup q}"
       cleanup q
@@ -138,7 +138,7 @@ pow = (r, s) ->
       if s.first() % 2 == 1
         recur -> step(mul(p, r), r, sub(s, ONE))
       else
-        recur -> step(p, mul(r, r), div(s, TWO))
+        recur -> step(p, Sequence.stored(mul(r, r)), div(s, TWO))
     else
       p
   resolve step(ONE, r, s)
@@ -146,10 +146,10 @@ pow = (r, s) ->
 sqrt = (s) ->
   n = s.size()
   if n == 1
-    new Stream Math.floor Math.sqrt s.first()
+    Sequence.conj Math.floor Math.sqrt s.first()
   else
     step = (r) ->
-      rn = div(add(r, div(s, r)), TWO)
+      rn = Sequence.stored div(add(r, div(s, r)), TWO)
       if cmp(r, rn) then recur -> step(rn) else rn
     resolve step s.take n >> 1
 
@@ -161,14 +161,14 @@ class LongInt
 
   constructor: (n = 0) ->
     make_digits = (m) ->
-      if m then new Stream(m % BASE, -> make_digits(Math.floor m / BASE))
+      if m then Sequence.conj(m % BASE, -> make_digits(Math.floor m / BASE))
 
     [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
-    @digits__ = make_digits m
+    @digits__ = Sequence.stored make_digits m
 
   create = (digits, sign) ->
     n = new LongInt()
-    n.digits__ = digits
+    n.digits__ = Sequence.stored digits
     n.sign__ = sign
     n
 
