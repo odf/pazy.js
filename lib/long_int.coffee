@@ -110,9 +110,9 @@ mul = (a, b) ->
       r
   step null, a, b
 
-div = (r, s) ->
-  f = Math.floor BASE / (s.last() + 1)
-  [r_, s_] = (Sequence.stored seqTimesDigit(x, f) for x in [r, s])
+divmod = (r, s) ->
+  scale = Math.floor BASE / (s.last() + 1)
+  [r_, s_] = (Sequence.stored seqTimesDigit(x, scale) for x in [r, s])
   [m, d] = [s_.size(), s_.last() + 1]
 
   step = (q, h, t) ->
@@ -128,9 +128,13 @@ div = (r, s) ->
       recur -> step(Sequence.conj(0, -> q),
                     Sequence.conj(t.first(), -> h), t.rest())
     else
-      cleanup q
+      [cleanup(q), h && div(h, Sequence.conj(scale))]
 
   resolve step(null, null, r_.reverse())
+
+div = (r, s) -> divmod(r, s)[0]
+
+mod = (r, s) -> divmod(r, s)[1]
 
 pow = (r, s) ->
   step = (p, r, s) ->
@@ -169,7 +173,7 @@ class LongInt
   create = (digits, sign) ->
     n = new LongInt()
     n.digits__ = Sequence.stored digits
-    n.sign__ = sign
+    n.sign__   = sign
     n
 
   convert = (x) ->
@@ -244,7 +248,13 @@ class LongInt
       create(div(this.digits__, other.digits__), this.sign() * other.sign())
 
   @operator ['mod', '%'], 2, (other) ->
-    this.minus(this.div(other).times(other))
+    d = this.abs().cmp other.abs()
+    if d < 0
+      this
+    else if d == 0
+      new LongInt(0)
+    else
+      create(mod(this.digits__, other.digits__), this.sign() * other.sign())
 
   @operator ['pow', '**'], 2, (other) ->
     if other.sign() > 0
