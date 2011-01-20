@@ -17,7 +17,7 @@ else
 
 # -- Call with '--test' for some quick-and-dirty testing
 
-quicktest = process?.argv[0] == '--test'
+quicktest = process?.argv[2] == '--test'
 
 # -- Setting the number base (maximal digit value - 1) and its square root
 
@@ -113,13 +113,14 @@ mul = (a, b) ->
 div = (r, s) ->
   f = Math.floor BASE / (s.last() + 1)
   [r_, s_] = (Sequence.stored seqTimesDigit(x, f) for x in [r, s])
-  log "div(#{dump r}, #{dump s}): premultiplying by #{f}, divisor ~> #{dump s_}"
   [m, d] = [s_.size(), s_.last() + 1]
 
   step = (q, h, t) ->
-    n = (h?.last() * if h?.size() > m then BASE else 1) or 0
-    f = (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
-    log "  step(#{dump q}, #{dump h}, #{rdump t}) -- f = #{f}"
+    f = if h?.size() < m
+      0
+    else
+      n = (h?.last() * if h?.size() > m then BASE else 1) or 0
+      (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
 
     if f
       recur -> step(add(q, Sequence.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
@@ -127,7 +128,6 @@ div = (r, s) ->
       recur -> step(Sequence.conj(0, -> q),
                     Sequence.conj(t.first(), -> h), t.rest())
     else
-      log "  returning #{dump cleanup q}"
       cleanup q
 
   resolve step(null, null, r_.reverse())
@@ -258,6 +258,10 @@ class LongInt
     else
       throw new Error('number must not be negative')
 
+  @operator ['gcd'], 2, (other) ->
+    step = (a, b) -> if b.cmp(0) > 0 then recur -> step b, a.mod b else a
+    [a, b] = [this.abs(), other.abs()]
+    if a.cmp(b) > 0 then resolve step a, b else resolve step b, a
 
 # --------------------------------------------------------------------
 # Exporting.
@@ -277,4 +281,9 @@ if quicktest
 
   b = new LongInt 111111112
   log "#{b} / 37 = #{b.div 37} (#{b.mod 37})"
+  log ""
+
+  c = new LongInt (2 << 26) * 29 * 31
+  d = new LongInt 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23 * 29 * 31
+  log "#{c} gcd #{d} = #{c.gcd d} (expected #{29 * 31})"
   log ""
