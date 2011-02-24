@@ -249,10 +249,22 @@ class Collection
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @entries?.each(func) else this
 
-  # Generic update method with support for multiple arguments
-  update: (args, step) ->
-    newroot = Sequence.reduce(args, @root, step)
-    if newroot != @root then new @constructor(newroot) else this
+  # Generic update method
+  update_: (root) -> if root != @root then new @constructor(root) else this
+
+  # Returns a new set with the given keys inserted as elements, or
+  # this set if it already contains all those elements.
+  plus: -> @plusAll new Sequence arguments
+
+  # Like plus, but takes a sequence of keys
+  plusAll: (seq) -> @update_ seq.reduce @root, @constructor.plusOne
+
+  # Returns a new set with the given keys removed, or this set if it
+  # does not contain any of them.
+  minus: -> @minusAll new Sequence arguments
+
+  # Like plus, but takes a sequence of keys
+  minusAll: (seq) -> @update_ seq.reduce @root, @constructor.minusOne
 
   # Returns the elements in this set as an array.
   toArray: -> Sequence.into @entries, []
@@ -293,23 +305,17 @@ class IntSet extends Collection
   # element of this set.
   contains: (key) -> @root.get(0, key) == true
 
-  # Returns a new set with the given keys inserted as elements, or
-  # this set if it already contains all those elements.
-  plus: ->
-    @update arguments, (root, key) ->
-      if util.isKey(key) and not root.get(0, key)
-        root.plus(0, key, new IntLeaf(key))
-      else
-        root
+  @plusOne: (root, key) ->
+    if util.isKey(key) and not root.get(0, key)
+      root.plus(0, key, new IntLeaf(key))
+    else
+      root
 
-  # Returns a new set with the given keys removed, or this set if it
-  # does not contain any of them.
-  minus: ->
-    @update arguments, (root, key) ->
-      if util.isKey(key) and root.get(0, key)
-        root.minus(0, key)
-      else
-        root
+  @minusOne: (root, key) ->
+    if util.isKey(key) and root.get(0, key)
+      root.minus(0, key)
+    else
+      root
 
 
 # A leaf node with an integer key and arbitrary value.
@@ -343,23 +349,17 @@ class IntMap extends Collection
   # element of this set.
   get: (key) -> @root.get(0, key)
 
-  # Returns a new set with the given keys inserted as elements, or
-  # this set if it already contains all those elements.
-  plus: ->
-    @update arguments, (root, [key, value]) ->
-      if util.isKey(key) and not areEqual(root.get(0, key), value)
-        root.plus(0, key, new IntLeafWithValue(key, value))
-      else
-        root
+  @plusOne: (root, [key, value]) ->
+    if util.isKey(key) and not areEqual(root.get(0, key), value)
+      root.plus(0, key, new IntLeafWithValue(key, value))
+    else
+      root
 
-  # Returns a new set with the given keys removed, or this set if it
-  # does not contain any of them.
-  minus: ->
-    @update arguments, (root, key) ->
-      if util.isKey(key) and typeof(root.get(0, key)) != 'undefined'
-        root.minus(0, key)
-      else
-        root
+  @minusOne: (root, key) ->
+    if util.isKey(key) and typeof(root.get(0, key)) != 'undefined'
+      root.minus(0, key)
+    else
+      root
 
 
 # --------------------------------------------------------------------
@@ -467,25 +467,19 @@ class HashSet extends Collection
   # element of this set.
   contains: (key) -> @root.get(0, hashCode(key), key) == true
 
-  # Returns a new set with the given keys inserted as elements, or
-  # this set if it already contains all those elements.
-  plus: ->
-    @update arguments, (root, key) ->
-      hash = hashCode(key)
-      if root.get(0, hash, key)
-        root
-      else
-        root.plus(0, hash, new HashLeaf(hash, key))
+  @plusOne: (root, key) ->
+    hash = hashCode(key)
+    if root.get(0, hash, key)
+      root
+    else
+      root.plus(0, hash, new HashLeaf(hash, key))
 
-  # Returns a new set with the given keys removed, or this set if it
-  # does not contain any of them.
-  minus: ->
-    @update arguments, (root, key) ->
-      hash = hashCode(key)
-      if root.get(0, hash, key)
-        root.minus(0, hash, key)
-      else
-        root
+  @minusOne: (root, key) ->
+    hash = hashCode(key)
+    if root.get(0, hash, key)
+      root.minus(0, hash, key)
+    else
+      root
 
 
 # --------------------------------------------------------------------
@@ -529,25 +523,19 @@ class HashMap extends Collection
   # key is not present.
   get: (key) -> @root.get(0, hashCode(key), key)
 
-  # Returns a new map with the given key-value pair inserted, or
-  # this map if it already contains that pair.
-  plus: ->
-    @update arguments, (root, [key, value]) ->
-      hash = hashCode(key)
-      if areEqual(root.get(0, hash, key), value)
-        root
-      else
-        root.plus(0, hash, new HashLeafWithValue(hash, key, value))
+  @plusOne: (root, [key, value]) ->
+    hash = hashCode(key)
+    if areEqual(root.get(0, hash, key), value)
+      root
+    else
+      root.plus(0, hash, new HashLeafWithValue(hash, key, value))
 
-  # Returns a new set with the given keys removed, or this set if it
-  # does not contain any of them.
-  minus: ->
-    @update arguments, (root, key) ->
-      hash = hashCode(key)
-      if typeof(root.get(0, hash, key)) != 'undefined'
-        root.minus(0, hash, key)
-      else
-        root
+  @minusOne: (root, key) ->
+    hash = hashCode(key)
+    if typeof(root.get(0, hash, key)) != 'undefined'
+      root.minus(0, hash, key)
+    else
+      root
 
 
 # --------------------------------------------------------------------
