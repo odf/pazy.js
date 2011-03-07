@@ -266,6 +266,9 @@ class Collection
   # Like plus, but takes a sequence of keys
   minusAll: (seq) -> @update_ seq.reduce @root, @constructor.minusOne
 
+  # Creates a mapped collection of the same type
+  map: (fun) -> new @constructor().plusAll @entries.map fun
+
   # Returns the elements in this set as an array.
   toArray: -> Sequence.into @entries, []
 
