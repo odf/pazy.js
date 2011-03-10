@@ -63,6 +63,9 @@ describe "A HashSet", ->
     it "should be empty when the item is removed", ->
       expect(hash.minus("first").size()).toBe 0
 
+    it "should be empty when the item is removed, twice", ->
+      expect(hash.minus("first", "first").size()).toBe 0
+
     it "should return true for the key", ->
       expect(hash.contains("first")).toBe true
 

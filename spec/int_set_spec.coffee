@@ -24,10 +24,10 @@ describe "An IntSet", ->
       expect(hash.size()).toEqual 0
 
     it "should return false on contains", ->
-      expect(hash.contains("first")).toBe false
+      expect(hash.contains(1337)).toBe false
 
     it "should still be empty when minus is called", ->
-      expect(hash.minus("first").size()).toEqual 0
+      expect(hash.minus(1337).size()).toEqual 0
 
     it "should have length 0 as an array", ->
       expect(hash.toArray().length).toEqual 0
@@ -44,6 +44,9 @@ describe "An IntSet", ->
 
     it "should have size 0 when the item is removed", ->
       expect(hash.minus(1337).size()).toBe 0
+
+    it "should have size 0 when the item is removed twice", ->
+      expect(hash.minus(1337, 1337).size()).toBe 0
 
     it "should return true for the key", ->
       expect(hash.contains(1337)).toBe true

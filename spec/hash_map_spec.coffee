@@ -67,8 +67,8 @@ describe "A HashMap", ->
     it "should not return anything when fed another key", ->
       expect(hash.get("second")).not.toBeDefined()
 
-    it "should be empty when the item is removed", ->
-      expect(hash.minus("first").size()).toBe 0
+    it "should be empty when the item is removed twice", ->
+      expect(hash.minus("first", "first").size()).toBe 0
 
     it "should contain the key-value pair", ->
       a = hash.toArray()

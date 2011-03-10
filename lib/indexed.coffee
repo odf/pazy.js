@@ -315,7 +315,7 @@ class IntSet extends Collection
       root
 
   @minusOne: (root, key) ->
-    if util.isKey(key) and root.get(0, key)
+    if util.isKey(key) and root?.get(0, key)
       root.minus(0, key)
     else
       root
@@ -359,7 +359,7 @@ class IntMap extends Collection
       root
 
   @minusOne: (root, key) ->
-    if util.isKey(key) and typeof(root.get(0, key)) != 'undefined'
+    if util.isKey(key) and typeof(root?.get(0, key)) != 'undefined'
       root.minus(0, key)
     else
       root
@@ -479,7 +479,7 @@ class HashSet extends Collection
 
   @minusOne: (root, key) ->
     hash = hashCode(key)
-    if root.get(0, hash, key)
+    if root?.get(0, hash, key)
       root.minus(0, hash, key)
     else
       root
@@ -535,7 +535,7 @@ class HashMap extends Collection
 
   @minusOne: (root, key) ->
     hash = hashCode(key)
-    if typeof(root.get(0, hash, key)) != 'undefined'
+    if typeof(root?.get(0, hash, key)) != 'undefined'
       root.minus(0, hash, key)
     else
       root

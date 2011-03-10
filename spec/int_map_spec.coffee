@@ -51,6 +51,9 @@ describe "An IntMap", ->
     it "should be empty when the item is removed", ->
       expect(hash.minus(1337).size()).toBe 0
 
+    it "should be empty when the item is removed twice", ->
+      expect(hash.minus(1337, 1337).size()).toBe 0
+
     it "should contain the key-value pair", ->
       a = hash.toArray()
       expect(a.length).toEqual 1
