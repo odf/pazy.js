@@ -245,6 +245,9 @@ class Collection
 
   size: -> @root.size
 
+  # The sequence of entries.
+  toSeq: -> @entries
+
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @entries?.each(func) else this
