@@ -200,13 +200,13 @@ describe "An IntMap", ->
       expect(hash.toArray()).toEqual(items)
 
     it "should have the first (key,value)-pair as its first element", ->
-      expect(hash.items().first()).toEqual(items[0])
+      expect(hash.toSeq().first()).toEqual(items[0])
 
     it "should have the second (key,value)-pair as its second element", ->
-      expect(hash.items().rest().first()).toEqual(items[1])
+      expect(hash.toSeq().rest().first()).toEqual(items[1])
 
     it "should have the last (key,value)-pair as its last element", ->
-      expect(hash.items().last()).toEqual(items[306])
+      expect(hash.toSeq().last()).toEqual(items[306])
 
 
     describe "some of which are then removed", ->

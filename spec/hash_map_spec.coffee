@@ -180,10 +180,10 @@ describe "A HashMap", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
     it "should return an item sequence of the correct size", ->
-      expect(hash.items().size()).toEqual(hash.size())
+      expect(hash.toSeq().size()).toEqual(hash.size())
 
     it "should return a sequence with all the keys on calling items()", ->
-      expect(hash.items().into([]).sort(FunnyKey.sorter)).toEqual(items)
+      expect(hash.toSeq().into([]).sort(FunnyKey.sorter)).toEqual(items)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]

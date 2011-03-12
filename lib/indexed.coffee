@@ -245,9 +245,6 @@ class Collection
 
   size: -> @root.size
 
-  # The sequence of entries.
-  toSeq: -> @entries
-
   # If called with a block, iterates over the elements in this set;
   # otherwise, returns this set (this mimics Ruby enumerables).
   each: (func) -> if func? then @entries?.each(func) else this
@@ -271,6 +268,9 @@ class Collection
 
   # Creates a mapped collection of the same type
   map: (fun) -> new @constructor().plusAll @entries.map fun
+
+  # The sequence of entries.
+  toSeq: -> @entries
 
   # Returns the elements in this set as an array.
   toArray: -> Sequence.into @entries, []
@@ -303,9 +303,6 @@ class IntLeaf
 # The IntSet class.
 class IntSet extends Collection
   @name = "IntSet"
-
-  # Returns the elements as a sequence
-  elements: -> @entries
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -347,9 +344,6 @@ class IntLeafWithValue
 # The IntMap class is essentially a huge sparse array.
 class IntMap extends Collection
   @name = "IntMap"
-
-  # Returns the (key,value)-pairs as a sequence
-  items: -> @entries
 
   # Returns true or false depending on whether the given key is an
   # element of this set.
@@ -466,9 +460,6 @@ class HashLeaf
 class HashSet extends Collection
   @name = "HashSet"
 
-  # Returns the elements as a sequence
-  elements: -> @entries
-
   # Returns true or false depending on whether the given key is an
   # element of this set.
   contains: (key) -> @root.get(0, hashCode(key), key) == true
@@ -521,9 +512,6 @@ class HashLeafWithValue
 # for the various node classes that hold the actual information.
 class HashMap extends Collection
   @name = "HashMap"
-
-  # Returns the (key,value)-pairs as a sequence
-  items: -> @entries
 
   # Retrieves the value associated with the given key, or nil if the
   # key is not present.
