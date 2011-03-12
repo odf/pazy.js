@@ -4,6 +4,7 @@
 # Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
+#TODO catch missing return values from function arguments
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
