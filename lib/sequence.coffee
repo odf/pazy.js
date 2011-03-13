@@ -17,8 +17,8 @@ class Sequence
     if not src?
       @first = ->
       @rest  = -> null
-    else if typeof src.sequence == 'function'
-      seq = src.sequence()
+    else if typeof src.toSeq == 'function'
+      seq = src.toSeq()
       @first = -> seq.first()
       @rest  = -> seq.rest()
     else if typeof src.first == 'function' and typeof src.rest == 'function'

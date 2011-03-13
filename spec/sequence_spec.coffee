@@ -1,8 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
   { Sequence } = require('sequence')
+  { IntSet }   = require('indexed')
 else
-  { Sequence } = this.pazy
+  { Sequence, IntSet } = this.pazy
 
 
 describe "An empty sequence created with the new operator", ->
@@ -402,3 +403,9 @@ describe "An array with some holes in it", ->
 
   it "should be compacted when turned into a sequence", ->
     expect(Sequence.into a, []).toEqual [1,2,3,6]
+
+describe "An IntSet", ->
+  s = new IntSet().plus 5, 3, 7, 2
+
+  it "should be sorted when turned into a sequence", ->
+    expect(Sequence.into s, []).toEqual [2,3,5,7]
