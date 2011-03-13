@@ -65,6 +65,12 @@ describe "An empty sequence created with the new operator", ->
   it "should return 0 on product", ->
     expect(s.product()).toBe 1
 
+  it "should return undefined on max", ->
+    expect(s.max()).toBe undefined
+
+  it "should return undefined on min", ->
+    expect(s.min()).toBe undefined
+
   it "should return null when combined with another sequence", ->
     expect(s.combine [1..5], (a, b) -> a + b).toBe null
 
@@ -139,6 +145,12 @@ describe "A sequence made of the numbers 1 and 2", ->
   it "should end with a 2", ->
     expect(s.last()).toBe 2
 
+  it "should return 2 on max", ->
+    expect(s.max()).toBe 2
+
+  it "should return 1 on min", ->
+    expect(s.min()).toBe 1
+
   it "should print as '(1, 2)'", ->
     expect(s.toString()).toEqual "(1, 2)"
 
@@ -172,6 +184,12 @@ describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
 
   it "should be empty when five elements are dropped", ->
     expect(s.drop 5).toBe null
+
+  it "should return 's' on max", ->
+    expect(s.max()).toBe 's'
+
+  it "should return 'a' on min", ->
+    expect(s.min()).toBe 'a'
 
   it "should print as (a, s, d, f)", ->
     expect(s.toString()).toEqual "(a, s, d, f)"

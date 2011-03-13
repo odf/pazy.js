@@ -146,6 +146,12 @@ class Sequence
   @method 'sum',     (seq) -> @reduce__ seq, 0, (a,b) -> a + b
   @method 'product', (seq) -> @reduce__ seq, 1, (a,b) -> a * b
 
+  @method 'fold', (seq, op) ->
+    @reduce__ seq.rest(), seq.first(), op
+
+  @method 'max', (seq) -> @fold__ seq, (a,b) -> if b > a then b else a
+  @method 'min', (seq) -> @fold__ seq, (a,b) -> if b < a then b else a
+
   @operator 'combine', (seq, other, op) ->
     if @empty__ seq or @empty__ other
       null
