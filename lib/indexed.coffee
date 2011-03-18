@@ -254,17 +254,17 @@ class Collection
 
   # Returns a new set with the given keys inserted as elements, or
   # this set if it already contains all those elements.
-  plus: -> @plusAll new Sequence arguments
+  plus: -> @plusAll arguments
 
   # Like plus, but takes a sequence of keys
-  plusAll: (seq) -> @update_ seq.reduce @root, @constructor.plusOne
+  plusAll: (seq) -> @update_ Sequence.reduce seq, @root, @constructor.plusOne
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
-  minus: -> @minusAll new Sequence arguments
+  minus: -> @minusAll arguments
 
   # Like plus, but takes a sequence of keys
-  minusAll: (seq) -> @update_ seq.reduce @root, @constructor.minusOne
+  minusAll: (seq) -> @update_ Sequence.reduce seq, @root, @constructor.minusOne
 
   # Creates a mapped collection of the same type
   map: (fun) -> new @constructor().plusAll @entries.map fun
