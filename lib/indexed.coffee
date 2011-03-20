@@ -267,7 +267,7 @@ class Collection
   minusAll: (seq) -> @update_ Sequence.reduce seq, @root, @constructor.minusOne
 
   # Creates a mapped collection of the same type
-  map: (fun) -> new @constructor().plusAll @entries.map fun
+  map: (fun) -> new @constructor().plusAll Sequence.map @entries, fun
 
   # The sequence of entries.
   toSeq: -> @entries
