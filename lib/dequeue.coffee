@@ -38,6 +38,8 @@ class Dequeue
       deq.rear  = rear
     deq
 
+  size: -> @lf + @lr
+
   after: (x) ->
     create Sequence.conj(x, (=> @front), 'stored'), @lf + 1, @rear, @lr
 
