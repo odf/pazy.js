@@ -53,13 +53,13 @@ class Dequeue
     if @rear then @rear.first() else if @front then @front.first()
 
   rest: ->
-    if @front
+    if @front?
       create @front.rest(), @lf - 1, @rear, @lr
     else if @rest
       new Dequeue()
 
   init: ->
-    if @rest
+    if @rear?
       create @front, @lf, @rear.rest(), @lr - 1
     else if @front
       new Dequeue()
