@@ -168,6 +168,7 @@ class Sequence
   @operator 'div', (seq, other) -> @combine__ seq, other, (a,b) -> a / b
 
   @operator 'equals', (seq, other) ->
+    #TODO correct if sequences have different lengths?
     @reduce__ @combine__(seq, other, (a,b) -> a == b), true, (a,b) -> a && b
 
   @operator 'interleave', (seq, other) ->

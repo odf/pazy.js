@@ -366,6 +366,8 @@ class IntMap extends Collection
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
+#TODO do not support arbitrary objects, but support sequences
+
 hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) & 0xffffffff
 
 hashCode = (obj) ->
