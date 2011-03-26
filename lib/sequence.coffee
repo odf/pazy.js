@@ -153,8 +153,10 @@ class Sequence
   @method 'min', (seq) -> @fold__ seq, (a,b) -> if b < a then b else a
 
   @operator 'combine', (seq, other, op) ->
-    if @empty__ seq or @empty__ other
-      null
+    if @empty__ seq
+      Sequence.map other, (a) -> op null, a
+    else if @empty__ other
+      Sequence.map seq, (a) -> op a, null
     else
       Sequence.conj op(seq.first(), other.first()), =>
         if seq.rest() and other.rest()

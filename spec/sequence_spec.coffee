@@ -72,16 +72,19 @@ describe "An empty sequence created with the new operator", ->
   it "should return undefined on min", ->
     expect(s.min()).toBe undefined
 
-  it "should return null when combined with another sequence", ->
-    expect(s.combine [1..5], (a, b) -> a + b).toBe null
+  it "should leave a sequence it is combined with as is", ->
+    expect(s.combine([1..5], (a, b) -> a + b).into []).toEqual [1..5]
 
-  it "should return null when added to another sequence", ->
-    expect(s.add [1..5]).toBe null
+  it "should leave a sequence it is added to as is", ->
+    expect(s.add([1..5]).into []).toEqual [1..5]
 
   it "should test equal to any other empty sequence", ->
     expect(s.equals null).toBe true
     expect(s.equals new Sequence()).toBe true
     expect(s.equals []).toBe true
+
+  it "should not test equal to a non-empty sequence", ->
+    expect(s.equals [1]).toBe false
 
   it "should reproduce any sequence it is interleaved with", ->
     expect(s.interleave([1..5]).into []).toEqual [1..5]
