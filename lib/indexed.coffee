@@ -394,6 +394,10 @@ areEqual = (obj1, obj2) ->
     obj1.equals(obj2)
   else if obj2? and typeof(obj2.equals) == "function"
     obj2.equals(obj1)
+  else if typeof(obj1) == "object"
+    typeof(obj2) == "object" and
+    Sequence.equals((k for k,v of obj1), (k for k,v of obj2)) and
+    Sequence.equals((v for k,v of obj1), (v for k,v of obj2))
   else
     obj1 == obj2
 

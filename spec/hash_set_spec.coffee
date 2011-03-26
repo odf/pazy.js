@@ -138,6 +138,35 @@ describe "A HashSet", ->
       expect(a).toContain("second")
 
 
+  describe "containing two arrays", ->
+    hash = new HashSet().plus([1,2,3]).plus([4,5,6])
+
+    it "should have size 2", ->
+      expect(hash.size()).toEqual 2
+
+    it "should not be empty", ->
+      expect(hash.size()).toBeGreaterThan 0
+
+    it "should not be empty when the first item is removed", ->
+      expect(hash.minus([1,2,3]).size()).toBeGreaterThan 0
+
+    it "should be empty when both items are removed", ->
+      expect(hash.minus([1,2,3]).minus([4,5,6]).size()).toBe 0
+
+    it "should return true for both keys", ->
+      expect(hash.contains([1,2,3])).toBe true
+      expect(hash.contains([4,5,6])).toBe true
+
+    it "should return false when fed another key", ->
+      expect(hash.contains([7,8,9])).toBe false
+
+    it "should contain the keys", ->
+      a = hash.toArray()
+      expect(a.length).toEqual 2
+      expect(a).toContain([1,2,3])
+      expect(a).toContain([4,5,6])
+
+
   describe "containing two items with a level 1 collision", ->
     key_a = new FunnyKey(1)
     key_b = new FunnyKey(33)
