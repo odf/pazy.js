@@ -161,6 +161,18 @@ describe "A sequence made of the numbers 1 and 2", ->
   it "should print as '1,2' when converted to an array", ->
     expect(s.into([]).toString()).toEqual "1,2"
 
+  it "should compare equal to a sequence with the same elements", ->
+    expect(s.equals [1,2]).toBe true
+
+  it "should combine correctly with another sequence", ->
+    expect(s.combine([1,2,1], (a,b) -> a == b).into []).
+      toEqual [true, true, false]
+
+  it "should not compare equal to the same sequence with a one appended", ->
+    expect(s.equals [1,2,1]).toBe false
+
+  it "should not compare equal to the same sequence with a zero appended", ->
+    expect(s.equals [1,2,0]).toBe false
 
 describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
   s = new Sequence ['a', 's', 'd', 'f']

@@ -159,8 +159,7 @@ class Sequence
       Sequence.map seq, (a) -> op a, null
     else
       Sequence.conj op(seq.first(), other.first()), =>
-        if seq.rest() and other.rest()
-          @combine__ seq.rest(), other.rest(), op
+        @combine__ seq.rest(), other.rest(), op
 
   @operator 'add', (seq, other) -> @combine__ seq, other, (a,b) -> a + b
   @operator 'sub', (seq, other) -> @combine__ seq, other, (a,b) -> a - b
@@ -168,8 +167,7 @@ class Sequence
   @operator 'div', (seq, other) -> @combine__ seq, other, (a,b) -> a / b
 
   @operator 'equals', (seq, other) ->
-    #TODO correct if sequences have different lengths?
-    @reduce__ @combine__(seq, other, (a,b) -> a == b), true, (a,b) -> a && b
+    not @find__(@combine__(seq, other, (a, b) -> a == b), (a) -> not a)?
 
   @operator 'interleave', (seq, other) ->
     if @empty__ seq
