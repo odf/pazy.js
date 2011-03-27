@@ -366,30 +366,24 @@ class IntMap extends Collection
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
-#TODO do not support arbitrary objects, but support sequences
-
-hashStep = (code, c) -> (code * 37 + c.charCodeAt(0)) & 0xffffffff
-
 hashCode = (obj) ->
-  if obj? and typeof(obj.hashCode) == "function"
-    code = obj.hashCode()
-    if util.isKey code
-      return code
-
-  stringVal =
-    if typeof(obj) == "string"
-      obj
-    else if typeof(obj) == "object"
-      ("#{k}:#{v}" for k,v of obj).join(",")
-    else if obj? and typeof(obj.toString) == "function"
-      obj.toString()
-    else
-      try
-        String(obj)
-      catch ex
-        Object::toString.call(obj)
-
-  Sequence.reduce(stringVal, 0, hashStep)
+  if not obj?
+    0
+  else if typeof(obj.hashCode) == "function" and util.isKey(obj.hashCode())
+    obj.hashCode()
+  else if util.isKey(obj)
+    obj
+  else if typeof(obj) == 'string' and obj.length <= 1
+    if obj.length == 0 then 1 else obj.charCodeAt(0)
+  else if Sequence.accepts(obj)
+    Sequence.reduce obj, 0, (code, x) -> (code * 37 + hashCode(x)) & 0xffffffff
+  else if typeof(obj.toString) == "function"
+    hashCode obj.toString()
+  else
+    try
+      hashCode String(obj)
+    catch ex
+      hashCode Object::toString.call(obj)
 
 areEqual = (obj1, obj2) ->
   if obj1? and typeof(obj1.equals) == "function"
