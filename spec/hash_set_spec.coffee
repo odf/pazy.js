@@ -167,6 +167,35 @@ describe "A HashSet", ->
       expect(a).toContain([4,5,6])
 
 
+  describe "containing two number", ->
+    hash = new HashSet().plus(0, 2)
+
+    it "should have size 2", ->
+      expect(hash.size()).toEqual 2
+
+    it "should not be empty", ->
+      expect(hash.size()).toBeGreaterThan 0
+
+    it "should not be empty when the first item is removed", ->
+      expect(hash.minus(0).size()).toBeGreaterThan 0
+
+    it "should be empty when both items are removed", ->
+      expect(hash.minus(0).minus(2).size()).toBe 0
+
+    it "should return true for both keys", ->
+      expect(hash.contains(0)).toBe true
+      expect(hash.contains(2)).toBe true
+
+    it "should return false when fed another key", ->
+      expect(hash.contains(1)).toBe false
+
+    it "should contain the keys", ->
+      a = hash.toArray()
+      expect(a.length).toEqual 2
+      expect(a).toContain(0)
+      expect(a).toContain(2)
+
+
   describe "containing two items with a level 1 collision", ->
     key_a = new FunnyKey(1)
     key_b = new FunnyKey(33)
