@@ -350,7 +350,7 @@ class IntMap extends Collection
   get: (key) -> @root.get(0, key)
 
   @plusOne: (root, [key, value]) ->
-    if util.isKey(key) and not areEqual(root.get(0, key), value)
+    if util.isKey(key) and root.get(0, key) != value
       root.plus(0, key, new IntLeafWithValue(key, value))
     else
       root
@@ -385,15 +385,15 @@ hashCode = (obj) ->
     catch ex
       hashCode Object::toString.call(obj)
 
-areEqual = (obj1, obj2) ->
-  if obj1? and typeof(obj1.equals) == "function"
+equalKeys = (obj1, obj2) ->
+  if typeof(obj1) == 'string' or typeof(obj2) == 'string'
+    obj1 == obj2
+  else if Sequence.accepts(obj1) and Sequence.accepts(obj2)
+    not Sequence.find(Sequence.combine(obj1, obj2, equalKeys), (a) -> not a)?
+  else if obj1? and typeof(obj1.equals) == "function"
     obj1.equals(obj2)
   else if obj2? and typeof(obj2.equals) == "function"
     obj2.equals(obj1)
-  else if typeof(obj1) == "object"
-    typeof(obj2) == "object" and
-    Sequence.equals((k for k,v of obj1), (k for k,v of obj2)) and
-    Sequence.equals((v for k,v of obj1), (v for k,v of obj2))
   else
     obj1 == obj2
 
@@ -407,7 +407,7 @@ class CollisionNode
     @elements = Sequence.flatMap @bucket, (n) -> n?.elements
 
   get: (shift, hash, key) ->
-    leaf = Sequence.find @bucket, (v) -> areEqual(v.key, key)
+    leaf = Sequence.find @bucket, (v) -> equalKeys(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
   plus: (shift, hash, leaf) ->
@@ -421,13 +421,13 @@ class CollisionNode
   minus: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
-      when 2    then Sequence.find @bucket, (v) -> not areEqual(v.key, key)
+      when 2    then Sequence.find @bucket, (v) -> not equalKeys(v.key, key)
       else           new CollisionNode(hash, this.bucketWithout(key))
 
   toString: -> "#{@bucket.join("|")}"
 
   bucketWithout: (key) ->
-    item for item in @bucket when not areEqual(item.key, key)
+    item for item in @bucket when not equalKeys(item.key, key)
 
 
 # --------------------------------------------------------------------
@@ -441,7 +441,7 @@ class HashLeaf
 
   size: 1
 
-  get:  (shift, hash, key) -> true if areEqual(key, @key)
+  get:  (shift, hash, key) -> true if equalKeys(key, @key)
 
   plus: (shift, hash, leaf) ->
     if hash == @hash
@@ -491,10 +491,10 @@ class HashLeafWithValue
 
   size: 1
 
-  get:  (shift, hash, key) -> @value if areEqual(key, @key)
+  get:  (shift, hash, key) -> @value if equalKeys(key, @key)
 
   plus: (shift, hash, leaf) ->
-    if areEqual(@key, leaf.key)
+    if equalKeys(@key, leaf.key)
       leaf
     else
       if hash == @hash
@@ -519,7 +519,7 @@ class HashMap extends Collection
 
   @plusOne: (root, [key, value]) ->
     hash = hashCode(key)
-    if areEqual(root.get(0, hash, key), value)
+    if root.get(0, hash, key) == value
       root
     else
       root.plus(0, hash, new HashLeafWithValue(hash, key, value))
