@@ -19,8 +19,12 @@ class Sequence
       @rest  = -> null
     else if typeof src.toSeq == 'function'
       seq = src.toSeq()
-      @first = -> seq.first()
-      @rest  = -> seq.rest()
+      if seq?
+        @first = -> seq.first()
+        @rest  = -> seq.rest()
+      else
+        @first = ->
+        @rest  = -> null
     else if typeof src.first == 'function' and typeof src.rest == 'function'
       @first = -> src.first()
       @rest  = -> src.rest()
@@ -38,6 +42,12 @@ class Sequence
         @rest  = -> null
     else
       throw new Error("cannot make a sequence from #{src}")
+
+  @accepts: (src) ->
+    not src? or
+    typeof(src.toSeq) == 'function' or
+    (typeof(src.first) == 'function' and typeof(src.rest) == 'function') or
+    typeof(src.length) == 'number'
 
   @conj: (first, rest = (-> null), mode = null) ->
     r = rest() if mode == 'forced'
@@ -75,7 +85,7 @@ class Sequence
     @::[name]      = (other, args...) -> f.call(@S__, this, make(other), args...)
 
   @method 'empty', (seq) ->
-    not seq? or typeof seq.first() == 'undefined'
+    not seq? or typeof(seq.first()) == 'undefined'
 
   @memo 'size', (seq) ->
     step = (s, n) -> if s then recur -> step s.rest(), n + 1 else n
