@@ -212,6 +212,16 @@ class Sequence
   @operator 'cartesian', (seq, other) ->
     @flatMap__ seq, (a) => @map__ other, (b) -> [a,b]
 
+  @method 'uniq', (seq, seen) ->
+    if @empty__ seq
+      null
+    else
+      x = seq.first()
+      if seen.contains x
+        @uniq__ seq.rest(), seen
+      else
+        Sequence.conj x, => @uniq__ seq.rest(), seen.plus x
+
   @method 'each', (seq, func) ->
     step = (s) -> if s then func(s.first()); recur -> step s.rest()
     resolve step seq unless @empty__ seq

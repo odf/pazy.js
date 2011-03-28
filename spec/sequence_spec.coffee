@@ -1,9 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence } = require('sequence')
-  { IntSet }   = require('indexed')
+  { Sequence }        = require('sequence')
+  { IntSet, HashSet } = require('indexed')
 else
-  { Sequence, IntSet } = this.pazy
+  { Sequence, IntSet, HashSet } = this.pazy
 
 
 describe "An empty sequence created with the new operator", ->
@@ -102,6 +102,9 @@ describe "An empty sequence created with the new operator", ->
 
   it "should have null as its cartesian product with any other sequence", ->
     expect(s.cartesian [1..5]).toBe null
+
+  it "should still be empty when uniq is applied", ->
+    expect(s.uniq(new HashSet())).toBe null
 
   it "should not pass any elements into a function applied via each", ->
     log = []
@@ -303,6 +306,9 @@ describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
 
   it "should contain the expected elements", ->
     expect(s.into []).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
+
+  it "should contain the elements 1, 2, 3 after flatten() and uniq()", ->
+    expect(s.flatten().uniq(new HashSet()).into []).toEqual [1,2,3]
 
 describe "A sequence implementing the Fibonacci numbers", ->
   s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().add s).stored()
