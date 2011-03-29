@@ -30,6 +30,12 @@ describe "A dequeue with the elements 0 to 9", ->
   it "should have an 8 right before the last element", ->
     expect(dequeue.init().last()).toBe 8
 
+  it "should have the same size after before() is called with no argument", ->
+    expect(dequeue.before().size()).toBe 10
+
+  it "should have the same size after after() is called with no argument", ->
+    expect(dequeue.after().size()).toBe 10
+
 describe "A dequeue with the elements 0 to 9 in reverse order", ->
   dequeue = Sequence.reduce [0..9], new Dequeue(), (q, x) -> q.after(x)
 

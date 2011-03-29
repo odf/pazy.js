@@ -41,10 +41,16 @@ class Dequeue
   size: -> @lf + @lr
 
   after: (x) ->
-    create Sequence.conj(x, (=> @front), 'stored'), @lf + 1, @rear, @lr
+    if typeof x == 'undefined'
+      this
+    else
+      create Sequence.conj(x, (=> @front), 'stored'), @lf + 1, @rear, @lr
 
   before: (x) ->
-    create @front, @lf, Sequence.conj(x, (=> @rear), 'stored'), @lr + 1
+    if typeof x == 'undefined'
+      this
+    else
+      create @front, @lf, Sequence.conj(x, (=> @rear), 'stored'), @lr + 1
 
   first: ->
     if @front then @front.first() else if @rear then @rear.first()
