@@ -185,9 +185,9 @@ class Sequence
     else
       Sequence.conj seq.first(), => @interleave__ other, seq.rest()
 
-  lazyConcat = (seq, next) ->
+  @operator 'lazyConcat', (seq, next) ->
     if seq
-      Sequence.conj seq.first(), -> lazyConcat seq.rest(), next
+      Sequence.conj seq.first(), => @lazyConcat__ seq.rest(), next
     else
       next()
 
@@ -195,13 +195,13 @@ class Sequence
     if @empty__ seq
       other
     else
-      lazyConcat seq, -> other
+      @lazyConcat__ seq, -> other
 
   @method 'flatten', (seq) ->
     if @empty__ seq
       null
     else if seq.first()
-      lazyConcat make(seq.first()), => @flatten__ seq.rest()
+      @lazyConcat__ make(seq.first()), => @flatten__ seq.rest()
     else if seq.rest()
       @flatten__ @dropWhile__(seq.rest(), (x) -> not make(x)?.first())
     else
