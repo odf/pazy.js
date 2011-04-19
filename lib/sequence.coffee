@@ -50,14 +50,15 @@ class Sequence
     typeof(src.length) == 'number'
 
   @conj: (first, rest = (-> null), mode = null) ->
-    r = rest() if mode == 'forced'
-    new Sequence
-      first: -> first
-      rest:
-        switch mode
-          when 'stored' then -> val = rest(); (@rest = -> val)()
-          when 'forced' then -> r
-          else               -> rest()
+    if mode == 'forced'
+      r = rest()
+      new Sequence
+        first: -> first
+        rest:  -> r
+    else
+      new Sequence
+        first: -> first
+        rest:  -> val = rest(); (@rest = -> val)()
 
   @from: (start) -> Sequence.conj start, => @from start+1
 
@@ -220,12 +221,6 @@ class Sequence
     step = (r, s) =>
       if s then recur => step Sequence.conj(s.first(), -> r), s.rest() else r
     if @empty__ seq then null else resolve step null, seq
-
-  @method 'stored', (seq) ->
-    if @empty__ seq
-      null
-    else
-      Sequence.conj seq.first(), (=> @stored__ seq.rest()), 'stored'
 
   @method 'forced', (seq) ->
     if @empty__ seq

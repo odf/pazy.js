@@ -112,7 +112,7 @@ mul = (a, b) ->
 
 divmod = (r, s) ->
   scale = Math.floor BASE / (s.last() + 1)
-  [r_, s_] = (Sequence.stored seqTimesDigit(x, scale) for x in [r, s])
+  [r_, s_] = (new Sequence seqTimesDigit(x, scale) for x in [r, s])
   [m, d] = [s_.size(), s_.last() + 1]
 
   step = (q, h, t) ->
@@ -142,7 +142,7 @@ pow = (r, s) ->
       if s.first() % 2 == 1
         recur -> step(mul(p, r), r, sub(s, ONE))
       else
-        recur -> step(p, Sequence.stored(mul(r, r)), div(s, TWO))
+        recur -> step(p, new Sequence(mul(r, r)), div(s, TWO))
     else
       p
   resolve step(ONE, r, s)
@@ -153,7 +153,7 @@ sqrt = (s) ->
     Sequence.conj Math.floor Math.sqrt s.first()
   else
     step = (r) ->
-      rn = Sequence.stored div(add(r, div(s, r)), TWO)
+      rn = new Sequence div(add(r, div(s, r)), TWO)
       if cmp(r, rn) then recur -> step(rn) else rn
     resolve step s.take n >> 1
 
@@ -168,11 +168,11 @@ class LongInt
       if m then Sequence.conj(m % BASE, -> make_digits(Math.floor m / BASE))
 
     [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
-    @digits__ = Sequence.stored make_digits m
+    @digits__ = new Sequence make_digits m
 
   create = (digits, sign) ->
     n = new LongInt()
-    n.digits__ = Sequence.stored digits
+    n.digits__ = new Sequence digits
     n.sign__   = sign
     n
 

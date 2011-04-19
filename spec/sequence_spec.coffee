@@ -115,9 +115,6 @@ describe "An empty sequence created with the new operator", ->
   it "should return null when reversed", ->
     expect(s.reverse()).toBe null
 
-  it "should return null on stored", ->
-    expect(s.stored()).toBe null
-
   it "should return null on forced", ->
     expect(s.forced()).toBe null
 
@@ -312,7 +309,7 @@ describe "A sequence containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
     expect(s.flatten().uniq().into []).toEqual [1,2,3]
 
 describe "A sequence implementing the Fibonacci numbers", ->
-  s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().add s).stored()
+  s = (Sequence.conj 0, -> Sequence.conj 1, -> s.rest().add s)
 
   it "should print as '(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)'", ->
     expect(s.toString()).toEqual "(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)"
@@ -353,7 +350,7 @@ describe "The sequence of prime numbers", ->
   isPrime = (n) ->
     n < 4 or primes.takeWhile((m) -> m * m <= n).forall (m) -> n % m
 
-  primes = Sequence.from(2).select(isPrime).stored()
+  primes = Sequence.from(2).select(isPrime)
 
   it "should start with the number 2, 3, 5, 7, 11, 13, 17, 19, 23 and 29", ->
     expect(primes.take(10).into []).toEqual [2,3,5,7,11,13,17,19,23,29]
@@ -382,9 +379,9 @@ describe "A forced sequence", ->
     expect(s.size()).toEqual 10
     expect(log).toEqual [0..9]
 
-describe "A stored sequence", ->
+describe "A sequence with default semantics", ->
   log = []
-  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x).stored()
+  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x)
 
   it "should only have the first member evaluated up front", ->
     expect(log).toEqual [0]
@@ -396,21 +393,6 @@ describe "A stored sequence", ->
     expect(s.last()).toEqual 81
     expect(s.size()).toEqual 10
     expect(log).toEqual [0..9]
-
-describe "A sequence with default semantics", ->
-  log = []
-  s = Sequence.range(0, 9).map((x) -> log.push(x); x * x)
-
-  it "should only have the first member evaluated up front", ->
-    expect(log).toEqual [0]
-
-  it "should contain the right values", ->
-    expect(s.into []).toEqual (x * x for x in [0..9])
-
-  it "should be executed each time it is accessed", ->
-    expect(s.last()).toEqual 81
-    expect(s.size()).toEqual 10
-    expect(log.length).toBeGreaterThan 10
 
 describe "An array of arrays, with empty ones and nulls mixed in", ->
   a = [[1,2,3],[],[4],null,[5,6],[7,[8,9]]]

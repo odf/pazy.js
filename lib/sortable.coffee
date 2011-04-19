@@ -41,9 +41,9 @@ class Sortable
 
   merge = (less, xs, ys) ->
     if xs and (not ys or less(xs.first(), ys.first()))
-      Sequence.conj xs.first(), (-> merge(less, xs.rest(), ys)), 'stored'
+      Sequence.conj xs.first(), (-> merge(less, xs.rest(), ys))
     else if ys
-      Sequence.conj ys.first(), (-> merge(less, xs, ys.rest())), 'stored'
+      Sequence.conj ys.first(), (-> merge(less, xs, ys.rest()))
 
 
 # --------------------------------------------------------------------

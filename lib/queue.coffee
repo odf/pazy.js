@@ -24,14 +24,14 @@ class Queue
       @front = @rear = @schedule = null
 
   rotate = (f, r, a) ->
-    a1 = Sequence.conj r.first(), (-> a), 'stored'
+    a1 = Sequence.conj r.first(), (-> a)
     if f
-      Sequence.conj f.first(), (-> rotate f.rest(), r.rest(), a1), 'stored'
+      Sequence.conj f.first(), (-> rotate f.rest(), r.rest(), a1)
     else
       a1
 
   push: (x) ->
-    new Queue(@front, Sequence.conj(x, (=> @rear), 'stored'), @schedule)
+    new Queue(@front, Sequence.conj(x, (=> @rear)), @schedule)
 
   first: -> @front?.first()
 
