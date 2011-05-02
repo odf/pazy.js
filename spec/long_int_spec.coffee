@@ -5,6 +5,13 @@ else
   { LongInt } = pazy
 
 
+describe "A LongInt with value 0", ->
+  a = new LongInt 0
+
+  it "should have a positive sign", ->
+    expect(a.sign()).toEqual 1
+
+
 describe "A LongInt", ->
   a = new LongInt 12345679
 
@@ -21,6 +28,9 @@ describe "A LongInt", ->
 
   it "can be compared with an integer", ->
     expect(a.cmp(12345680)).toBeLessThan 0
+
+  it "can be compared with 0", ->
+    expect(a.cmp(0)).toBeGreaterThan 0
 
   it "can be compared with another LongInt", ->
     expect(a.cmp(new LongInt 12345680)).toBeLessThan 0

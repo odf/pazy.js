@@ -41,25 +41,13 @@ ZERO = Sequence.conj 0
 ONE  = Sequence.conj 1
 TWO  = Sequence.conj 2
 
-# -- Constructs a simple list
-
-list = (car, cdr) ->
-  first: -> car
-  rest:  -> cdr
-
 # -- Internal helper functions that operate on (sequences of) digits/limbs
 
 cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
 cmp = (r, s) ->
-  step = (diff, r, s) ->
-    if r and s
-      recur -> step(list(r.first() - s.first(), diff), r.rest(), s.rest())
-    else if r or s
-      if r then 1 else -1
-    else
-      Sequence.dropWhile(diff, ((x) -> x == 0))?.first() or 0
-  resolve step null, r, s
+  d = Sequence.combine(r, s, (a, b) -> a - b)
+  d?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
 
 add = (r, s, c = 0) ->
   if c or (r and s)
@@ -176,7 +164,7 @@ class LongInt
     n.sign__   = sign
     n
 
-  convert = (x) ->
+  @make: (x) ->
     if x instanceof LongInt
       x
     else if typeof x == 'number'
@@ -205,7 +193,7 @@ class LongInt
     @sign() * resolve step(0, rev)
 
   @operator: (names, arity, code) ->
-    f = (args...) -> code.apply(this, convert x for x in args[...arity-1])
+    f = (args...) -> code.apply(this, LongInt.make x for x in args[...arity-1])
     @::[name] = f for name in names
     null
 
