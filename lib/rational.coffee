@@ -14,18 +14,18 @@ else
 
 class Rational
   constructor: (num = 0, den = 1, quick = false) ->
-    if quick
-      @num__ = num
-      @den__ = den
+    sgn = LongInt.make(den).cmp(0)
+    if sgn == 0
+      throw new Error "denominator is zero"
+    else if sgn < 0
+      [n, d] = [LongInt.make(num).neg(), LongInt.make(den).neg()]
     else
-      sgn = LongInt.make(den).cmp(0)
-      if sgn == 0
-        throw new Error "denominator is zero"
-      else if sgn < 0
-        [n, d] = [LongInt.make(num).neg(), LongInt.make(den).neg()]
-      else
-        [n, d] = [LongInt.make(num), LongInt.make(den)]
+      [n, d] = [LongInt.make(num), LongInt.make(den)]
 
+    if quick
+      @num__ = n
+      @den__ = d
+    else
       a = n.gcd d
       @num__ = n.div a
       @den__ = d.div a
@@ -50,9 +50,11 @@ class Rational
     @::[name] = f for name in names
     null
 
-  @operator ['neg', '-'], 1, -> new Rational(@num__.neg(), @den__, true)
+  @operator ['neg', '-'], 1, -> new Rational @num__.neg(), @den__, true
 
-  @operator ['abs'], 1, -> new Rational(@num__.abs(), @den__, true)
+  @operator ['inv'], 1, -> new Rational @den__, @num__, true
+
+  @operator ['abs'], 1, -> new Rational @num__.abs(), @den__, true
 
   @operator ['sign'], 1, -> @num__.sign()
 
@@ -60,7 +62,18 @@ class Rational
     a = this.den__.gcd other.den__
     t = this.den__.div a
     n = other.den__.div(a).times(this.num__).plus t.times(other.num__)
-    new Rational n, t.times(other.den__)
+    new Rational n, t.times other.den__
+
+  @operator ['minus', '-'], 2, (other) -> this.plus other.neg()
+
+  @operator ['times', '*'], 2, (other) ->
+    a = this.num__.gcd other.den__
+    b = this.den__.gcd other.num__
+    n = this.num__.div(a).times other.num__.div(b)
+    d = this.den__.div(b).times other.den__.div(a)
+    new Rational n, d, true
+
+  @operator ['div', '/'], 2, (other) -> this.times other.inv()
 
 
 # --------------------------------------------------------------------
