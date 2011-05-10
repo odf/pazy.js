@@ -66,6 +66,8 @@ class Rational
 
   @operator ['minus', '-'], 2, (other) -> this.plus other.neg()
 
+  @operator ['cmp', '<=>'], 2, (other) -> this.minus(other).num__.cmp 0
+
   @operator ['times', '*'], 2, (other) ->
     a = this.num__.gcd other.den__
     b = this.den__.gcd other.num__
@@ -74,6 +76,10 @@ class Rational
     new Rational n, d, true
 
   @operator ['div', '/'], 2, (other) -> this.times other.inv()
+
+  @operator ['pow', '**'], 2, (other) ->
+    throw new Error('exponent must be an integer') unless other.den__.cmp(1) == 0
+    new Rational @num__.pow(other.num__), @den__.pow(other.num__)
 
 
 # --------------------------------------------------------------------
