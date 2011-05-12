@@ -11,6 +11,25 @@ describe "A LongInt with value 0", ->
   it "should have a positive sign", ->
     expect(a.sign()).toEqual 1
 
+  it "can be compared with 0", ->
+    expect(a.cmp(0)).toBe 0
+
+
+describe "A LongInt with value 1", ->
+  a = new LongInt 1
+
+  it "should have a positive sign", ->
+    expect(a.sign()).toEqual 1
+
+  it "can be compared with 0", ->
+    expect(a.cmp(0)).toBeGreaterThan 0
+
+  it "can have the gcd taken with itself", ->
+    expect(a.gcd(a).toString()).toEqual '1'
+
+  it "can be multiplied by 0", ->
+    expect(a.times(0).toString()).toEqual '0'
+
 
 describe "A LongInt", ->
   a = new LongInt 12345679
@@ -53,6 +72,9 @@ describe "A LongInt", ->
   it "can be multiplied with another LongInt", ->
     expect(a.times(new LongInt 9000000009).toString())
       .toEqual '111111111111111111'
+
+  it "can be multiplied by 0", ->
+    expect(a.times(0).toString()).toEqual '0'
 
   it "can be divided by an integer", ->
     expect(a.div(343).toString()).toEqual '35993'
