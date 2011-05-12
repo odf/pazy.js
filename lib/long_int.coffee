@@ -156,7 +156,7 @@ class LongInt
       if m then Sequence.conj(m % BASE, -> make_digits(Math.floor m / BASE))
 
     [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
-    @digits__ = new Sequence make_digits m
+    @digits__ = cleanup new Sequence make_digits m
 
   create = (digits, sign) ->
     n = new LongInt()
