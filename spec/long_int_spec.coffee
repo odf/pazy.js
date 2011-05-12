@@ -76,6 +76,9 @@ describe "A LongInt", ->
   it "can be multiplied by 0", ->
     expect(a.times(0).toString()).toEqual '0'
 
+  it "can be negated and then multiplied by 0", ->
+    expect(a.neg().times(0).toString()).toEqual '0'
+
   it "can be divided by an integer", ->
     expect(a.div(343).toString()).toEqual '35993'
 

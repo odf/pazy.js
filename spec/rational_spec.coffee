@@ -58,5 +58,8 @@ describe 'A Rational with the value 0', ->
   it "can have itself subtracted from it", ->
     expect(a.minus(a).toString()).toBe '0/1'
 
+  it "can do complicated things with itself", ->
+    expect(a.neg().times(a).minus(a).toString()).toBe '0/1'
+
   it "can be compared to 0", ->
     expect(a.cmp 0).toBe 0

@@ -160,8 +160,8 @@ class LongInt
 
   create = (digits, sign) ->
     n = new LongInt()
-    n.digits__ = new Sequence digits
-    n.sign__   = sign
+    n.digits__ = cleanup new Sequence digits
+    n.sign__   = if n.digits__? then sign else 1
     n
 
   @make: (x) ->
