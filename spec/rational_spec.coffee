@@ -29,7 +29,7 @@ describe 'A Rational', ->
     expect(new Rational(5).minus(a).toString()).toEqual '30/7'
 
   it "can be subtracted from itself", ->
-    expect(a.minus(a).toString()).toEqual '0/1'
+    expect(a.minus(a).toString()).toEqual '0'
 
   it "can be compared to another rational", ->
     expect(a.cmp new Rational 5).toBeLessThan 0
@@ -50,16 +50,16 @@ describe 'A Rational with the value 0', ->
   a = new Rational(0)
 
   it "can be negated", ->
-    expect(a.neg().toString()).toBe '0/1'
+    expect(a.neg().toString()).toBe '0'
 
   it "can have itself added to it", ->
-    expect(a.plus(a).toString()).toBe '0/1'
+    expect(a.plus(a).toString()).toBe '0'
 
   it "can have itself subtracted from it", ->
-    expect(a.minus(a).toString()).toBe '0/1'
+    expect(a.minus(a).toString()).toBe '0'
 
   it "can do complicated things with itself", ->
-    expect(a.neg().times(a).minus(a).toString()).toBe '0/1'
+    expect(a.neg().times(a).minus(a).toString()).toBe '0'
 
   it "can be compared to 0", ->
     expect(a.cmp 0).toBe 0

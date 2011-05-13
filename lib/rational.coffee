@@ -43,7 +43,11 @@ class Rational
     else
       throw new Error "#{x} is not a number"
 
-  toString: -> "#{@num__.toString()}/#{@den__.toString()}"
+  toString: ->
+    if @den__.cmp(1) == 0
+      @num__.toString()
+    else
+      "#{@num__.toString()}/#{@den__.toString()}"
 
   @operator: (names, arity, code) ->
     f = (args...) -> code.apply(this, convert x for x in args[...arity-1])
