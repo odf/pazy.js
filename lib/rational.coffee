@@ -30,8 +30,8 @@ class Rational
       @num__ = n.div a
       @den__ = d.div a
 
-  @numerator: -> @num__
-  @denominator: -> @den__
+  numerator: -> @num__
+  denominator: -> @den__
 
   convert = (x) ->
     if x instanceof Rational
