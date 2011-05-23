@@ -134,6 +134,9 @@ describe "An empty sequence created with the new operator", ->
   it "should print as ()", ->
     expect(s.toString()).toEqual '()'
 
+  it "should produce an empty string if joined with --", ->
+    expect(s.join '--').toEqual ''
+
 
 describe "A sequence made of the numbers 1 and 2", ->
   s = new Sequence [1, 2]
@@ -162,6 +165,9 @@ describe "A sequence made of the numbers 1 and 2", ->
   it "should print as '1,2' when converted to an array", ->
     expect(s.into([]).toString()).toEqual "1,2"
 
+  it "should produce the string '1--2' when joined with --", ->
+    expect(s.join '--').toEqual '1--2'
+
   it "should compare equal to a sequence with the same elements", ->
     expect(s.equals [1,2]).toBe true
 
@@ -174,6 +180,22 @@ describe "A sequence made of the numbers 1 and 2", ->
 
   it "should not compare equal to the same sequence with a zero appended", ->
     expect(s.equals [1,2,0]).toBe false
+
+describe "A sequence of ten times the letter 'A'", ->
+  s = Sequence.constant('A').take(10)
+
+  it "should have size 10", ->
+    expect(s.size()).toBe 10
+
+  it "should start with an 'A'", ->
+    expect(s.first()).toBe 'A'
+
+  it "should end with an 'A'", ->
+    expect(s.last()).toBe 'A'
+
+  Sequence.range(0,9).each (i) ->
+    it "should have an 'A' at position #{i}", ->
+      expect(s.get(i)).toBe 'A'
 
 describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
   s = new Sequence ['a', 's', 'd', 'f']

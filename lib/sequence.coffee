@@ -64,6 +64,8 @@ class Sequence
 
   @range: (start, end) -> @take__ @from(start), end - start + 1
 
+  @constant: (value) -> Sequence.conj value, => @constant value
+
   make = (seq) ->
     if seq and (res = new Sequence(seq)) and not res.empty() then res else null
 
@@ -240,12 +242,14 @@ class Sequence
     else
       throw new Error('cannot inject into #{target}')
 
+  @method 'join', (seq, glue) -> @into__(seq, []).join glue
+
   toString: (limit = 10) ->
     [s, more] = if limit > 0
       [@take(limit), @get(limit)?]
     else
       [this, false]
-    '(' + Sequence.into(s, []).join(', ') + if more then ', ...)' else ')'
+    '(' + Sequence.join(s, ', ') + if more then ', ...)' else ')'
 
 
 # --------------------------------------------------------------------
