@@ -35,16 +35,22 @@ class Digit1
   constructor: -> [@a] = arguments
   reduceLeft:  (z, op) -> op(z, @a)
   reduceRight: (op, z) -> op(@a, z)
+  after:  (x) -> new Digit2 x, @a
+  before: (x) -> new Digit2 @a, x
 
 class Digit2
   constructor: -> [@a, @b] = arguments
   reduceLeft:  (z, op) -> op(op(z, @a), @b)
   reduceRight: (op, z) -> op(@a, op(@b, z))
+  after:  (x) -> new Digit3 x, @a, @b
+  before: (x) -> new Digit3 @a, @b, x
 
 class Digit3
   constructor: -> [@a, @b, @c] = arguments
   reduceLeft:  (z, op) -> op(op(op(z, @a), @b), @c)
   reduceRight: (op, z) -> op(@a, op(@b, op(@c, z)))
+  after:  (x) -> new Digit4 x, @a, @b, @c
+  before: (x) -> new Digit4 @a, @b, @c, x
 
 class Digit4
   constructor: -> [@a, @b, @c, @d] = arguments
@@ -67,6 +73,9 @@ makeDigit = (args...) ->
 Empty = {
   reduceLeft:  (z, op) -> z
   reduceRight: (op, z) -> z
+
+  after:  (a) -> new Single a
+  before: (a) -> new Single a
 }
 
 
@@ -76,6 +85,9 @@ class Single
 
   reduceLeft:  (z, op) -> op z, @a
   reduceRight: (op, z) -> op @a, z
+
+  after:  (x) -> new Deep makeDigit(x), Empty, makeDigit(@a)
+  before: (x) -> new Deep makeDigit(@a), Empty, makeDigit(x)
 
 
 # A deep finger tree.
@@ -94,6 +106,20 @@ class Deep
     op1 = reduceRight op0
     op2 = reduceRight op1
     op1(@l, op2(@m, op1(@r, z)))
+
+  after: (x) ->
+    if @l.constructor == Digit4
+      { a, b, c, d } = @l
+      new Deep makeDigit(x, a), @m.after(makeNode(b, c, d)), @r
+    else
+      new Deep @l.after(x), @m, @r
+
+  before: (x) ->
+    if @r.constructor == Digit4
+      { a, b, c, d } = @r
+      new Deep @l, @m.before(makeNode(a, b, c)), makeDigit(d, x)
+    else
+      new Deep @l, @m, @r.before(x)
 
 
 # --------------------------------------------------------------------
