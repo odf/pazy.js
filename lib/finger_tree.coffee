@@ -86,38 +86,38 @@ class Single
   reduceLeft:  (z, op) -> op z, @a
   reduceRight: (op, z) -> op @a, z
 
-  after:  (x) -> new Deep makeDigit(x), Empty, makeDigit(@a)
-  before: (x) -> new Deep makeDigit(@a), Empty, makeDigit(x)
+  after:  (x) -> new Deep makeDigit(x), (-> Empty), makeDigit(@a)
+  before: (x) -> new Deep makeDigit(@a), (-> Empty), makeDigit(x)
 
 
 # A deep finger tree.
 class Deep
   constructor: (left, middle, right) ->
     @l = left
-    @m = middle
+    @m = -> val = middle(); (@m = -> val)()
     @r = right
 
   reduceLeft: (z, op0) ->
     op1 = reduceLeft op0
     op2 = reduceLeft op1
-    op1(op2(op1(z, @l), @m), @r)
+    op1(op2(op1(z, @l), @m()), @r)
 
   reduceRight: (op0, z) ->
     op1 = reduceRight op0
     op2 = reduceRight op1
-    op1(@l, op2(@m, op1(@r, z)))
+    op1(@l, op2(@m(), op1(@r, z)))
 
   after: (x) ->
     if @l.constructor == Digit4
       { a, b, c, d } = @l
-      new Deep makeDigit(x, a), @m.after(makeNode(b, c, d)), @r
+      new Deep makeDigit(x, a), (=> @m().after(makeNode(b, c, d))), @r
     else
       new Deep @l.after(x), @m, @r
 
   before: (x) ->
     if @r.constructor == Digit4
       { a, b, c, d } = @r
-      new Deep @l, @m.before(makeNode(a, b, c)), makeDigit(d, x)
+      new Deep @l, (=> @m().before(makeNode(a, b, c))), makeDigit(d, x)
     else
       new Deep @l, @m, @r.before(x)
 
@@ -129,8 +129,4 @@ class Deep
 exports ?= this.pazy ?= {}
 exports.reduceLeft  = reduceLeft
 exports.reduceRight = reduceRight
-exports.makeDigit   = makeDigit
-exports.makeNode    = makeNode
 exports.Empty  = Empty
-exports.Single = Single
-exports.Deep   = Deep
