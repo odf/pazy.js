@@ -5,6 +5,13 @@
 # --------------------------------------------------------------------
 
 
+if typeof(require) != 'undefined'
+  require.paths.unshift('#{__dirname}/../lib')
+  { Sequence } = require('sequence')
+else
+  { Sequence } = pazy
+
+
 # A node.
 class Node2
   constructor: -> [@a, @b] = arguments
@@ -140,7 +147,8 @@ class Deep
   reduceLeft  = (op) -> (z, x) -> x.reduceLeft(z, op)
   reduceRight = (op) -> (x, z) -> x.reduceRight(op, z)
 
-  asTree = (s) -> reduceLeft((a, b) -> a.before b) Empty, s
+  asTree = (s) -> s.reduceLeft Empty, (a, b) -> a.before b
+  asSeq  = (s) -> s.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 
   constructor: (left, mid, right) ->
     @l = left
@@ -192,6 +200,16 @@ class Deep
     else
       new Deep @l, @m, @r.init()
 
+  nodes = (n, s) ->
+    if n == 0
+      null
+    else if n == 2 or n % 3 == 1
+      Sequence.conj new Tree2(s.take(3).into([])...), -> nodes n-2, s.drop 2
+    else if n >= 3
+      Sequence.conj new Tree3(s.take(3).into([])...), -> nodes n-3, s.drop 3
+    else
+      raise new Error "this should not happen"
+
 
 # --------------------------------------------------------------------
 # Exporting.
@@ -199,4 +217,4 @@ class Deep
 
 exports ?= this.pazy ?= {}
 
-exports.Empty       = Empty
+exports.Empty = Empty
