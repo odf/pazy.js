@@ -1,13 +1,13 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
   { Sequence } = require('sequence')
-  { reduceRight, reduceLeft, Empty } = require('finger_tree')
+  { Empty }    = require('finger_tree')
 else
-  { Sequence, reduceRight, reduceLeft, Empty } = pazy
+  { Sequence, Empty } = pazy
 
 
-asSeq = (x) -> reduceRight((a, b) -> Sequence.conj a, -> b) x, null
-sum   = (x) -> reduceLeft((a, b) -> a + b) 0, x
+asSeq = (x) -> x.reduceRight ((a, b) -> Sequence.conj a, -> b), null
+sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
 
 leftSeq = (t) -> if t != Empty then Sequence.conj t.first(), -> leftSeq t.rest()
 rightSeq = (t) -> if t != Empty then Sequence.conj t.last(), -> rightSeq t.init()

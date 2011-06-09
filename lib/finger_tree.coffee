@@ -5,10 +5,6 @@
 # --------------------------------------------------------------------
 
 
-reduceLeft  = (op) -> (z, x) -> x.reduceLeft(z, op)
-reduceRight = (op) -> (x, z) -> x.reduceRight(op, z)
-
-
 # A node.
 class Node2
   constructor: -> [@a, @b] = arguments
@@ -141,6 +137,11 @@ class Single
 
 # A deep finger tree.
 class Deep
+  reduceLeft  = (op) -> (z, x) -> x.reduceLeft(z, op)
+  reduceRight = (op) -> (x, z) -> x.reduceRight(op, z)
+
+  asTree = (s) -> reduceLeft((a, b) -> a.before b) Empty, s
+
   constructor: (left, mid, right) ->
     @l = left
     @m = -> val = mid(); (@m = -> val)()
@@ -191,14 +192,11 @@ class Deep
     else
       new Deep @l, @m, @r.init()
 
-asTree = (s) -> reduceLeft((a, b) -> a.before b) Empty, s
-
 
 # --------------------------------------------------------------------
 # Exporting.
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.reduceLeft  = reduceLeft
-exports.reduceRight = reduceRight
-exports.Empty  = Empty
+
+exports.Empty       = Empty
