@@ -210,6 +210,22 @@ class Deep
     else
       raise new Error "this should not happen"
 
+  app3 = (tLeft, list, tRight) ->
+    if tLeft == Empty
+      Sequence.reduce Sequence.reverse(list), tRight, (t, x) -> t.after x
+    else if tRight == Empty
+      Sequence.reduce list, tLeft, (t, x) -> t.before x
+    else if tLeft.constructor == Single
+      app3(Empty, list, tRight).after tLeft.a
+    else if tRight.constructor == Single
+      app3(tLeft, list, Empty).before tRight.a
+    else
+      tmp = Sequence.flatten [asSeq(tLeft.r), list,  asSeq(tRight.l)]
+      s = node tmp.size(), tmp
+      new Deep tLeft.l, (-> app3 tLeft.m(), s, tRight.m()), tRight.r
+
+  concat: (t) -> app3 this, null, t
+
 
 # --------------------------------------------------------------------
 # Exporting.
