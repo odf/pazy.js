@@ -54,3 +54,9 @@ describe "A finger tree made by appending elements from a sequence", ->
 
   it "should produce the elements in reverse order via last|init", ->
     expect(rightSeq(tree).into []).toEqual [100..1]
+
+  describe "when concatenated with itself", ->
+    t1 = tree.concat tree
+
+    it "should produce the right elements in the right order", ->
+      expect(leftSeq(t1).into []).toEqual [1..100].concat [1..100]

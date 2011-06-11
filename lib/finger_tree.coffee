@@ -204,9 +204,9 @@ class Deep
     if n == 0
       null
     else if n == 2 or n % 3 == 1
-      Sequence.conj new Tree2(s.take(3).into([])...), -> nodes n-2, s.drop 2
+      Sequence.conj new Node2(s.take(3).into([])...), -> nodes n-2, s.drop 2
     else if n >= 3
-      Sequence.conj new Tree3(s.take(3).into([])...), -> nodes n-3, s.drop 3
+      Sequence.conj new Node3(s.take(3).into([])...), -> nodes n-3, s.drop 3
     else
       raise new Error "this should not happen"
 
@@ -221,7 +221,7 @@ class Deep
       app3(tLeft, list, Empty).before tRight.a
     else
       tmp = Sequence.flatten [asSeq(tLeft.r), list,  asSeq(tRight.l)]
-      s = node tmp.size(), tmp
+      s = nodes tmp.size(), tmp
       new Deep tLeft.l, (-> app3 tLeft.m(), s, tRight.m()), tRight.r
 
   concat: (t) -> app3 this, null, t
