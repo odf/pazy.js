@@ -50,15 +50,6 @@ class FingerTreeType
       asDigit:  -> new T.Digit3 @a, @b, @c
       norm: -> @v
 
-    makeNode = (args...) ->
-      type = switch args.length
-        when 2 then T.Node2
-        when 3 then T.Node3
-        else
-          raise new Error "Illegal number of arguments: #{args.length}"
-
-      new type args...
-
 
     # A digit in a finger tree.
     @Digit1 = class
@@ -130,17 +121,6 @@ class FingerTreeType
 
       norm: -> norm(@a).plus(norm(@b)).plus(norm(@c)).plus(norm(@d))
 
-    makeDigit = (args...) ->
-      type = switch args.length
-        when 1 then T.Digit1
-        when 2 then T.Digit2
-        when 3 then T.Digit3
-        when 4 then T.Digit4
-        else
-          raise new Error "Illegal number of arguments: #{args.length}"
-
-      new type args...
-
 
     # An empty finger tree.
     @Empty = {
@@ -169,8 +149,8 @@ class FingerTreeType
       reduceLeft:  (z, op) -> op z, @a
       reduceRight: (op, z) -> op @a, z
 
-      after:  (x) -> new T.Deep makeDigit(x), (-> T.Empty), makeDigit(@a)
-      before: (x) -> new T.Deep makeDigit(@a), (-> T.Empty), makeDigit(x)
+      after:  (x) -> new T.Deep new T.Digit1(x), (-> T.Empty), new T.Digit1(@a)
+      before: (x) -> new T.Deep new T.Digit1(@a), (-> T.Empty), new T.Digit1(x)
 
       first: -> @a
       last:  -> @a
@@ -209,14 +189,18 @@ class FingerTreeType
       after: (x) ->
         if @l.constructor == T.Digit4
           { a, b, c, d } = @l
-          new T.Deep makeDigit(x, a), (=> @m().after(makeNode(b, c, d))), @r
+          new T.Deep(new T.Digit2(x, a),
+                     (=> @m().after(new T.Node3(b, c, d))),
+                     @r)
         else
           new T.Deep @l.after(x), @m, @r
 
       before: (x) ->
         if @r.constructor == T.Digit4
           { a, b, c, d } = @r
-          new T.Deep @l, (=> @m().before(makeNode(a, b, c))), makeDigit(d, x)
+          new T.Deep(@l,
+                     (=> @m().before(new T.Node3(a, b, c))),
+                     new T.Digit2(d, x))
         else
           new T.Deep @l, @m, @r.before(x)
 
