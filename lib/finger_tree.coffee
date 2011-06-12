@@ -122,6 +122,8 @@ Empty = {
 
   rest: ->
   init: ->
+
+  concat: (t) -> t
 }
 
 
@@ -140,6 +142,8 @@ class Single
 
   rest: -> Empty
   init: -> Empty
+
+  concat: (t) -> t.after @a
 
 
 # A deep finger tree.
