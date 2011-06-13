@@ -19,11 +19,15 @@ SizeMeasure =
 
 
 class FingerTreeType
+  buildLeft:  -> Sequence.reduce arguments, @Empty, (s, a) -> s.before a
+  buildRight: -> Sequence.reduce arguments, @Empty, (s, a) -> s.after a
+
   constructor: (measure = SizeMeasure) ->
     T = this
     norm = ->
       Sequence.reduce arguments, measure.empty, (n, x) ->
         if x?
+          # TODO - make measures work correctly in all cases
           t = if typeof x.measure == 'function'
             x.measure()
           else
@@ -127,6 +131,8 @@ class FingerTreeType
 
     # An empty finger tree.
     @Empty = {
+      isEmpty: -> true
+
       reduceLeft:  (z, op) -> z
       reduceRight: (op, z) -> z
 
@@ -148,6 +154,8 @@ class FingerTreeType
     # A finger tree with a single element.
     @Single = class
       constructor: (a) -> @a = a
+
+      isEmpty: -> false
 
       reduceLeft:  (z, op) -> op z, @a
       reduceRight: (op, z) -> op @a, z
@@ -178,6 +186,8 @@ class FingerTreeType
         @l = left
         @m = -> val = mid(); (@m = -> val)()
         @r = right
+
+      isEmpty: -> false
 
       measure: -> val = norm(@l, @m(), @r); (@measure = -> val)()
 
@@ -265,4 +275,4 @@ class FingerTreeType
 
 exports ?= this.pazy ?= {}
 
-exports.Empty = new FingerTreeType().Empty
+exports.FingerTreeType = FingerTreeType
