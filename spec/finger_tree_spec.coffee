@@ -34,6 +34,9 @@ describe "A finger tree made by prepending elements from a sequence", ->
   it "should produce the elements in reverse order via last|init", ->
     expect(rightSeq(tree).into []).toEqual [1..10]
 
+  it "should have the right size", ->
+    expect(tree.measure()).toBe 10
+
 describe "A finger tree made by appending elements from a sequence", ->
   tree = Sequence.reduce [1..100], Empty, (s, a) -> s.before a
 
@@ -69,3 +72,6 @@ describe "A finger tree made by appending elements from a sequence", ->
 
   it "should concatenate with an empty one on the left", ->
     expect(asArray(Empty.before(0).concat tree)).toEqual [0..100]
+
+  it "should have the right size", ->
+    expect(tree.measure()).toBe 100

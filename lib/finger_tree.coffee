@@ -24,9 +24,10 @@ class FingerTreeType
     norm = ->
       Sequence.reduce arguments, measure.empty, (n, x) ->
         if x?
-          t = switch x.constructor
-            when T.Node2, T.Node3 then x.measure()
-            else measure.single(x)
+          t = if typeof x.measure == 'function'
+            x.measure()
+          else
+            measure.single(x)
           measure.sum n, t
         else
           n
@@ -177,6 +178,8 @@ class FingerTreeType
         @l = left
         @m = -> val = mid(); (@m = -> val)()
         @r = right
+
+      measure: -> val = norm(@l, @m(), @r); (@measure = -> val)()
 
       reduceLeft: (z, op0) ->
         op1 = reduceLeft op0
