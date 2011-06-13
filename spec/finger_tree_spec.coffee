@@ -43,6 +43,14 @@ describe "A finger tree made by prepending elements from a sequence", ->
   it "should have the right size", ->
     expect(tree.measure()).toBe 10
 
+  it "should produce correct sizes while being deconstructed", ->
+    expect(tree.init().measure()).toBe 9
+    expect(tree.rest().measure()).toBe 9
+    expect(tree.init().init().measure()).toBe 8
+    expect(tree.init().rest().measure()).toBe 8
+    expect(tree.rest().init().measure()).toBe 8
+    expect(tree.rest().rest().measure()).toBe 8
+
 describe "A finger tree made by appending elements from a sequence", ->
   tree = FingerTree.buildLeft [1..100]...
 
