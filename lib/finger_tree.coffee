@@ -12,43 +12,45 @@ else
   { Sequence } = pazy
 
 
-class SizeMeasurement
-  constructor: (@v) ->
-
-  plus: (other) -> new SizeMeasurement this.v + other.v
-
-  @empty: 0
-  @norm: (x) -> new SizeMeasurement 1
+SizeMeasure =
+  empty:  0
+  single: (x) -> 1
+  sum:    (a, b) -> a + b
 
 
 class FingerTreeType
-  constructor: (measurement = SizeMeasurement) ->
+  constructor: (measure = SizeMeasure) ->
     T = this
-    norm = (x) ->
-      switch x.constructor
-        when T.Node2, T.Node3 then x.norm()
-        else measurement.norm(x)
+    norm = ->
+      Sequence.reduce arguments, measure.empty, (n, x) ->
+        if x?
+          t = switch x.constructor
+            when T.Node2, T.Node3 then x.measure()
+            else measure.single(x)
+          measure.sum n, t
+        else
+          n
 
     # A node.
     @Node2 = class
       constructor: ->
         [@a, @b] = arguments
-        @v = norm(@a).plus norm(@b)
+        @v = norm @a, @b
 
       reduceLeft:  (z, op) -> op(op(z, @a), @b)
       reduceRight: (op, z) -> op(@a, op(@b, z))
-      asDigit:  -> new T.Digit2 @a, @b
-      norm: -> @v
+      asDigit: -> new T.Digit2 @a, @b
+      measure: -> @v
 
     @Node3 = class
       constructor: ->
         [@a, @b, @c] = arguments
-        @v = norm(@a).plus(norm(@b)).plus norm(@c)
+        @v = norm @a, @b, @c
 
       reduceLeft:  (z, op) -> op(op(op(z, @a), @b), @c)
       reduceRight: (op, z) -> op(@a, op(@b, op(@c, z)))
-      asDigit:  -> new T.Digit3 @a, @b, @c
-      norm: -> @v
+      asDigit: -> new T.Digit3 @a, @b, @c
+      measure: -> @v
 
 
     # A digit in a finger tree.
@@ -67,7 +69,7 @@ class FingerTreeType
       rest: -> T.Empty
       init: -> T.Empty
 
-      norm: -> norm(@a)
+      measure: -> norm @a
 
     @Digit2 = class
       constructor: -> [@a, @b] = arguments
@@ -86,7 +88,7 @@ class FingerTreeType
 
       asNode: -> new T.Node2 @a, @b
 
-      norm: -> norm(@a).plus(norm(@b))
+      measure: -> norm @a, @b
 
     @Digit3 = class
       constructor: -> [@a, @b, @c] = arguments
@@ -105,7 +107,7 @@ class FingerTreeType
 
       asNode: -> new T.Node3 @a, @b, @c
 
-      norm: -> norm(@a).plus(norm(@b)).plus(norm(@c))
+      measure: -> norm @a, @b, @c
 
     @Digit4 = class
       constructor: -> [@a, @b, @c, @d] = arguments
@@ -119,7 +121,7 @@ class FingerTreeType
       rest: -> new T.Digit3 @b, @c, @d
       init: -> new T.Digit3 @a, @b, @c
 
-      norm: -> norm(@a).plus(norm(@b)).plus(norm(@c)).plus(norm(@d))
+      measure: -> norm @a, @b, @c, @d
 
 
     # An empty finger tree.
@@ -138,7 +140,7 @@ class FingerTreeType
 
       concat: (t) -> t
 
-      norm: -> measurement.empty
+      measure: -> norm()
     }
 
 
@@ -160,7 +162,7 @@ class FingerTreeType
 
       concat: (t) -> t.after @a
 
-      norm: -> norm @a
+      measure: -> norm @a
 
 
     # A deep finger tree.
