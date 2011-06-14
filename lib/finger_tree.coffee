@@ -20,20 +20,43 @@ SizeMeasure =
 
 class FingerTreeType
   constructor: (measure = SizeMeasure) ->
-    @buildLeft  = -> Sequence.reduce arguments, Empty, (s, a) -> s.before a
-    @buildRight = -> Sequence.reduce arguments, Empty, (s, a) -> s.after a
+    @buildLeft  = ->
+      new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
 
-    norm = ->
-      Sequence.reduce arguments, measure.empty, (n, x) ->
-        if x?
-          # TODO - make measures work correctly in all cases
-          t = if typeof x.measure == 'function'
-            x.measure()
-          else
-            measure.single(x)
-          measure.sum n, t
-        else
-          n
+    @buildRight = ->
+      new Instance Sequence.reduce arguments, Empty, (s, a) -> s.after a
+
+    single = (x) -> if x == Empty or x.constructor in internal
+        x.measure()
+      else
+        measure.single(x)
+
+    norm = -> Sequence.reduce arguments, measure.empty, (n, x) ->
+      if x? then measure.sum n, single x else n
+
+
+    # Wrapper for finger tree instances
+    class Instance
+      constructor: (@data) ->
+
+      isEmpty: -> @data.isEmpty()
+
+      reduceLeft:  (z, op) -> @data.reduceLeft z, op
+      reduceRight: (op, z) -> @data.reduceRight op, z
+
+      after:  (x) -> new Instance @data.after x
+      before: (x) -> new Instance @data.before x
+
+      first: -> @data.first()
+      last:  -> @data.last()
+
+      rest: -> new Instance @data.rest()
+      init: -> new Instance @data.init()
+
+      concat: (t) -> new Instance @data.concat t.data
+
+      measure: -> @data.measure()
+
 
     # A node.
     class Node2
@@ -266,6 +289,18 @@ class FingerTreeType
           new Deep tLeft.l, (-> app3 tLeft.m(), s, tRight.m()), tRight.r
 
       concat: (t) -> app3 this, null, t
+
+
+    internal = [
+      Node2
+      Node3
+      Digit1
+      Digit2
+      Digit3
+      Digit4
+      Single
+      Deep
+    ]
 
 
 # --------------------------------------------------------------------

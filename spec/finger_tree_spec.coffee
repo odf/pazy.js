@@ -51,6 +51,10 @@ describe "A finger tree made by prepending elements from a sequence", ->
     expect(tree.rest().init().measure()).toBe 8
     expect(tree.rest().rest().measure()).toBe 8
 
+  it "within a finger tree should not lead to confusion with measures", ->
+    expect(FingerTree.buildRight(tree, tree).measure()).toBe 2
+
+
 describe "A finger tree made by appending elements from a sequence", ->
   tree = FingerTree.buildLeft [1..100]...
 
