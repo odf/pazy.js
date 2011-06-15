@@ -69,6 +69,9 @@ class FingerTreeType
             [@data, Empty]
         [new Instance(a), new Instance(b)]
 
+      takeUntil: (p) -> @split(p)[0]
+      dropUntil: (p) -> @split(p)[1]
+
 
     # A node.
     class Node2
