@@ -55,9 +55,10 @@ describe "A finger tree made by prepending elements from a sequence", ->
     expect(FingerTree.buildRight(tree, tree).measure()).toBe 2
 
   it "should split correctly", ->
-    [l, r] = tree.split (n) -> n > 5
+    [l, x, r] = tree.split (n) -> n > 5
     expect(asArray l).toEqual [10..6]
-    expect(asArray r).toEqual [5..1]
+    expect(x).toBe 5
+    expect(asArray r).toEqual [4..1]
 
   it "should do takeUntil correctly", ->
     expect(asArray tree.takeUntil (n) -> n > 7).toEqual [10..4]
@@ -109,6 +110,7 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(tree.measure()).toBe 100
 
   it "should split correctly", ->
-    [l, r] = tree.split (n) -> n > 27
+    [l, x, r] = tree.split (n) -> n > 27
     expect(asArray l).toEqual [1..27]
-    expect(asArray r).toEqual [28..100]
+    expect(x).toBe 28
+    expect(asArray r).toEqual [29..100]

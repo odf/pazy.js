@@ -59,21 +59,19 @@ class FingerTreeType
       measure: -> @data.measure()
 
       split: (p) ->
-        [a, b] =
-          if @data == Empty
-            [Empty, Empty]
-          else if p norm @data
-            [l, x, r] = @data.split p, measure.empty
-            [l, r.after(x)]
-          else
-            [@data, Empty]
-        [new Instance(a), new Instance(b)]
+        if @data != Empty and p norm @data
+          [l, x, r] = @data.split p, measure.empty
+          [new Instance(l), x, new Instance(r)]
+        else
+          [this, undefined, new Instance(Empty)]
 
       takeUntil: (p) -> @split(p)[0]
-      dropUntil: (p) -> @split(p)[1]
 
-      at: (p) -> if @data != Empty and p norm @data
-        @data.split(p, measure.empty)[1]
+      dropUntil: (p) ->
+        [l, x, r] = @split(p)
+        r.after x
+
+      at: (p) -> @split(p)[1]
 
 
     # A node.
