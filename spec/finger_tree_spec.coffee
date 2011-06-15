@@ -65,6 +65,9 @@ describe "A finger tree made by prepending elements from a sequence", ->
   it "should do dropUntil correctly", ->
     expect(asArray tree.dropUntil (n) -> n > 4).toEqual [6..1]
 
+  it "should return the element at position 7 as 3", ->
+    expect(tree.at (n) -> n > 7).toBe 3
+
 
 describe "A finger tree made by appending elements from a sequence", ->
   tree = FingerTree.buildLeft [1..100]...

@@ -72,6 +72,9 @@ class FingerTreeType
       takeUntil: (p) -> @split(p)[0]
       dropUntil: (p) -> @split(p)[1]
 
+      at: (p) -> if @data != Empty and p norm @data
+        @data.split(p, measure.empty)[1]
+
 
     # A node.
     class Node2
