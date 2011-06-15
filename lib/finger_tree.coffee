@@ -8,8 +8,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
   { Sequence } = require('sequence')
+  { suspend }  = require('functional')
 else
-  { Sequence } = pazy
+  { Sequence, suspend } = pazy
 
 
 SizeMeasure =
@@ -57,6 +58,17 @@ class FingerTreeType
 
       measure: -> @data.measure()
 
+      split: (p) ->
+        [a, b] =
+          if @data == Empty
+            [Empty, Empty]
+          else if p norm @data
+            [l, x, r] = @data.split p, measure.empty
+            [l, r.after(x)]
+          else
+            [@data, Empty]
+        [new Instance(a), new Instance(b)]
+
 
     # A node.
     class Node2
@@ -98,6 +110,8 @@ class FingerTreeType
 
       measure: -> norm @a
 
+      split: (p, i) -> [Empty, @a, Empty]
+
     class Digit2
       constructor: -> [@a, @b] = arguments
 
@@ -116,6 +130,12 @@ class FingerTreeType
       asNode: -> new Node2 @a, @b
 
       measure: -> norm @a, @b
+
+      split: (p, i) ->
+        if p measure.sum i, norm @a
+          [Empty, @a, new Digit1(@b)]
+        else
+          [new Digit1(@a), @b, Empty]
 
     class Digit3
       constructor: -> [@a, @b, @c] = arguments
@@ -136,6 +156,15 @@ class FingerTreeType
 
       measure: -> norm @a, @b, @c
 
+      split: (p, i) ->
+        i1 = measure.sum i, norm @a
+        if p i1
+          [Empty, @a, new Digit2(@b, @c)]
+        else if p measure.sum i1, norm @b
+          [new Digit1(@a), @b, new Digit1(@c)]
+        else
+          [new Digit2(@a, @b), @c, Empty]
+
     class Digit4
       constructor: -> [@a, @b, @c, @d] = arguments
 
@@ -149,6 +178,19 @@ class FingerTreeType
       init: -> new Digit3 @a, @b, @c
 
       measure: -> norm @a, @b, @c, @d
+
+      split: (p, i) ->
+        i1 = measure.sum i, norm @a
+        if p i1
+          [Empty, @a, new Digit3(@b, @c, @d)]
+        else
+          i2 = measure.sum i1, norm @b
+          if p i2
+            [new Digit1(@a), @b, new Digit2(@c, @d)]
+          else if p measure.sum i2, norm @c
+            [new Digit2(@a, @b), @c, new Digit1(@d)]
+          else
+            [new Digit3(@a, @b, @c), @d, Empty]
 
 
     # An empty finger tree.
@@ -195,6 +237,8 @@ class FingerTreeType
 
       measure: -> norm @a
 
+      split: (p, i) -> [Empty, @a, Empty]
+
 
     # A deep finger tree.
     class Deep
@@ -226,41 +270,40 @@ class FingerTreeType
       after: (x) ->
         if @l.constructor == Digit4
           { a, b, c, d } = @l
-          new Deep(new Digit2(x, a),
-                     (=> @m().after(new Node3(b, c, d))),
-                     @r)
+          new Deep new Digit2(x, a), (=> @m().after(new Node3(b, c, d))), @r
         else
           new Deep @l.after(x), @m, @r
 
       before: (x) ->
         if @r.constructor == Digit4
           { a, b, c, d } = @r
-          new Deep(@l,
-                     (=> @m().before(new Node3(a, b, c))),
-                     new Digit2(d, x))
+          new Deep @l, (=> @m().before(new Node3(a, b, c))), new Digit2(d, x)
         else
           new Deep @l, @m, @r.before(x)
 
       first: -> @l.first()
       last:  -> @r.last()
 
-      rest: ->
-        if  @l.rest() == Empty
-          if @m() == Empty
-            asTree @r
+      deepL = (l, m, r) ->
+        if l == Empty
+          if m() == Empty
+            asTree r
           else
-            new Deep @m().first().asDigit(), (=> @m().rest()), @r
+            new Deep m().first().asDigit(), (=> m().rest()), r
         else
-          new Deep @l.rest(), @m, @r
+          new Deep l, m, r
 
-      init: ->
-        if  @r.init() == Empty
-          if @m() == Empty
-            asTree @l
+      deepR = (l, m, r) ->
+        if  r == Empty
+          if m() == Empty
+            asTree l
           else
-            new Deep @l, (=> @m().init()), @m().last().asDigit()
+            new Deep l, (=> m().init()), m().last().asDigit()
         else
-          new Deep @l, @m, @r.init()
+          new Deep l, m, r
+
+      rest: -> deepL @l.rest(), suspend(=> @m()), @r
+      init: -> deepR @l, suspend(=> @m()), @r.init()
 
       nodes = (n, s) ->
         if n == 0
@@ -290,6 +333,20 @@ class FingerTreeType
 
       concat: (t) -> app3 this, null, t
 
+      split: (p, i) ->
+        i1 = measure.sum i, norm @l
+        if p i1
+          [l, x, r] = @l.split p, i
+          [asTree(l), x, deepL(r, suspend(=> @m()), @r)]
+        else
+          i2 = measure.sum i1, norm @m()
+          if p i2
+            [ml, xs, mr] = @m().split p, i1
+            [l, x, r] = xs.asDigit().split p, measure.sum i1, norm ml
+            [deepR(@l, (-> ml), l), x, deepL(r, (-> mr), @r)]
+          else
+            [l, x, r] = @r.split p, i2
+            [deepR(@l, suspend(=> @m()), l), x, asTree(r)]
 
     internal = [
       Node2
