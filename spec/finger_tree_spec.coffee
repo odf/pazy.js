@@ -54,6 +54,11 @@ describe "A finger tree made by prepending elements from a sequence", ->
   it "within a finger tree should not lead to confusion with measures", ->
     expect(FingerTree.buildRight(tree, tree).measure()).toBe 2
 
+  it "should split correctly", ->
+    [l, r] = tree.split (n) -> n > 5
+    expect(asArray l).toEqual [10..6]
+    expect(asArray r).toEqual [5..1]
+
 
 describe "A finger tree made by appending elements from a sequence", ->
   tree = FingerTree.buildLeft [1..100]...
@@ -93,3 +98,8 @@ describe "A finger tree made by appending elements from a sequence", ->
 
   it "should have the right size", ->
     expect(tree.measure()).toBe 100
+
+  it "should split correctly", ->
+    [l, r] = tree.split (n) -> n > 27
+    expect(asArray l).toEqual [1..27]
+    expect(asArray r).toEqual [28..100]
