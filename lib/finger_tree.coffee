@@ -76,9 +76,7 @@ class FingerTreeType
 
     # A node.
     class Node2
-      constructor: ->
-        [@a, @b] = arguments
-        @v = norm @a, @b
+      constructor: (@a, @b) -> @v = norm @a, @b
 
       reduceLeft:  (z, op) -> op(op(z, @a), @b)
       reduceRight: (op, z) -> op(@a, op(@b, z))
@@ -86,9 +84,7 @@ class FingerTreeType
       measure: -> @v
 
     class Node3
-      constructor: ->
-        [@a, @b, @c] = arguments
-        @v = norm @a, @b, @c
+      constructor: (@a, @b, @c) -> @v = norm @a, @b, @c
 
       reduceLeft:  (z, op) -> op(op(op(z, @a), @b), @c)
       reduceRight: (op, z) -> op(@a, op(@b, op(@c, z)))
@@ -98,7 +94,7 @@ class FingerTreeType
 
     # A digit in a finger tree.
     class Digit1
-      constructor: -> [@a] = arguments
+      constructor: (@a) ->
 
       reduceLeft:  (z, op) -> op(z, @a)
       reduceRight: (op, z) -> op(@a, z)
@@ -117,7 +113,7 @@ class FingerTreeType
       split: (p, i) -> [Empty, @a, Empty]
 
     class Digit2
-      constructor: -> [@a, @b] = arguments
+      constructor: (@a, @b) ->
 
       reduceLeft:  (z, op) -> op(op(z, @a), @b)
       reduceRight: (op, z) -> op(@a, op(@b, z))
@@ -142,7 +138,7 @@ class FingerTreeType
           [new Digit1(@a), @b, Empty]
 
     class Digit3
-      constructor: -> [@a, @b, @c] = arguments
+      constructor: (@a, @b, @c) ->
 
       reduceLeft:  (z, op) -> op(op(op(z, @a), @b), @c)
       reduceRight: (op, z) -> op(@a, op(@b, op(@c, z)))
@@ -170,7 +166,7 @@ class FingerTreeType
           [new Digit2(@a, @b), @c, Empty]
 
     class Digit4
-      constructor: -> [@a, @b, @c, @d] = arguments
+      constructor: (@a, @b, @c, @d) ->
 
       reduceLeft:  (z, op) -> op(op(op(op(z, @a), @b), @c), @d)
       reduceRight: (op, z) -> op(@a, op(@b, op(@c, op(@d, z))))
@@ -221,7 +217,7 @@ class FingerTreeType
 
     # A finger tree with a single element.
     class Single
-      constructor: (a) -> @a = a
+      constructor: (@a) ->
 
       isEmpty: -> false
 
@@ -252,10 +248,7 @@ class FingerTreeType
       asTree = (s) -> s.reduceLeft Empty, (a, b) -> a.before b
       asSeq  = (s) -> s.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 
-      constructor: (left, mid, right) ->
-        @l = left
-        @m = -> val = mid(); (@m = -> val)()
-        @r = right
+      constructor: (@l, m, @r) -> @m = -> val = m(); (@m = -> val)()
 
       isEmpty: -> false
 
