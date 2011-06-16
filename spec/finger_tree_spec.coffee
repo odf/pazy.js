@@ -1,9 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }   = require('sequence')
-  { CountedSeq } = require('finger_tree')
+  { Sequence }               = require('sequence')
+  { CountedSeq, OrderedSeq } = require('finger_tree')
 else
-  { Sequence, CountedSeq } = pazy
+  { Sequence, CountedSeq, OrderedSeq } = pazy
 
 asSeq = (x) -> x.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
@@ -120,3 +120,10 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(asArray l).toEqual [1..27]
     expect(x).toBe 28
     expect(asArray r).toEqual [29..100]
+
+
+describe "An ordered sequence", ->
+  tree = Sequence.reduce [8, 3, 4, 2, 0, 1, 7, 5, 6, 9], OrderedSeq.buildLeft(), (s, x) -> s.insert x
+
+  it "should have the right elements in the right order", ->
+    expect(asArray tree).toEqual [1..10]

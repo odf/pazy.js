@@ -31,7 +31,7 @@ class FingerTreeType
 
 
     # Wrapper for finger tree instances
-    class Instance extends extensions
+    class Instance
       constructor: (@data) ->
 
       isEmpty: -> @data.isEmpty()
@@ -62,6 +62,9 @@ class FingerTreeType
       takeUntil: (p) -> @split(p)[0]
       dropUntil: (p) -> [l, x, r] = @split(p); r.after x
       find:      (p) -> @split(p)[1]
+
+    for k, v of extensions::
+      Instance::[k] = v
 
 
     # A node.
@@ -302,7 +305,7 @@ class FingerTreeType
           Sequence.conj new Node3(s.take(3).into([])...),
             -> nodes n-3, s.drop 3
         else
-          raise new Error "this should not happen"
+          throw new Error "this should not happen"
 
       app3 = (tLeft, list, tRight) ->
         if tLeft == Empty
@@ -347,12 +350,13 @@ class FingerTreeType
     ]
 
 # --------------------------------------------------------------------
-# Exporting and specialising.
+# Exports and specialisations.
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
+
 
 SizeMeasure =
   empty:  0
@@ -364,3 +368,32 @@ class CountedExtensions
   splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
 
 exports.CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
+
+
+OrderMeasure =
+  empty:  undefined
+  single: (x) -> x
+  sum:    (a, b) -> if b? then b else a
+
+class OrderedExtensions
+  partition: (k) ->
+    [l, x, r] = @split((m) -> m >= k)
+    [l, r.after x]
+
+  insert: (x) ->
+    [l, r] = @partition(x)
+    l.concat r.after x
+
+  deleteAll: (x) ->
+    [l, r] = @partition(x)
+    l.concat r.split((m) -> m > k)[2]
+
+  merge: (t) ->
+    if t.isEmpty()
+      this
+    else
+      x = t.first()
+      [l, r] = @split (m) -> m > x
+      l.concat t.rest().merge(r).after x
+
+exports.OrderedSeq = new FingerTreeType OrderMeasure, OrderedExtensions
