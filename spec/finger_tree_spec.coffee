@@ -67,7 +67,15 @@ describe "A finger tree made by prepending elements from a sequence", ->
     expect(asArray tree.dropUntil (n) -> n > 4).toEqual [6..1]
 
   it "should return the element at position 7 as 3", ->
-    expect(tree.at (n) -> n > 7).toBe 3
+    expect(tree.find (n) -> n > 7).toBe 3
+
+  it "should respond to get", ->
+    expect(tree.get(8)).toBe 2
+
+  it "should respond to splitAt", ->
+    [l, r] = tree.splitAt 6
+    expect(asArray l).toEqual [10..5]
+    expect(asArray r).toEqual [4..1]
 
 
 describe "A finger tree made by appending elements from a sequence", ->

@@ -18,9 +18,13 @@ SizeMeasure =
   single: (x) -> 1
   sum:    (a, b) -> a + b
 
+class SizeExtensions
+  get: (i) -> @find (m) -> m > i
+  splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
+
 
 class FingerTreeType
-  constructor: (measure = SizeMeasure) ->
+  constructor: (measure = SizeMeasure, extensions = SizeExtensions) ->
     @buildLeft  = ->
       new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
 
@@ -37,7 +41,7 @@ class FingerTreeType
 
 
     # Wrapper for finger tree instances
-    class Instance
+    class Instance extends extensions
       constructor: (@data) ->
 
       isEmpty: -> @data.isEmpty()
@@ -66,12 +70,8 @@ class FingerTreeType
           [this, undefined, new Instance(Empty)]
 
       takeUntil: (p) -> @split(p)[0]
-
-      dropUntil: (p) ->
-        [l, x, r] = @split(p)
-        r.after x
-
-      at: (p) -> @split(p)[1]
+      dropUntil: (p) -> [l, x, r] = @split(p); r.after x
+      find:      (p) -> @split(p)[1]
 
 
     # A node.
