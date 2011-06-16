@@ -359,8 +359,8 @@ SizeMeasure =
   single: (x) -> 1
   sum:    (a, b) -> a + b
 
-class OrderedExtensions
+class CountedExtensions
   get: (i) -> @find (m) -> m > i
   splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
 
-exports.OrderedSeq = new FingerTreeType SizeMeasure, OrderedExtensions
+exports.CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
