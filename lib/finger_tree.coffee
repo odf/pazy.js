@@ -13,18 +13,8 @@ else
   { Sequence, suspend } = pazy
 
 
-SizeMeasure =
-  empty:  0
-  single: (x) -> 1
-  sum:    (a, b) -> a + b
-
-class SizeExtensions
-  get: (i) -> @find (m) -> m > i
-  splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
-
-
 class FingerTreeType
-  constructor: (measure = SizeMeasure, extensions = SizeExtensions) ->
+  constructor: (measure, extensions) ->
     @buildLeft  = ->
       new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
 
@@ -356,11 +346,21 @@ class FingerTreeType
       Deep
     ]
 
-
 # --------------------------------------------------------------------
-# Exporting.
+# Exporting and specialising.
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
+
+SizeMeasure =
+  empty:  0
+  single: (x) -> 1
+  sum:    (a, b) -> a + b
+
+class OrderedExtensions
+  get: (i) -> @find (m) -> m > i
+  splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
+
+exports.OrderedSeq = new FingerTreeType SizeMeasure, OrderedExtensions

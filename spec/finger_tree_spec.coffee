@@ -1,11 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }       = require('sequence')
-  { FingerTreeType } = require('finger_tree')
+  { Sequence }   = require('sequence')
+  { OrderedSeq } = require('finger_tree')
 else
-  { Sequence, FingerTreeType } = pazy
-
-FingerTree = new FingerTreeType()
+  { Sequence, OrderedSeq } = pazy
 
 asSeq = (x) -> x.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
@@ -20,7 +18,7 @@ asArray  = (t) -> leftSeq(t).into []
 
 
 describe "A finger tree made by prepending elements from a sequence", ->
-  tree = FingerTree.buildRight [1..10]...
+  tree = OrderedSeq.buildRight [1..10]...
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [10..1]
@@ -52,7 +50,7 @@ describe "A finger tree made by prepending elements from a sequence", ->
     expect(tree.rest().rest().measure()).toBe 8
 
   it "within a finger tree should not lead to confusion with measures", ->
-    expect(FingerTree.buildRight(tree, tree).measure()).toBe 2
+    expect(OrderedSeq.buildRight(tree, tree).measure()).toBe 2
 
   it "should split correctly", ->
     [l, x, r] = tree.split (n) -> n > 5
@@ -79,7 +77,7 @@ describe "A finger tree made by prepending elements from a sequence", ->
 
 
 describe "A finger tree made by appending elements from a sequence", ->
-  tree = FingerTree.buildLeft [1..100]...
+  tree = OrderedSeq.buildLeft [1..100]...
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [1..100]
@@ -103,16 +101,16 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(asArray(tree.concat tree)).toEqual [1..100].concat [1..100]
 
   it "should concatenate with an empty one on the right", ->
-    expect(asArray(tree.concat FingerTree.buildLeft())).toEqual [1..100]
+    expect(asArray(tree.concat OrderedSeq.buildLeft())).toEqual [1..100]
 
   it "should concatenate with an empty one on the left", ->
-    expect(asArray(FingerTree.buildLeft().concat tree)).toEqual [1..100]
+    expect(asArray(OrderedSeq.buildLeft().concat tree)).toEqual [1..100]
 
   it "should concatenate with a single-element one on the right", ->
-    expect(asArray(tree.concat FingerTree.buildLeft 101)).toEqual [1..101]
+    expect(asArray(tree.concat OrderedSeq.buildLeft 101)).toEqual [1..101]
 
   it "should concatenate with a single-element one on the left", ->
-    expect(asArray(FingerTree.buildLeft(0).concat tree)).toEqual [0..100]
+    expect(asArray(OrderedSeq.buildLeft(0).concat tree)).toEqual [0..100]
 
   it "should have the right size", ->
     expect(tree.measure()).toBe 100
