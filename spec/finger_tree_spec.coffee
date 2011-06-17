@@ -147,3 +147,18 @@ describe "An ordered sequence", ->
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [0..9]
+
+  it "should partition correctly", ->
+    [l, r] = tree.partition 6
+    expect(asArray l).toEqual [0, 1, 2, 3, 4, 5]
+    expect(asArray r).toEqual [6, 7, 8, 9]
+
+  it "should split correctly", ->
+    [l, x, r] = tree.split (m) -> m > 6
+    expect(asArray l).toEqual [0, 1, 2, 3, 4, 5, 6]
+    expect(x).toBe 7
+    expect(asArray r).toEqual [8, 9]
+
+  it "should have the right contents after removing some elements", ->
+    t = tree.deleteAll(5).deleteAll(7).deleteAll(2)
+    expect(asArray t).toEqual [0, 1, 3, 4, 6, 8, 9]

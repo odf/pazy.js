@@ -382,7 +382,7 @@ class OrderedExtensions
 
   deleteAll: (x) ->
     [l, r] = @partition(x)
-    l.concat r.split((m) -> m > k)[2]
+    l.concat r.dropUntil (m) -> m > x
 
   merge: (t) ->
     if t.isEmpty()
