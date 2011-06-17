@@ -14,11 +14,25 @@ leftSeq  = (t) ->
 rightSeq = (t) ->
   Sequence.conj(t.last(), -> rightSeq t.init()) unless t.isEmpty()
 
-asArray  = (t) -> leftSeq(t).into []
+asArray  = (t) -> Sequence.into leftSeq(t), []
+
+
+describe "A finger tree containing a single element", ->
+  tree = CountedSeq.buildRight 1
+
+  it "should have size 1", ->
+    expect(tree.size()).toBe 1
+
+  #TODO implementation specific - remove after debugging
+  it "should bee implemented as a Single node", ->
+    expect(tree.data.constructor.name).toEqual "Single"
 
 
 describe "A finger tree made by prepending elements from a sequence", ->
   tree = CountedSeq.buildRight [1..10]...
+
+  it "should have the right size", ->
+    expect(tree.size()).toBe 10
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [10..1]
@@ -52,11 +66,17 @@ describe "A finger tree made by prepending elements from a sequence", ->
   it "within a finger tree should not lead to confusion with measures", ->
     expect(CountedSeq.buildRight(tree, tree).measure()).toBe 2
 
-  it "should split correctly", ->
+  it "should split correctly in the middle", ->
     [l, x, r] = tree.split (n) -> n > 5
     expect(asArray l).toEqual [10..6]
     expect(x).toBe 5
     expect(asArray r).toEqual [4..1]
+
+  it "should split correctly at the end", ->
+    [l, x, r] = tree.split (n) -> n > 10
+    expect(asArray l).toEqual [10..1]
+    expect(x).toBe undefined
+    expect(asArray r).toEqual []
 
   it "should do takeUntil correctly", ->
     expect(asArray tree.takeUntil (n) -> n > 7).toEqual [10..4]
@@ -126,4 +146,4 @@ describe "An ordered sequence", ->
   tree = Sequence.reduce [8, 3, 4, 2, 0, 1, 7, 5, 6, 9], OrderedSeq.buildLeft(), (s, x) -> s.insert x
 
   it "should have the right elements in the right order", ->
-    expect(asArray tree).toEqual [1..10]
+    expect(asArray tree).toEqual [0..9]

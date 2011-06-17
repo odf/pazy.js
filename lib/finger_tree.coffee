@@ -31,7 +31,7 @@ class FingerTreeType
 
 
     # Wrapper for finger tree instances
-    class Instance
+    class Instance extends extensions
       constructor: (@data) ->
 
       isEmpty: -> @data.isEmpty()
@@ -39,8 +39,8 @@ class FingerTreeType
       reduceLeft:  (z, op) -> @data.reduceLeft z, op
       reduceRight: (op, z) -> @data.reduceRight op, z
 
-      after:  (x) -> new Instance @data.after x
-      before: (x) -> new Instance @data.before x
+      after:  (x) -> if x == undefined then @ else new Instance @data.after x
+      before: (x) -> if x == undefined then @ else new Instance @data.before x
 
       first: -> @data.first()
       last:  -> @data.last()
@@ -48,7 +48,7 @@ class FingerTreeType
       rest: -> new Instance @data.rest()
       init: -> new Instance @data.init()
 
-      concat: (t) -> new Instance @data.concat t.data
+      concat: (t) -> if not t? then this else new Instance @data.concat t.data
 
       measure: -> @data.measure()
 
@@ -62,9 +62,6 @@ class FingerTreeType
       takeUntil: (p) -> @split(p)[0]
       dropUntil: (p) -> [l, x, r] = @split(p); r.after x
       find:      (p) -> @split(p)[1]
-
-    for k, v of extensions::
-      Instance::[k] = v
 
 
     # A node.
@@ -298,14 +295,12 @@ class FingerTreeType
       nodes = (n, s) ->
         if n == 0
           null
-        else if n == 2 or n % 3 == 1
-          Sequence.conj new Node2(s.take(3).into([])...),
-            -> nodes n-2, s.drop 2
-        else if n >= 3
-          Sequence.conj new Node3(s.take(3).into([])...),
-            -> nodes n-3, s.drop 3
-        else
+        else if n == 1 or n < 0
           throw new Error "this should not happen"
+        else if n == 2 or n % 3 == 1
+          Sequence.conj new Node2(s.take(2).into([])...), -> nodes n-2, s.drop 2
+        else
+          Sequence.conj new Node3(s.take(3).into([])...), -> nodes n-3, s.drop 3
 
       app3 = (tLeft, list, tRight) ->
         if tLeft == Empty
@@ -364,6 +359,7 @@ SizeMeasure =
   sum:    (a, b) -> a + b
 
 class CountedExtensions
+  size: -> @measure()
   get: (i) -> @find (m) -> m > i
   splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
 
