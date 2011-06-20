@@ -418,7 +418,7 @@ SortedSeq = (->
       else
         k = t2.first()
         [l, x, r] = t1.split (m) -> m > k
-        l.before(k).concat merge(r.after(x), t2.rest())
+        l.before(k).concat merge(t2.rest(), r.after(x))
 
     merge: (other) -> new Instance merge this.data, other.data
 
