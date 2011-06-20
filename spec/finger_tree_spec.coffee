@@ -143,7 +143,7 @@ describe "A finger tree made by appending elements from a sequence", ->
 
 
 describe "An sorted sequence", ->
-  tree = SortedSeq.build [8, 3, 4, 2, 0, 1, 7, 5, 6, 9]...
+  tree = SortedSeq.build 8, 3, 4, 2, 0, 1, 7, 5, 6, 9
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [0..9]
@@ -164,8 +164,8 @@ describe "An sorted sequence", ->
     expect(asArray t).toEqual [0, 1, 3, 4, 6, 8, 9]
 
 describe "A pair of sorted sequences", ->
-  t1 = SortedSeq.build [8, 5, 7, 9, 1, 6]...
-  t2 = SortedSeq.build [4, 7, 2, 0, 3]...
+  t1 = SortedSeq.build 8, 5, 7, 9, 1, 6
+  t2 = SortedSeq.build 4, 7, 2, 0, 3
 
   it "should merge correctly", ->
     expect(asArray t1.merge(t2)).toEqual [0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9]
