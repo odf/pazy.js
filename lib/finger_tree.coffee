@@ -63,6 +63,8 @@ class FingerTreeType
       dropUntil: (p) -> [l, x, r] = @split(p); r.after x
       find:      (p) -> @split(p)[1]
 
+      toString: -> @data.reduceLeft "", (s, x) -> s + x
+
 
     # A node.
     class Node2
@@ -344,14 +346,10 @@ class FingerTreeType
       Deep
     ]
 
+
 # --------------------------------------------------------------------
-# Exports and specialisations.
+# Specialisations
 # --------------------------------------------------------------------
-
-exports ?= this.pazy ?= {}
-
-exports.FingerTreeType = FingerTreeType
-
 
 SizeMeasure =
   empty:  0
@@ -363,7 +361,7 @@ class CountedExtensions
   get: (i) -> @find (m) -> m > i
   splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
 
-exports.CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
+CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
 
 
 OrderMeasure =
@@ -371,25 +369,74 @@ OrderMeasure =
   single: (x) -> x
   sum:    (a, b) -> if b? then b else a
 
-class OrderedExtensions
-  partition: (k) ->
-    [l, x, r] = @split((m) -> m >= k)
-    [l, r.after x]
+class SortedExtensions
 
-  insert: (x) ->
-    [l, r] = @partition(x)
-    l.concat r.after x
+SortedSeq = (->
+  Tree = new FingerTreeType OrderMeasure, SortedExtensions
 
-  deleteAll: (x) ->
-    [l, r] = @partition(x)
-    l.concat r.dropUntil (m) -> m > x
+  class Instance
+    constructor: (@data) ->
 
-  merge: (t) ->
-    if t.isEmpty()
-      this
-    else
-      x = t.first()
-      [l, r] = @split (m) -> m > x
-      l.concat t.rest().merge(r).after x
+    isEmpty: -> @data.isEmpty()
 
-exports.OrderedSeq = new FingerTreeType OrderMeasure, OrderedExtensions
+    reduceLeft:  (z, op) -> @data.reduceLeft z, op
+    reduceRight: (op, z) -> @data.reduceRight op, z
+
+    first: -> @data.first()
+    last:  -> @data.last()
+
+    rest: -> new Instance @data.rest()
+    init: -> new Instance @data.init()
+
+    split: (p) ->
+      [l, x, r] = @data.split p
+      [new Instance(l), x, new Instance(r)]
+
+    takeUntil: (p) -> new Instance @data.takeUntil p
+    dropUntil: (p) -> new Instance @data.dropUntil p
+    find:      (p) -> @data.find p
+
+    split = (data, k) ->
+      [l, x, r] = data.split((m) -> m >= k)
+      [l, r.after x]
+
+    partition: (k) ->
+      [l, r] = split @data, k
+      [new Instance(l), new Instance(r)]
+
+    insert: (x) ->
+      [l, r] = split @data, x
+      new Instance l.concat r.after x
+
+    deleteAll: (x) ->
+      [l, r] = split @data, x
+      new Instance l.concat r.dropUntil (m) -> m > x
+
+    merge = (t1, t2) ->
+      if t2.isEmpty()
+        t1
+      else
+        k = t2.first()
+        [l, x, r] = t1.split (m) -> m > k
+        l.before(k).concat merge(r.after(x), t2.rest())
+
+    merge: (other) -> new Instance merge this.data, other.data
+
+    toString: -> @data.toString()
+
+
+  Empty = new Instance Tree.buildLeft()
+
+  { build: -> Sequence.reduce arguments, Empty, (s, a) -> s.insert a }
+)()
+
+
+# --------------------------------------------------------------------
+# Exports
+# --------------------------------------------------------------------
+
+exports ?= this.pazy ?= {}
+
+exports.FingerTreeType = FingerTreeType
+exports.CountedSeq     = CountedSeq
+exports.SortedSeq      = SortedSeq

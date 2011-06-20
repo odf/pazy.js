@@ -1,9 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }               = require('sequence')
-  { CountedSeq, OrderedSeq } = require('finger_tree')
+  { Sequence }              = require('sequence')
+  { CountedSeq, SortedSeq } = require('finger_tree')
 else
-  { Sequence, CountedSeq, OrderedSeq } = pazy
+  { Sequence, CountedSeq, SortedSeq } = pazy
 
 asSeq = (x) -> x.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
@@ -142,8 +142,8 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(asArray r).toEqual [29..100]
 
 
-describe "An ordered sequence", ->
-  tree = Sequence.reduce [8, 3, 4, 2, 0, 1, 7, 5, 6, 9], OrderedSeq.buildLeft(), (s, x) -> s.insert x
+describe "An sorted sequence", ->
+  tree = SortedSeq.build [8, 3, 4, 2, 0, 1, 7, 5, 6, 9]...
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [0..9]
@@ -162,3 +162,10 @@ describe "An ordered sequence", ->
   it "should have the right contents after removing some elements", ->
     t = tree.deleteAll(5).deleteAll(7).deleteAll(2)
     expect(asArray t).toEqual [0, 1, 3, 4, 6, 8, 9]
+
+describe "A pair of sorted sequences", ->
+  t1 = SortedSeq.build [8, 5, 7, 9, 1, 6]...
+  t2 = SortedSeq.build [4, 7, 2, 0, 3]...
+
+  it "should merge correctly", ->
+    expect(asArray t1.merge(t2)).toEqual [0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9]
