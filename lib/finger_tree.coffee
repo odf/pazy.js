@@ -15,7 +15,7 @@ else
 
 class FingerTreeType
   constructor: (measure, extensions) ->
-    @buildLeft  = ->
+    @buildLeft = @build = ->
       new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
 
     @buildRight = ->

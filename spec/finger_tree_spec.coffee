@@ -97,7 +97,7 @@ describe "A finger tree made by prepending elements from a sequence", ->
 
 
 describe "A finger tree made by appending elements from a sequence", ->
-  tree = CountedSeq.buildLeft [1..100]...
+  tree = CountedSeq.build [1..100]...
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [1..100]
@@ -121,16 +121,16 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(asArray(tree.concat tree)).toEqual [1..100].concat [1..100]
 
   it "should concatenate with an empty one on the right", ->
-    expect(asArray(tree.concat CountedSeq.buildLeft())).toEqual [1..100]
+    expect(asArray(tree.concat CountedSeq.build())).toEqual [1..100]
 
   it "should concatenate with an empty one on the left", ->
-    expect(asArray(CountedSeq.buildLeft().concat tree)).toEqual [1..100]
+    expect(asArray(CountedSeq.build().concat tree)).toEqual [1..100]
 
   it "should concatenate with a single-element one on the right", ->
-    expect(asArray(tree.concat CountedSeq.buildLeft 101)).toEqual [1..101]
+    expect(asArray(tree.concat CountedSeq.build 101)).toEqual [1..101]
 
   it "should concatenate with a single-element one on the left", ->
-    expect(asArray(CountedSeq.buildLeft(0).concat tree)).toEqual [0..100]
+    expect(asArray(CountedSeq.build(0).concat tree)).toEqual [0..100]
 
   it "should have the right size", ->
     expect(tree.measure()).toBe 100
