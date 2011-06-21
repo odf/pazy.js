@@ -23,10 +23,6 @@ describe "A finger tree containing a single element", ->
   it "should have size 1", ->
     expect(tree.size()).toBe 1
 
-  #TODO implementation specific - remove after debugging
-  it "should bee implemented as a Single node", ->
-    expect(tree.data.constructor.name).toEqual "Single"
-
 
 describe "A finger tree made by prepending elements from a sequence", ->
   tree = CountedSeq.buildRight [1..10]...
@@ -36,6 +32,9 @@ describe "A finger tree made by prepending elements from a sequence", ->
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [10..1]
+
+  it "should have the correct reverse", ->
+    expect(asArray tree.reverse()).toEqual [1..10]
 
   it "should add up to 55", ->
     expect(sum(tree)).toBe 55
@@ -101,6 +100,9 @@ describe "A finger tree made by appending elements from a sequence", ->
 
   it "should have the right elements in the right order", ->
     expect(asArray tree).toEqual [1..100]
+
+  it "should have the correct reverse", ->
+    expect(asArray tree.reverse()).toEqual [100..1]
 
   it "should add up to 5050", ->
     expect(sum(tree)).toBe 5050

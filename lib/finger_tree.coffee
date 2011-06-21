@@ -29,6 +29,8 @@ class FingerTreeType
     norm = -> Sequence.reduce arguments, measure.empty, (n, x) ->
       if x? then measure.sum n, single x else n
 
+    rev = (x) -> if x?.constructor in [Node2, Node3] then x.reverse() else x
+
 
     # Wrapper for finger tree instances
     class Instance extends extensions
@@ -59,6 +61,8 @@ class FingerTreeType
         else
           [this, undefined, new Instance(Empty)]
 
+      reverse: -> new Instance @data.reverse()
+
       takeUntil: (p) -> @split(p)[0]
       dropUntil: (p) -> [l, x, r] = @split(p); r.after x
       find:      (p) -> @split(p)[1]
@@ -74,6 +78,7 @@ class FingerTreeType
       reduceRight: (op, z) -> op(@a, op(@b, z))
       asDigit: -> new Digit2 @a, @b
       measure: -> @v
+      reverse: -> new Node2 rev(@b), rev(@a)
 
     class Node3
       constructor: (@a, @b, @c) -> @v = norm @a, @b, @c
@@ -82,6 +87,7 @@ class FingerTreeType
       reduceRight: (op, z) -> op(@a, op(@b, op(@c, z)))
       asDigit: -> new Digit3 @a, @b, @c
       measure: -> @v
+      reverse: -> new Node3 rev(@c), rev(@b), rev(@a)
 
 
     # A digit in a finger tree.
@@ -103,6 +109,8 @@ class FingerTreeType
       measure: -> norm @a
 
       split: (p, i) -> [Empty, @a, Empty]
+
+      reverse: -> new Digit1 rev(@a)
 
     class Digit2
       constructor: (@a, @b) ->
@@ -128,6 +136,8 @@ class FingerTreeType
           [Empty, @a, new Digit1(@b)]
         else
           [new Digit1(@a), @b, Empty]
+
+      reverse: -> new Digit2 rev(@b), rev(@a)
 
     class Digit3
       constructor: (@a, @b, @c) ->
@@ -157,6 +167,8 @@ class FingerTreeType
         else
           [new Digit2(@a, @b), @c, Empty]
 
+      reverse: -> new Digit3 rev(@c), rev(@b), rev(@a)
+
     class Digit4
       constructor: (@a, @b, @c, @d) ->
 
@@ -184,6 +196,8 @@ class FingerTreeType
           else
             [new Digit3(@a, @b, @c), @d, Empty]
 
+      reverse: -> new Digit4 rev(@d), rev(@c), rev(@b), rev(@a)
+
 
     # An empty finger tree.
     Empty = {
@@ -204,6 +218,8 @@ class FingerTreeType
       concat: (t) -> t
 
       measure: -> norm()
+
+      reverse: -> this
     }
 
 
@@ -230,6 +246,8 @@ class FingerTreeType
       measure: -> norm @a
 
       split: (p, i) -> [Empty, @a, Empty]
+
+      reverse: -> this
 
 
     # A deep finger tree.
@@ -334,6 +352,8 @@ class FingerTreeType
           else
             [l, x, r] = @r.split p, i2
             [deepR(@l, suspend(=> @m()), l), x, asTree(r)]
+
+      reverse: -> new Deep @r.reverse(), suspend(=> @m().reverse()), @l.reverse()
 
     internal = [
       Node2
