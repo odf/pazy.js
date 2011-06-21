@@ -12,9 +12,10 @@ if typeof(require) != 'undefined'
 else
   { Sequence, recur, resolve, suspend } = pazy
 
+class Void
 
 class FingerTreeType
-  constructor: (measure, extensions) ->
+  constructor: (measure, extensions = Void) ->
     @buildLeft = @build = ->
       new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
 
@@ -384,72 +385,70 @@ class CountedExtensions
 CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
 
 
-OrderMeasure =
-  empty:  undefined
-  single: (x) -> x
-  sum:    (a, b) -> if b? then b else a
+class SortedSeqType
+  constructor: (less = ((a, b) -> a < b), extensions = Void) ->
+    @build = -> Sequence.reduce arguments, Empty, (s, a) -> s.insert a
 
-class SortedExtensions
+    class Instance extends extensions
+      constructor: (@data) ->
 
-SortedSeq = (->
-  class Instance
-    constructor: (@data) ->
+      isEmpty: -> @data.isEmpty()
 
-    isEmpty: -> @data.isEmpty()
+      reduceLeft:  (z, op) -> @data.reduceLeft z, op
+      reduceRight: (op, z) -> @data.reduceRight op, z
 
-    reduceLeft:  (z, op) -> @data.reduceLeft z, op
-    reduceRight: (op, z) -> @data.reduceRight op, z
+      first: -> @data.first()
+      last:  -> @data.last()
 
-    first: -> @data.first()
-    last:  -> @data.last()
+      rest: -> new Instance @data.rest()
+      init: -> new Instance @data.init()
 
-    rest: -> new Instance @data.rest()
-    init: -> new Instance @data.init()
+      split: (p) ->
+        [l, x, r] = @data.split p
+        [new Instance(l), x, new Instance(r)]
 
-    split: (p) ->
-      [l, x, r] = @data.split p
-      [new Instance(l), x, new Instance(r)]
+      takeUntil: (p) -> new Instance @data.takeUntil p
+      dropUntil: (p) -> new Instance @data.dropUntil p
+      find:      (p) -> @data.find p
 
-    takeUntil: (p) -> new Instance @data.takeUntil p
-    dropUntil: (p) -> new Instance @data.dropUntil p
-    find:      (p) -> @data.find p
+      split = (data, k) ->
+        [l, x, r] = data.split((m) -> not less m, k)
+        [l, r.after x]
 
-    split = (data, k) ->
-      [l, x, r] = data.split((m) -> m >= k)
-      [l, r.after x]
+      partition: (k) ->
+        [l, r] = split @data, k
+        [new Instance(l), new Instance(r)]
 
-    partition: (k) ->
-      [l, r] = split @data, k
-      [new Instance(l), new Instance(r)]
+      insert: (x) ->
+        [l, r] = split @data, x
+        new Instance l.concat r.after x
 
-    insert: (x) ->
-      [l, r] = split @data, x
-      new Instance l.concat r.after x
+      deleteAll: (x) ->
+        [l, r] = split @data, x
+        new Instance l.concat r.dropUntil (m) -> less x, m
 
-    deleteAll: (x) ->
-      [l, r] = split @data, x
-      new Instance l.concat r.dropUntil (m) -> m > x
+      merge = (s, t1, t2) ->
+        if t2.isEmpty()
+          s.concat t1
+        else
+          k = t2.first()
+          [l, x, r] = t1.split (m) -> less k, m
+          recur -> merge s.concat(l).before(k), t2.rest(), r.after(x)
 
-    merge = (s, t1, t2) ->
-      if t2.isEmpty()
-        s.concat t1
-      else
-        k = t2.first()
-        [l, x, r] = t1.split (m) -> m > k
-        recur -> merge s.concat(l).before(k), t2.rest(), r.after(x)
+      merge: (other) ->
+        new Instance resolve merge Tree.build(), this.data, other.data
 
-    merge: (other) ->
-      new Instance resolve merge Tree.build(), this.data, other.data
-
-    toString: -> @data.toString()
+      toString: -> @data.toString()
 
 
-  Tree = new FingerTreeType OrderMeasure, SortedExtensions
+    OrderMeasure =
+      empty:  undefined
+      single: (x) -> x
+      sum:    (a, b) -> if b? then b else a
 
-  Empty = new Instance Tree.build()
+    Tree = new FingerTreeType OrderMeasure
 
-  { build: -> Sequence.reduce arguments, Empty, (s, a) -> s.insert a }
-)()
+    Empty = new Instance Tree.build()
 
 
 # --------------------------------------------------------------------
@@ -460,4 +459,5 @@ exports ?= this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
 exports.CountedSeq     = CountedSeq
-exports.SortedSeq      = SortedSeq
+exports.SortedSeqType  = SortedSeqType
+exports.SortedSeq      = new SortedSeqType()
