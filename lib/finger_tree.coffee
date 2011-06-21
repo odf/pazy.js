@@ -7,10 +7,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence } = require('sequence')
-  { suspend }  = require('functional')
+  { Sequence }                = require('sequence')
+  { recur, resolve, suspend } = require('functional')
 else
-  { Sequence, suspend } = pazy
+  { Sequence, recur, resolve, suspend } = pazy
 
 
 class FingerTreeType
@@ -372,8 +372,6 @@ OrderMeasure =
 class SortedExtensions
 
 SortedSeq = (->
-  Tree = new FingerTreeType OrderMeasure, SortedExtensions
-
   class Instance
     constructor: (@data) ->
 
@@ -412,20 +410,23 @@ SortedSeq = (->
       [l, r] = split @data, x
       new Instance l.concat r.dropUntil (m) -> m > x
 
-    merge = (t1, t2) ->
+    merge = (s, t1, t2) ->
       if t2.isEmpty()
-        t1
+        s.concat t1
       else
         k = t2.first()
         [l, x, r] = t1.split (m) -> m > k
-        l.before(k).concat merge(t2.rest(), r.after(x))
+        recur -> merge s.concat(l).before(k), t2.rest(), r.after(x)
 
-    merge: (other) -> new Instance merge this.data, other.data
+    merge: (other) ->
+      new Instance resolve merge Tree.build(), this.data, other.data
 
     toString: -> @data.toString()
 
 
-  Empty = new Instance Tree.buildLeft()
+  Tree = new FingerTreeType OrderMeasure, SortedExtensions
+
+  Empty = new Instance Tree.build()
 
   { build: -> Sequence.reduce arguments, Empty, (s, a) -> s.insert a }
 )()
