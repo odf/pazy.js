@@ -68,7 +68,7 @@ class FingerTreeType
       dropUntil: (p) -> [l, x, r] = @split(p); r.after x
       find:      (p) -> @split(p)[1]
 
-      toString: -> @data.reduceLeft "", (s, x) -> s + x
+      toString: -> @data.reduceLeft "", (s, x) -> s + ' ' + x
 
 
     # A node.
@@ -437,6 +437,20 @@ class SortedSeqType
 
       merge: (other) ->
         new Instance resolve merge Tree.build(), this.data, other.data
+
+      intersect = (s, t1, t2) ->
+        if t2.isEmpty()
+          s
+        else
+          k = t2.first()
+          [l, x, r] = t1.split (m) -> not less m, k
+          if less(k, x)
+            recur -> intersect s, t2.rest(), r.after x
+          else
+            recur -> intersect s.before(x), t2.rest(), r
+
+      intersect: (other) ->
+        new Instance resolve intersect Tree.build(), this.data, other.data
 
       toString: -> @data.toString()
 

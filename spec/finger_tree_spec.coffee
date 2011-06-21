@@ -167,10 +167,13 @@ describe "An sorted sequence", ->
 
 describe "A pair of sorted sequences", ->
   t1 = SortedSeq.build 8, 5, 7, 9, 1, 6
-  t2 = SortedSeq.build 4, 7, 2, 0, 3
+  t2 = SortedSeq.build 4, 7, 2, 0, 3, 1
 
   it "should merge correctly", ->
-    expect(asArray t1.merge(t2)).toEqual [0, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9]
+    expect(asArray t1.merge(t2)).toEqual [0, 1, 1, 2, 3, 4, 5, 6, 7, 7, 8, 9]
+
+  it "should intersect correctly", ->
+    expect(asArray t1.intersect(t2)).toEqual [1, 7]
 
 describe "A pair of single-element sorted sequences", ->
   t1 = SortedSeq.build 8
@@ -178,3 +181,6 @@ describe "A pair of single-element sorted sequences", ->
 
   it "should merge correctly", ->
     expect(asArray t1.merge(t2)).toEqual [4, 8]
+
+  it "should intersect correctly", ->
+    expect(asArray t1.intersect(t2)).toEqual []
