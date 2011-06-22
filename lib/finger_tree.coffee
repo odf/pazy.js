@@ -263,7 +263,7 @@ class FingerTreeType
       asTree = (s) -> s.reduceLeft Empty, (a, b) -> a.before b
       asSeq  = (s) -> s.reduceRight ((a, b) -> Sequence.conj a, -> b), null
 
-      constructor: (@l, m, @r) -> @m = -> val = m(); (@m = -> val)()
+      constructor: (@l, @m, @r) ->
 
       isEmpty: -> false
 
@@ -282,14 +282,16 @@ class FingerTreeType
       after: (x) ->
         if @l.constructor == Digit4
           { a, b, c, d } = @l
-          new Deep new Digit2(x, a), (=> @m().after(new Node3(b, c, d))), @r
+          l = new Digit2 x, a
+          new Deep l, suspend(=> @m().after(new Node3(b, c, d))), @r
         else
           new Deep @l.after(x), @m, @r
 
       before: (x) ->
         if @r.constructor == Digit4
           { a, b, c, d } = @r
-          new Deep @l, (=> @m().before(new Node3(a, b, c))), new Digit2(d, x)
+          r = new Digit2(d, x)
+          new Deep @l, suspend(=> @m().before(new Node3(a, b, c))), r
         else
           new Deep @l, @m, @r.before(x)
 
@@ -301,7 +303,7 @@ class FingerTreeType
           if m() == Empty
             asTree r
           else
-            new Deep m().first().asDigit(), (=> m().rest()), r
+            new Deep m().first().asDigit(), suspend(=> m().rest()), r
         else
           new Deep l, m, r
 
@@ -310,7 +312,7 @@ class FingerTreeType
           if m() == Empty
             asTree l
           else
-            new Deep l, (=> m().init()), m().last().asDigit()
+            new Deep l, suspend(=> m().init()), m().last().asDigit()
         else
           new Deep l, m, r
 
@@ -339,7 +341,7 @@ class FingerTreeType
         else
           tmp = Sequence.flatten [asSeq(tLeft.r), list,  asSeq(tRight.l)]
           s = nodes tmp.size(), tmp
-          new Deep tLeft.l, (-> app3 tLeft.m(), s, tRight.m()), tRight.r
+          new Deep tLeft.l, suspend(-> app3 tLeft.m(), s, tRight.m()), tRight.r
 
       concat: (t) -> app3 this, null, t
 
@@ -358,7 +360,7 @@ class FingerTreeType
             [l, x, r] = @r.split p, i2
             [deepR(@l, suspend(=> @m()), l), x, asTree(r)]
 
-      reverse: -> new Deep @r.reverse(), (=> @m().reverse()), @l.reverse()
+      reverse: -> new Deep @r.reverse(), suspend(=> @m().reverse()), @l.reverse()
 
     internal = [
       Node2
