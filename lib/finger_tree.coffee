@@ -394,30 +394,35 @@ OrderMeasure =
   sum:    (a, b) -> if b? then b else a
 
 SortedExtensions = (less) -> class
-  after  = (data, k) -> if k == undefined then data else data.after k
-  before = (data, k) -> if k == undefined then data else data.before k
+  after  = (s, k) ->
+    if k == undefined then s else new s.constructor s.data.after k
+
+  before = (s, k) ->
+    if k == undefined then s else new s.constructor s.data.before k
+
+  concat = (s, t) -> new s.constructor s.data.concat t.data
 
   partition: (k) ->
     [l, x, r] = @split((m) -> not less m, k)
-    [l, new @constructor after r.data, x]
+    [l, after r, x]
 
   insert: (k) ->
     [l, r] = @partition k
-    new @constructor l.data.concat after r.data, k
+    concat l, after r, k
 
   deleteAll: (k) ->
     [l, r] = @partition k
-    new @constructor l.data.concat r.dropUntil((m) -> less k, m).data
+    concat l, r.dropUntil (m) -> less k, m
 
   merge = (s, t1, t2) ->
     if t2.isEmpty()
-      new @constructor s.data.concat t1.data
+      concat s, t1
     else
       k = t2.first()
       [l, x, r] = t1.split (m) -> less k, m
       recur ->
-        a = new t2.constructor before s.data.concat(l.data), k
-        merge a, t2.rest(), new t2.constructor after r.data, x
+        a = concat s, before l, k
+        merge a, t2.rest(), after r, x
 
   merge: (other) -> resolve merge @empty(), this, other
 
@@ -428,9 +433,9 @@ SortedExtensions = (less) -> class
       k = t2.first()
       [l, x, r] = t1.split (m) -> not less m, k
       if less(k, x)
-        recur -> intersect s, t2.rest(), new t2.constructor after r.data, x
+        recur -> intersect s, t2.rest(), after r, x
       else
-        recur -> intersect new t2.constructor(before(s.data, x)), t2.rest(), r
+        recur -> intersect before(s, x), t2.rest(), r
 
   intersect: (other) -> resolve intersect @empty(), this, other
 
