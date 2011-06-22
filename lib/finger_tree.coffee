@@ -19,13 +19,12 @@ class DefaultExtensions
   before: (x) -> if x == undefined then @ else new @constructor @data.before x
   concat: (t) -> if not t? then this else new @constructor @data.concat t.data
   reverse: -> new @constructor @data.reverse()
-  plus: (x) -> @before x
+  @::plus = @::before
 
 
 class FingerTreeType
   constructor: (measure, extensions = DefaultExtensions) ->
-    @build = ->
-      Sequence.reduce arguments, new Instance(Empty), (s, a) -> s.plus a
+    @build = -> Sequence.reduce arguments, empty, (s, a) -> s.plus a
 
     single = (x) -> if x == Empty or x.constructor in internal
         x.measure()
@@ -42,7 +41,7 @@ class FingerTreeType
     class Instance extends extensions
       constructor: (@data) ->
 
-      empty: -> new Instance Empty
+      empty: -> empty
 
       isEmpty: -> @data.isEmpty()
 
@@ -225,6 +224,8 @@ class FingerTreeType
 
       reverse: -> this
     }
+
+    empty = new Instance Empty
 
 
     # A finger tree with a single element.
@@ -439,7 +440,8 @@ SortedExtensions = (less) -> class
 
   intersect: (other) -> resolve intersect @empty(), this, other
 
-  plus: (x) -> @insert x
+  @::plus = @::insert
+
 
 SortedSeq = new FingerTreeType OrderMeasure, SortedExtensions (a, b) -> a < b
 
