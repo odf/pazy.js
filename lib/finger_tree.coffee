@@ -14,13 +14,18 @@ else
 
 class Void
 
-class FingerTreeType
-  constructor: (measure, extensions = Void) ->
-    @buildLeft = @build = ->
-      new Instance Sequence.reduce arguments, Empty, (s, a) -> s.before a
+class DefaultExtensions
+  after:  (x) -> if x == undefined then @ else new @constructor @data.after x
+  before: (x) -> if x == undefined then @ else new @constructor @data.before x
+  concat: (t) -> if not t? then this else new @constructor @data.concat t.data
+  reverse: -> new @constructor @data.reverse()
+  plus: (x) -> @before x
 
-    @buildRight = ->
-      new Instance Sequence.reduce arguments, Empty, (s, a) -> s.after a
+
+class FingerTreeType
+  constructor: (measure, extensions = DefaultExtensions) ->
+    @build = ->
+      Sequence.reduce arguments, new Instance(Empty), (s, a) -> s.plus a
 
     single = (x) -> if x == Empty or x.constructor in internal
         x.measure()
@@ -37,21 +42,18 @@ class FingerTreeType
     class Instance extends extensions
       constructor: (@data) ->
 
+      empty: -> new Instance Empty
+
       isEmpty: -> @data.isEmpty()
 
       reduceLeft:  (z, op) -> @data.reduceLeft z, op
       reduceRight: (op, z) -> @data.reduceRight op, z
-
-      after:  (x) -> if x == undefined then @ else new Instance @data.after x
-      before: (x) -> if x == undefined then @ else new Instance @data.before x
 
       first: -> @data.first()
       last:  -> @data.last()
 
       rest: -> new Instance @data.rest()
       init: -> new Instance @data.init()
-
-      concat: (t) -> if not t? then this else new Instance @data.concat t.data
 
       measure: -> @data.measure()
 
@@ -62,10 +64,11 @@ class FingerTreeType
         else
           [this, undefined, new Instance(Empty)]
 
-      reverse: -> new Instance @data.reverse()
-
       takeUntil: (p) -> @split(p)[0]
-      dropUntil: (p) -> [l, x, r] = @split(p); r.after x
+      dropUntil: (p) ->
+        [l, x, r] = @split(p)
+        if x == undefined then r else new Instance r.data.after x
+
       find:      (p) -> @split(p)[1]
 
       toString: -> @data.reduceLeft "", (s, x) -> s + ' ' + x
@@ -377,7 +380,7 @@ SizeMeasure =
   single: (x) -> 1
   sum:    (a, b) -> a + b
 
-class CountedExtensions
+class CountedExtensions extends DefaultExtensions
   size: -> @measure()
   get: (i) -> @find (m) -> m > i
   splitAt: (i) -> [l, x, r] = @split((m) -> m > i); [l, r.after x]
@@ -385,84 +388,55 @@ class CountedExtensions
 CountedSeq = new FingerTreeType SizeMeasure, CountedExtensions
 
 
-class SortedSeqType
-  constructor: (less = ((a, b) -> a < b), extensions = Void) ->
-    @build = -> Sequence.reduce arguments, Empty, (s, a) -> s.insert a
+OrderMeasure =
+  empty:  undefined
+  single: (x) -> x
+  sum:    (a, b) -> if b? then b else a
 
-    class Instance extends extensions
-      constructor: (@data) ->
+SortedExtensions = (less) -> class
+  after  = (data, k) -> if k == undefined then data else data.after k
+  before = (data, k) -> if k == undefined then data else data.before k
 
-      isEmpty: -> @data.isEmpty()
+  partition: (k) ->
+    [l, x, r] = @split((m) -> not less m, k)
+    [l, new @constructor after r.data, x]
 
-      reduceLeft:  (z, op) -> @data.reduceLeft z, op
-      reduceRight: (op, z) -> @data.reduceRight op, z
+  insert: (k) ->
+    [l, r] = @partition k
+    new @constructor l.data.concat after r.data, k
 
-      first: -> @data.first()
-      last:  -> @data.last()
+  deleteAll: (k) ->
+    [l, r] = @partition k
+    new @constructor l.data.concat r.dropUntil((m) -> less k, m).data
 
-      rest: -> new Instance @data.rest()
-      init: -> new Instance @data.init()
+  merge = (s, t1, t2) ->
+    if t2.isEmpty()
+      new @constructor s.data.concat t1.data
+    else
+      k = t2.first()
+      [l, x, r] = t1.split (m) -> less k, m
+      recur ->
+        a = new t2.constructor before s.data.concat(l.data), k
+        merge a, t2.rest(), new t2.constructor after r.data, x
 
-      split: (p) ->
-        [l, x, r] = @data.split p
-        [new Instance(l), x, new Instance(r)]
+  merge: (other) -> resolve merge @empty(), this, other
 
-      takeUntil: (p) -> new Instance @data.takeUntil p
-      dropUntil: (p) -> new Instance @data.dropUntil p
-      find:      (p) -> @data.find p
+  intersect = (s, t1, t2) ->
+    if t2.isEmpty()
+      s
+    else
+      k = t2.first()
+      [l, x, r] = t1.split (m) -> not less m, k
+      if less(k, x)
+        recur -> intersect s, t2.rest(), new t2.constructor after r.data, x
+      else
+        recur -> intersect new t2.constructor(before(s.data, x)), t2.rest(), r
 
-      split = (data, k) ->
-        [l, x, r] = data.split((m) -> not less m, k)
-        [l, r.after x]
+  intersect: (other) -> resolve intersect @empty(), this, other
 
-      partition: (k) ->
-        [l, r] = split @data, k
-        [new Instance(l), new Instance(r)]
+  plus: (x) -> @insert x
 
-      insert: (x) ->
-        [l, r] = split @data, x
-        new Instance l.concat r.after x
-
-      deleteAll: (x) ->
-        [l, r] = split @data, x
-        new Instance l.concat r.dropUntil (m) -> less x, m
-
-      merge = (s, t1, t2) ->
-        if t2.isEmpty()
-          s.concat t1
-        else
-          k = t2.first()
-          [l, x, r] = t1.split (m) -> less k, m
-          recur -> merge s.concat(l).before(k), t2.rest(), r.after(x)
-
-      merge: (other) ->
-        new Instance resolve merge Tree.build(), this.data, other.data
-
-      intersect = (s, t1, t2) ->
-        if t2.isEmpty()
-          s
-        else
-          k = t2.first()
-          [l, x, r] = t1.split (m) -> not less m, k
-          if less(k, x)
-            recur -> intersect s, t2.rest(), r.after x
-          else
-            recur -> intersect s.before(x), t2.rest(), r
-
-      intersect: (other) ->
-        new Instance resolve intersect Tree.build(), this.data, other.data
-
-      toString: -> @data.toString()
-
-
-    OrderMeasure =
-      empty:  undefined
-      single: (x) -> x
-      sum:    (a, b) -> if b? then b else a
-
-    Tree = new FingerTreeType OrderMeasure
-
-    Empty = new Instance Tree.build()
+SortedSeq = new FingerTreeType OrderMeasure, SortedExtensions (a, b) -> a < b
 
 
 # --------------------------------------------------------------------
@@ -473,5 +447,4 @@ exports ?= this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
 exports.CountedSeq     = CountedSeq
-exports.SortedSeqType  = SortedSeqType
-exports.SortedSeq      = new SortedSeqType()
+exports.SortedSeq      = SortedSeq

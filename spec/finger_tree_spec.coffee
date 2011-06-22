@@ -18,14 +18,14 @@ asArray  = (t) -> Sequence.into leftSeq(t), []
 
 
 describe "A finger tree containing a single element", ->
-  tree = CountedSeq.buildRight 1
+  tree = CountedSeq.build 1
 
   it "should have size 1", ->
     expect(tree.size()).toBe 1
 
 
 describe "A finger tree made by prepending elements from a sequence", ->
-  tree = CountedSeq.buildRight [1..10]...
+  tree = Sequence.reduce [1..10], CountedSeq.build(), (s, x) -> s.after x
 
   it "should have the right size", ->
     expect(tree.size()).toBe 10
@@ -63,7 +63,7 @@ describe "A finger tree made by prepending elements from a sequence", ->
     expect(tree.rest().rest().measure()).toBe 8
 
   it "within a finger tree should not lead to confusion with measures", ->
-    expect(CountedSeq.buildRight(tree, tree).measure()).toBe 2
+    expect(CountedSeq.build(tree, tree).measure()).toBe 2
 
   it "should split correctly in the middle", ->
     [l, x, r] = tree.split (n) -> n > 5
@@ -144,7 +144,7 @@ describe "A finger tree made by appending elements from a sequence", ->
     expect(asArray r).toEqual [29..100]
 
 
-describe "An sorted sequence", ->
+describe "A sorted sequence", ->
   tree = SortedSeq.build 8, 3, 4, 2, 0, 1, 7, 5, 6, 9
 
   it "should have the right elements in the right order", ->
