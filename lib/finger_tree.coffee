@@ -394,7 +394,7 @@ OrderMeasure =
   single: (x) -> x
   sum:    (a, b) -> if b? then b else a
 
-SortedExtensions = (less) -> class
+SortedExtensions = (less, extensions) -> class extends extensions
   after  = (s, k) ->
     if k == undefined then s else new s.constructor s.data.after k
 
@@ -443,7 +443,9 @@ SortedExtensions = (less) -> class
   @::plus = @::insert
 
 
-SortedSeq = new FingerTreeType OrderMeasure, SortedExtensions (a, b) -> a < b
+class SortedSeqType extends FingerTreeType
+  constructor: (less = ((a, b) -> a < b), extensions = Void) ->
+    super OrderMeasure, SortedExtensions less, extensions
 
 
 # --------------------------------------------------------------------
@@ -454,4 +456,5 @@ exports ?= this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
 exports.CountedSeq     = CountedSeq
-exports.SortedSeq      = SortedSeq
+exports.SortedSeqType  = SortedSeqType
+exports.SortedSeq      = new SortedSeqType()
