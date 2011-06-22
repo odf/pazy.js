@@ -358,7 +358,7 @@ class FingerTreeType
             [l, x, r] = @r.split p, i2
             [deepR(@l, suspend(=> @m()), l), x, asTree(r)]
 
-      reverse: -> new Deep @r.reverse(), suspend(=> @m().reverse()), @l.reverse()
+      reverse: -> new Deep @r.reverse(), (=> @m().reverse()), @l.reverse()
 
     internal = [
       Node2
