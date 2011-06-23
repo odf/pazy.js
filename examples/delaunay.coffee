@@ -15,13 +15,12 @@ class Point3d
 # triangle, specified by three input points.
 circumCircleCenter = (a, b, c) ->
 
-  # The three given points are first projected onto a paraboloid.
-  [ap, bp, cp] = [a.projection(), b.projection(), c.projection()]
+  # First, the normal to the plane formed by the projections of the
+  # points a, b and c onto a standard parabola is computed.
+  ap = a.projection()
+  n = b.projection().minus(ap).cross c.projection().minus(ap)
 
-  # The normal to the projected triangle is computed next.
-  n = bp.minus(ap).cross cp.minus(ap)
-
-  # The normal scaled to z=-1/2 and projected back onto the x,y-plane
+  # This normal scaled to z=-1/2 and projected back onto the x,y-plane
   # yields the desired point.
   if Math.abs(n.z) > 1e-6
     p = n.times 1 / (-0.5 * n.z)
@@ -33,16 +32,12 @@ circumCircleCenter = (a, b, c) ->
 # inside, zero means on and a negative value means outside.
 inclusionInCircumCircle = (a, b, c, d) ->
 
-  # The four given points are first projected onto a paraboloid.
-  [ap, bp, cp, dp] =
-    [a.projection(), b.projection(), c.projection(), d.projection()]
+  # First, the normal to the plane formed by the projections of the
+  # points a, b and c onto a standard parabola is computed.
+  ap = a.projection()
+  n = b.projection().minus(ap).cross c.projection().minus(ap)
 
-  # The normal to the triangle formed by the projection of a, b and c
-  # is computed next.
-  n = bp.minus(ap).cross cp.minus(ap)
-
-  # The following tells us whether the projection of d is on, below or
-  # above the plane of the projected triangle, and thus whether d
-  # itself is on, inside or outside the circum-circle of the original
-  # one.
-  d.minus(a).dot(n) * (if n.z > 0 then -1 else 1)
+  # This dot product tells us whether the projection of d is on, below
+  # or above the plane of the projected triangle, and thus whether d
+  # is on, inside or outside the circum-circle of the original one.
+  d.projection().minus(ap).dot(n) * (if n.z > 0 then -1 else 1)
