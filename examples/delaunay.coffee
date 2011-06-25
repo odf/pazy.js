@@ -1,4 +1,5 @@
-# Computing Delaunay triangulations and stuff.
+# These are the beginnings of a package to compute 2-dimensional Delaunay
+# triangulations via the incremental flip algorithm.
 #
 # _Copyright (c) 2011 Olaf Delgado-Friedrichs_
 
@@ -83,7 +84,14 @@ inclusionInCircumCircle = (a, b, c, d) ->
 
 # ----
 
-# The function `Triangulation` creates an _oriented_ abstract triangulation,
+# The helper function `seq` creates a sequence from its argument
+# list.
+seq = (args...) -> new Sequence args
+
+
+# ----
+
+# The function `triangulation` creates an _oriented_ abstract triangulation,
 # i.e. one in which the vertices of each triangle are assigned one out of two
 # possible circular orders. Whenever two triangles share an edge, we moreover
 # require the orientations of these to 'match' in such a way that the induced
@@ -96,10 +104,6 @@ inclusionInCircumCircle = (a, b, c, d) ->
 # ->` construct.
 
 triangulation = do ->
-  # The helper function `seq` creates a sequence from its argument
-  # list.
-  seq = (args...) -> new Sequence args
-
   # We use a hidden class to encapsulate the implementation details.
   class Triangulation
 
@@ -161,6 +165,33 @@ triangulation = do ->
   # Here we define our access point. The function `triangulation` takes a list
   # of triangles, each given as an array of three abstract vertices.
   (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x...
+
+
+# ----
+
+# The function `delaunayTriangulation` creates the Delaunay triangulation of a
+# set of points in the x,y-plane using the so-called incremental flip method.
+# As before, we hide implementation details within a closure.
+
+delaunayTriangulation = do ->
+
+  # Again, we use a hidden class to encapsulate the implementation details.
+  class Triangulation
+    # The triangle `outer` is a conceptual, 'infinitely large' triangle which
+    # is added to avoid special boundary considerations within the algorithm.
+    outer = seq -1, -2, -3
+
+    # The constructor arguments are specific to this particular
+    # algorithm.
+    constructor: (
+      # The abstract triangulation:
+      @triangulation__ = triangulation(outer),
+      # Maps vertex numbers to `Point2d` instances:
+      @coords__ = new HashMap(),
+      # The set of all `Point2d` instances present:
+      @points__ = new HashSet(),
+      # Defines the history DAG used to locate which triangle a point is in:
+      @children__ = new HashMap().plus [outer, seq()]) ->
 
 
 # ----
