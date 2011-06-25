@@ -40,29 +40,55 @@ describe "An empty triangulation", ->
   t = triangulation()
 
   it "should produce an empty sequence of triangles", ->
-    expect(Sequence.empty t).toBe true
+    expect(Sequence.empty t).toBeTruthy()
 
-  it "should return anything on find", ->
-    expect(t.find 1, 2, 3).toBe undefined
+  it "shouldn't return anything on find", ->
+    expect(t.find 1, 2, 3).toBeUndefined()
 
   it "should produce a non-empty triangulation when a triangle is added", ->
-    expect(Sequence.empty t.plus 1, 2, 3).toBe false
+    expect(Sequence.empty t.plus 1, 2, 3).toBeFalsy()
 
 
 describe "A triangulation with one triangle", ->
-  t = triangulation([1,2,3])
+  t = triangulation([1, 2, 3])
 
   it "should not be empty", ->
-    expect(Sequence.empty t).toBe false
+    expect(Sequence.empty t).toBeFalsy()
 
   it "should have one triangle", ->
     expect(Sequence.size t).toBe 1
+
+  it "should find that triangle again", ->
+    expect(t.find(1, 2, 3).equals [1, 2, 3]).toBeTruthy()
+
+  it "should find that triangle with its vertices cyclically permuted", ->
+    expect(t.find(2, 3, 1).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(3, 1, 2).equals [1, 2, 3]).toBeTruthy()
+
+  it "should not find the same triangle when the orientation is reversed", ->
+    expect(t.find 1, 3, 2).toBeUndefined()
+    expect(t.find 3, 2, 1).toBeUndefined()
+    expect(t.find 2, 1, 3).toBeUndefined()
+
+  it "should find the three edges included in that triangle", ->
+    expect(t.find(1, 2).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(2, 3).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(3, 1).equals [1, 2, 3]).toBeTruthy()
+
+  it "should not find the edges in that triangle with reversed orientation", ->
+    expect(t.find 1, 3).toBeUndefined()
+    expect(t.find 3, 2).toBeUndefined()
+    expect(t.find 2, 1).toBeUndefined()
+
+  it "should not find unrelated triangles or edges", ->
+    expect(t.find 1, 2, 3.01).toBeUndefined()
+    expect(t.find 'a', 'b').toBeUndefined()
 
   it "should produce a sequence containing only the original triangle", ->
     expect(t.toSeq().toString()).toEqual "((1, 2, 3))"
 
   it "should return something when find is called with the original triangle", ->
-    expect(t.find 1, 2, 3).toNotBe undefined
+    expect(t.find 1, 2, 3).toBeDefined()
 
   it "should not change when we add the same triangle again", ->
     expect(t.plus 1, 2, 3).toEqual t
