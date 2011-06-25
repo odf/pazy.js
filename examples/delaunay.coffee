@@ -70,3 +70,15 @@ inclusionInCircumCircle = (a, b, c, d) ->
   # which we can readily read of the dot product of the lifted normal
   # and the vector from the lift of a to the lift of d.
   liftedNormal(a, b, c).dot lift(d).minus lift(a)
+
+
+# ----
+
+# We export the classes `Point2d` and `Point3d` and the functions
+# `circumCircleCenter` and `inclusionInCircumCircle` for testing.
+
+exports ?= this.pazy ?= {}
+exports.Point2d = Point2d
+exports.Point3d = Point3d
+exports.circumCircleCenter = circumCircleCenter
+exports.inclusionInCircumCircle = inclusionInCircumCircle
