@@ -144,6 +144,20 @@ triangulation = do ->
           @triangles__.plus(seq(a, b, c)),
           @third__.plusAll(seq [seq(a, b), c], [seq(b, c), a], [seq(c, a), b]))
 
+    # The method `minus` returs a triangulation with the given triangle
+    # removed, if present.
+    minus: (a, b, c) ->
+      # First, we check if the given triangle is present.
+      t = @find a, b, c
+      # If so, we construct a new triangulation without it.
+      if t?
+        new Triangulation(
+          @triangles__.minus(t),
+          @third__.minusAll(seq seq(a, b), seq(b, c), seq(c, a)))
+      # Otherwise, we just return this triangulation unchanged.
+      else
+        this
+
   # Here we define our access point. The function `triangulation` takes a list
   # of triangles, each given as an array of three abstract vertices.
   (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x...

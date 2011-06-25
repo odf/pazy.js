@@ -48,9 +48,15 @@ describe "An empty triangulation", ->
   it "should produce a non-empty triangulation when a triangle is added", ->
     expect(Sequence.empty t.plus 1, 2, 3).toBeFalsy()
 
+  it "should not change when minus() is called", ->
+    expect(t.minus 1, 2, 3).toEqual t
+
 
 describe "A triangulation with one triangle", ->
   t = triangulation([1, 2, 3])
+
+  it "should produce a sequence containing only the original triangle", ->
+    expect(t.toSeq().toString()).toEqual "((1, 2, 3))"
 
   it "should not be empty", ->
     expect(Sequence.empty t).toBeFalsy()
@@ -84,12 +90,6 @@ describe "A triangulation with one triangle", ->
     expect(t.find 1, 2, 3.01).toBeUndefined()
     expect(t.find 'a', 'b').toBeUndefined()
 
-  it "should produce a sequence containing only the original triangle", ->
-    expect(t.toSeq().toString()).toEqual "((1, 2, 3))"
-
-  it "should return something when find is called with the original triangle", ->
-    expect(t.find 1, 2, 3).toBeDefined()
-
   it "should not change when we add the same triangle again", ->
     expect(t.plus 1, 2, 3).toEqual t
 
@@ -98,3 +98,12 @@ describe "A triangulation with one triangle", ->
 
   it "should throw an Exception when we add a bad triangle", ->
     expect(-> t.plus 1, 2, 4).toThrow 'Orientation mismatch.'
+
+  it "should be empty after removing that triangle", ->
+    expect(Sequence.empty t.minus 1, 2, 3).toBeTruthy()
+
+  it "should not change when we call minus with a different triangle", ->
+    expect(t.minus 1, 2, 4).toEqual t
+
+  it "should not change when we call minus with the same triangle reversed", ->
+    expect(t.minus 3, 2, 1).toEqual t
