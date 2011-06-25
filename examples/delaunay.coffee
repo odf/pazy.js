@@ -112,12 +112,20 @@ triangulation = do ->
     # as a lazy sequence.
     toSeq: -> @triangles__.toSeq()
 
-    # For a given oriented triangle specified by its three vertices, the
-    # method `find` returns a canonical vertex order if the triangle is
-    # included in this triangulation or else `null`.
+    # The method `find` returns a canonical representation for the unique
+    # triangle in this triangulation, if any, which contains the two or three
+    # given vertices in the correct order.
     find: (a, b, c) ->
-      seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
-        find((t) => @triangles__.contains(t))
+      # If three vertices are given, we look for all three possible vertex
+      # orders with the same orientation in the triangle list.
+      if c?
+        seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
+          find((t) => @triangles__.contains(t))
+      # Otherwise we look for the corresponding third vertex, if any, and call
+      # find again.
+      else
+        c = @third__.get seq a, b
+        @find a, b, c if c?
 
     # The method `plus` returns a triangulation with the given triangle added
     # unless it is already present or creates an orientation mismatch. In the
