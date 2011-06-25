@@ -1,56 +1,39 @@
 # Computing Delaunay triangulations and stuff.
 #
-# _Copyright (c) 2011 Olaf Delgado-Friedrichs_
+# Copyright (c) 2011 Olaf Delgado-Friedrichs
 
 # ----
 
-# The class `Point2d` represents points in the x,y-plane.
+# The class `Point2d` represents points in the x,y-plane and provides
+# just the bare minimum of operations we need here.
 class Point2d
-  constructor: (x, y) ->
-    # We define the attributes x and y as accessor functions instead
-    # of plain values to ensure they are _immutable_, i.e., can't be
-    # changed by accident.
-    @x = -> x
-    @y = -> y
-
-  # We don't need a full-fledged point class here, just define
-  # whatever we will need later on.
-  times: (f) -> new Point2d @x() * f, @y() * f
-  equals: (p) -> @x() == p.x() and @y() == p.y()
+  constructor: (@x, @y) ->
+  times: (f) -> new Point2d @x * f, @y * f
 
 
 # ----
 
-# The class `Point3d` represents points in 3-dimensional space.
+# The class `Point3d` represents points in 3-dimensional space and
+# provides just the bare minimum of operations we need here.
 class Point3d
-  constructor: (x, y, z) ->
-    # We use the same trick as in `Point2d` to make the coordinate
-    # values immutable.
-    @x = -> x
-    @y = -> y
-    @z = -> z
-
-  # As with `Point2d`, we only define what we need.
-  minus: (p) -> new Point3d @x() - p.x(), @y() - p.y(), @z() - p.z()
-  times: (f) -> new Point3d @x() * f, @y() * f, @z() * f
-  dot:   (p) -> @x() * p.x() + @y() * p.y() + @z() * p.z()
-  cross: (p) ->
-    new Point3d @y()*p.z() - @z()*p.y(),
-                @z()*p.x() - @x()*p.z(),
-                @x()*p.y() - @y()*p.x()
+  constructor: (@x, @y, @z) ->
+  minus: (p) -> new Point3d @x - p.x, @y - p.y, @z - p.z
+  times: (f) -> new Point3d @x * f, @y * f, @z * f
+  dot:   (p) -> @x * p.x + @y * p.y + @z * p.z
+  cross: (p) -> new Point3d @y*p.z - @z*p.y, @z*p.x - @x*p.z, @x*p.y - @y*p.x
 
 
 # ----
 
 # The function `lift` computes the projection or 'lift' of a given
 # point in the plane onto the standard parabola z = x * x + y * y.
-lift = (p) -> new Point3d p.x(), p.y(), p.x() * p.x() + p.y() * p.y()
+lift = (p) -> new Point3d p.x, p.y, p.x * p.x + p.y * p.y
 
 # ----
 
 # The function `unlift` projects a point in 3d space back onto the
 # x,y-plane.
-unlift = (p) -> new Point2d p.x(), p.y()
+unlift = (p) -> new Point2d p.x, p.y
 
 # ----
 
@@ -59,7 +42,7 @@ unlift = (p) -> new Point2d p.x(), p.y()
 
 liftedNormal = (a, b, c) ->
   n = lift(b).minus(lift(a)).cross lift(c).minus(lift(a))
-  if n.z() > 0 then n.times(-1) else n
+  if n.z > 0 then n.times(-1) else n
 
 
 # ----
@@ -71,7 +54,7 @@ circumCircleCenter = (a, b, c) ->
   # The lifted normal scaled to z=-1/2 and projected back onto the
   # x,y-plane yields the desired point.
   n = liftedNormal a, b, c
-  unlift n.times -0.5 / n.z() if Math.abs(n.z()) > 1e-6
+  unlift n.times -0.5 / n.z if Math.abs(n.z) > 1e-6
 
 
 # ----

@@ -13,7 +13,7 @@ describe "The triangle (1,4), (4,3), (-3,2)", ->
   c = new Point2d -3, 2
 
   it "should have (1,-1) as its center", ->
-    expect(circumCircleCenter(a, b, c).equals(new Point2d 1, -1)).toBe true
+    expect(circumCircleCenter a, b, c).toEqual new Point2d 1, -1
 
   it "should have the origin inside", ->
     expect(inclusionInCircumCircle a, b, c, new Point2d 0, 0).toBeGreaterThan 0
