@@ -64,9 +64,6 @@ liftedNormal = (a, b, c) ->
 # The function `circumCircleCenter` computes the center of the circum-circle
 # of a given triangle, specified by three input points.
 circumCircleCenter = (a, b, c) ->
-
-  # The lifted normal scaled to z=-1/2 and projected back onto the x,y-plane
-  # yields the desired point.
   n = liftedNormal a, b, c
   unlift n.times -0.5 / n.z if Math.abs(n.z) > 1e-6
 
@@ -77,11 +74,6 @@ circumCircleCenter = (a, b, c) ->
 # outside or on the circle through points a, b and c. A positive return value
 # means inside, zero means on and a negative value means outside.
 inclusionInCircumCircle = (a, b, c, d) ->
-
-  # Equivalently, we can ask whether the lift of d is below, on or above the
-  # plane formed by the lifts of the points a, b and c, which we can readily
-  # read of the dot product of the lifted normal and the vector from the lift
-  # of a to the lift of d.
   liftedNormal(a, b, c).dot lift(d).minus lift(a)
 
 
@@ -120,10 +112,6 @@ triangulation = do ->
     # triangle in this triangulation, if any, which contains the two or three
     # given vertices in the correct order.
     find: (a, b, c) ->
-      # If three vertices are given, we look for all three possible vertex
-      # orders with the same orientation in the triangle list.  Otherwise, we
-      # look for the corresponding third vertex, if any, and call find
-      # recursively.
      if c?
         seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
           find((t) => @triangles__.contains(t))
@@ -240,10 +228,8 @@ delaunayTriangulation = do ->
     # The method `plus` creates a new Delaunay triangulation with the given
     # `Point2d` instance added as a site.
     plus: (p) ->
-      # We return the current instance unchanged if the site is already in.
       if @sites__.contains p
         this
-      # Otherwise, there's work to do...
       else
         # ...
 
