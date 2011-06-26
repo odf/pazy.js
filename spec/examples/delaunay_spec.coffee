@@ -2,10 +2,10 @@ if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
   require.paths.unshift('#{__dirname}/../examples')
   { Sequence } = require 'sequence'
-  { Point2d, Point3d, triangulation,
+  { Point2d, Point3d, triangulation, delaunayTriangulation,
     circumCircleCenter, inclusionInCircumCircle } = require 'delaunay'
 else
-  { Point2d, Point3d, triangulation,
+  { Point2d, Point3d, triangulation, delaunayTriangulation,
     circumCircleCenter, inclusionInCircumCircle } = pazy
 
 
@@ -107,3 +107,13 @@ describe "A triangulation with one triangle", ->
 
   it "should not change when we call minus with the same triangle reversed", ->
     expect(t.minus 3, 2, 1).toEqual t
+
+
+describe "An empty Delaunay triangulation", ->
+  t = delaunayTriangulation()
+
+  it "should produce an empty sequence of triangles", ->
+    expect(Sequence.empty t).toBeTruthy()
+
+  it "should report any point as in the virtual outer triangle", ->
+    expect(t.containingTriangle(new Point2d 1, 1).into []).toEqual [-1, -2, -3]

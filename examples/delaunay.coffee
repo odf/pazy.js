@@ -9,10 +9,11 @@
 # package system).
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
+  { recur, resolve }   = require 'functional'
+  { Sequence }         = require 'sequence'
   { HashSet, HashMap } = require 'indexed'
-  { Sequence } = require 'sequence'
 else
-  { HashSet, HashMap, Sequence } = this.pazy
+  { recur, resolve, Sequence, HashSet, HashMap } = this.pazy
 
 # ----
 
@@ -20,6 +21,8 @@ else
 # bare minimum of operations we need here.
 class Point2d
   constructor: (@x, @y) ->
+  plus:  (p) -> new Point2d @x + p.x, @y + p.y
+  minus: (p) -> new Point2d @x + p.x, @y + p.y
   times: (f) -> new Point2d @x * f, @y * f
 
 
@@ -167,27 +170,27 @@ triangulation = do ->
 # ----
 
 # The function `delaunayTriangulation` creates the Delaunay triangulation of a
-# set of points in the x,y-plane using the so-called incremental flip method.
+# set of sites in the x,y-plane using the so-called incremental flip method.
 delaunayTriangulation = do ->
 
   # Again, we use a hidden class to encapsulate the implementation details.
   class Triangulation
     # The triangle `outer` is a virtual, 'infinitely large' triangle which is
     # added internally to avoid special boundary considerations within the
-    # algorithm. To distinguish its (virtual) vertices from regular vertices,
-    # we use negative numbers.
+    # algorithm. To distinguish its vertices from vertices corresponding to
+    # regular sites, we use negative indices.
     outer = seq -1, -2, -3
 
     # The constructor arguments are specific to this particular
     # algorithm.
     constructor: (args...) ->
       # The underlying abstract triangulation:
-      @triangulation__ = args[0] || triangulation(outer)
-      # Maps vertex numbers to `Point2d` instances:
-      @position__      = args[1] || new HashMap()
-      # The set of all `Point2d` instances present:
-      @points__        = args[2] || new HashSet()
-      # Defines the history DAG used to locate which triangle a point is in:
+      @triangulation__ = args[0] || triangulation(outer.into [])
+      # Maps vertex numbers to sites, expressed as `Point2d` instances:
+      @position__      = args[1] || []
+      # The set of all sites present:
+      @sites__         = args[2] || new HashSet()
+      # Defines the history DAG used to locate which triangle a new site is in:
       @children__      = args[3] || new HashMap().plus [outer, seq()]
 
     # The method `toSeq` returns the proper (non-virtual) triangles contained
@@ -200,6 +203,57 @@ delaunayTriangulation = do ->
     # vertex number as a `Point2d` instance.
     position: (n) -> @position__.get n
 
+    # The method `isRightOf` determines which side of the oriented line given
+    # by the sites with indices `a` and `b` the point `p` (a `Point2d`
+    # instance) lies on. A positive value means it is to the right, a negative
+    # value to the left, and a zero value on the line.
+    isRightOf: (a, b, p) ->
+      if a < 0 and b < 0
+        0
+      else if a < 0
+        -@isRightOf b, a, p
+      else
+        r = @position__ a
+        rs = switch b
+             when -1 then new Point2d  1,  0
+             when -2 then new Point2d -1,  1
+             when -3 then new Point2d -1, -1
+             else         @position__(b).minus r
+        rp = p.minus r
+        rs.x * rp.y - rs.y * rp.x
+
+    # The method `isInTriangle` returns true if the given `Point2d` instance
+    # `p` is contained in the triangle `t` given as a sequence of site
+    # indices.
+    isInTriangle: (t, p) ->
+      [a, b, c] = t.into []
+      seq([a, b], [b, c], [c, a]).forall (r, s) => @isRightOf(r, s, p) <= 0
+
+    # The method `containingTriangle` returns the triangle the given point is
+    # in.
+    containingTriangle: (p) ->
+      step = (t) =>
+        if t?
+          candidates = @children__.get t
+          if Sequence.empty candidates
+            t
+          else
+            recur => step candidates.find (s) => @isInTriangle s, p
+      resolve step outer
+
+    # The method `plus` creates a new Delaunay triangulation with the given
+    # `Point2d` instance added as a site.
+    plus: (p) ->
+      # We return the current instance unchanged if the site is already in.
+      if @sites__.contains p
+        this
+      # Otherwise, there's work to do...
+      else
+        # ...
+
+  # Here we define our access point. The function `delaunayTriangulation` takes
+  # a list of sites, each given as a `Point2d` instance.
+  (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x
 
 # ----
 
@@ -213,3 +267,4 @@ exports.Point3d = Point3d
 exports.circumCircleCenter      = circumCircleCenter
 exports.inclusionInCircumCircle = inclusionInCircumCircle
 exports.triangulation           = triangulation
+exports.delaunayTriangulation   = delaunayTriangulation
