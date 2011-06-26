@@ -111,44 +111,44 @@ describe "A triangulation with one triangle", ->
     expect(t.minus 3, 2, 1).toEqual t
 
 
-# describe "An empty Delaunay triangulation", ->
-#   t = delaunayTriangulation()
+describe "An empty Delaunay triangulation", ->
+  t = delaunayTriangulation()
 
-#   it "should produce an empty sequence of triangles", ->
-#     expect(Sequence.empty t).toBeTruthy()
+  it "should produce an empty sequence of triangles", ->
+    expect(Sequence.empty t).toBeTruthy()
 
-#   it "should report any point as in the virtual outer triangle", ->
-#     expect(t.containingTriangle(new Point2d 1, 1).into []).toEqual [-1, -2, -3]
+  it "should report any point as in the virtual outer triangle", ->
+    expect(t.containingTriangle(new Point2d 1, 1).into []).toEqual [-1, -2, -3]
 
-# describe "A Delaunay triangulation with one site", ->
-#   p = new Point2d 1, 1
-#   t = delaunayTriangulation(p)
+describe "A Delaunay triangulation with one site", ->
+  p = new Point2d 1, 1
+  t = delaunayTriangulation(p)
 
-#   it "should contain that site at position 0", ->
-#     expect(t.position 0).toEqual p
+  it "should contain that site at position 0", ->
+    expect(t.position 0).toEqual p
 
-#   it "should contain no triangles", ->
-#     expect(Sequence.empty t).toBeTruthy()
+  it "should contain no triangles", ->
+    expect(Sequence.empty t).toBeTruthy()
 
-#   it "should report a point as in a triangle different from the outer one", ->
-#     q = new Point2d 2, 1
-#     f = t.containingTriangle(q).into []
-#     expect(f.length).toBe 3
-#     expect(f).toNotEqual [-1, -2, -3]
+  it "should report a point as in a triangle different from the outer one", ->
+    q = new Point2d 2, 1
+    f = t.containingTriangle(q).into []
+    expect(f.length).toBe 3
+    expect(f).toNotEqual [-1, -2, -3]
 
-# describe "A Delaunay triangulation with three sites", ->
-#   [p, q, r] = [new Point2d(0, 0), new Point2d(1, 0), new Point2d(1, 1)]
-#   t = delaunayTriangulation(p, q, r)
+describe "A Delaunay triangulation with three sites", ->
+  [p, q, r] = [new Point2d(0, 0), new Point2d(1, 0), new Point2d(1, 1)]
+  t = delaunayTriangulation(p, q, r)
 
-#   it "should contain those sites at positions 0, 1 and 2", ->
-#     expect(t.position 0).toEqual p
-#     expect(t.position 1).toEqual q
-#     expect(t.position 2).toEqual r
+  it "should contain those sites at positions 0, 1 and 2", ->
+    expect(t.position 0).toEqual p
+    expect(t.position 1).toEqual q
+    expect(t.position 2).toEqual r
 
-#   it "should contain one triangle", ->
-#     expect(Sequence.size t).toBe 1
+  it "should contain one triangle", ->
+    expect(Sequence.size t).toBe 1
 
-#   it "should report a point inside the triangle correctly", ->
-#     x = new Point2d 0.5, 0.25
-#     f = t.containingTriangle(x).into []
-#     expect(f).toEqual [0, 1, 2]
+  it "should report a point inside the triangle correctly", ->
+    x = new Point2d 0.5, 0.25
+    f = t.containingTriangle(x).into []
+    expect(f).toEqual [0, 1, 2]

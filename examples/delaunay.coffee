@@ -304,7 +304,7 @@ delaunayTriangulation = do ->
         t = @containingTriangle p
         [a, b, c] = t.into []
         seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
-          if T.isRightOf(u, v, p) == 0
+          if T.isRightOf(u, v, p) == 0 and not (u < 0 and v < 0)
             w = T.third u, v
             resolve doFlips flip(T, u, v), seq [u, w], [w, v]
           else
