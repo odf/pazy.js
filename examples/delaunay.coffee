@@ -121,12 +121,12 @@ triangulation = do ->
     # given vertices in the correct order.
     find: (a, b, c) ->
       # If three vertices are given, we look for all three possible vertex
-      # orders with the same orientation in the triangle list.
-      if c?
+      # orders with the same orientation in the triangle list.  Otherwise, we
+      # look for the corresponding third vertex, if any, and call find
+      # recursively.
+     if c?
         seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
           find((t) => @triangles__.contains(t))
-      # Otherwise we look for the corresponding third vertex, if any, and call
-      # find again.
       else
         c = @third__.get seq a, b
         @find a, b, c if c?
@@ -136,13 +136,10 @@ triangulation = do ->
     # first case, the original triangulation is returned without changes; in
     # the second, an exception is raised.
     plus: (a, b, c) ->
-      # First, we check if the triangle was already there.
       if @find a, b, c
         this
-      # Next, we make sure we don't create a duplicate oriented edge.
       else if seq(seq(a, b), seq(b, c), seq(c, a)).find((e) => @third__.get(e)?)
         throw new Error 'Orientation mismatch.'
-      # If the given triangle is okay to add, we create a new instance.
       else
         new Triangulation(
           @triangles__.plus(seq(a, b, c)),
@@ -151,14 +148,11 @@ triangulation = do ->
     # The method `minus` returs a triangulation with the given triangle
     # removed, if present.
     minus: (a, b, c) ->
-      # First, we check if the given triangle is present.
       t = @find a, b, c
-      # If so, we construct a new triangulation without it.
       if t?
         new Triangulation(
           @triangles__.minus(t),
           @third__.minusAll(seq seq(a, b), seq(b, c), seq(c, a)))
-      # Otherwise, we just return this triangulation unchanged.
       else
         this
 
@@ -181,16 +175,18 @@ delaunayTriangulation = do ->
     # regular sites, we use negative indices.
     outer = seq -1, -2, -3
 
-    # The constructor arguments are specific to this particular
-    # algorithm.
+    # The constructor is called with implementation specific data for the new
+    # instance, specifically:
+    #
+    # 1. The underlying abstract triangulation.
+    # 2. A mapping from vertex numbers to sites (`Point2d` instances).
+    # 3. The set of all sites present.
+    # 4. The child relation of the history DAG which is used to locate which
+    # triangle a new site is in.
     constructor: (args...) ->
-      # The underlying abstract triangulation:
       @triangulation__ = args[0] || triangulation(outer.into [])
-      # Maps vertex numbers to sites, expressed as `Point2d` instances:
       @position__      = args[1] || []
-      # The set of all sites present:
       @sites__         = args[2] || new HashSet()
-      # Defines the history DAG used to locate which triangle a new site is in:
       @children__      = args[3] || new HashMap().plus [outer, seq()]
 
     # The method `toSeq` returns the proper (non-virtual) triangles contained
