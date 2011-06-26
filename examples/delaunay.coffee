@@ -24,6 +24,7 @@ class Point2d
   plus:  (p) -> new Point2d @x + p.x, @y + p.y
   minus: (p) -> new Point2d @x + p.x, @y + p.y
   times: (f) -> new Point2d @x * f, @y * f
+  toString:  -> "(#{@x}, #{@y})"
 
 
 # ----
@@ -175,7 +176,7 @@ delaunayTriangulation = do ->
       @triangulation__ = args[0] || triangulation(outer.into [])
       @position__      = args[1] || []
       @sites__         = args[2] || new HashSet()
-      @children__      = args[3] || new HashMap().plus [outer, seq()]
+      @children__      = args[3] || new HashMap()
 
     # The method `toSeq` returns the proper (non-virtual) triangles contained
     # in this triangulation as a lazy sequence. It does so by removing any
@@ -185,7 +186,7 @@ delaunayTriangulation = do ->
 
     # The method `position` returns the coordinates corresponding to a given
     # vertex number as a `Point2d` instance.
-    position: (n) -> @position__.get n
+    position: (n) -> @position__[n]
 
     # The method `isRightOf` determines which side of the oriented line given
     # by the sites with indices `a` and `b` the point `p` (a `Point2d`
@@ -197,12 +198,12 @@ delaunayTriangulation = do ->
       else if a < 0
         -@isRightOf b, a, p
       else
-        r = @position__ a
+        r = @position a
         rs = switch b
              when -1 then new Point2d  1,  0
              when -2 then new Point2d -1,  1
              when -3 then new Point2d -1, -1
-             else         @position__(b).minus r
+             else         @position(b).minus r
         rp = p.minus r
         rs.x * rp.y - rs.y * rp.x
 
@@ -211,19 +212,30 @@ delaunayTriangulation = do ->
     # indices.
     isInTriangle: (t, p) ->
       [a, b, c] = t.into []
-      seq([a, b], [b, c], [c, a]).forall (r, s) => @isRightOf(r, s, p) <= 0
+      seq([a, b], [b, c], [c, a]).forall ([r, s]) => @isRightOf(r, s, p) <= 0
 
     # The method `containingTriangle` returns the triangle the given point is
     # in.
     containingTriangle: (p) ->
       step = (t) =>
-        if t?
-          candidates = @children__.get t
-          if Sequence.empty candidates
-            t
-          else
-            recur => step candidates.find (s) => @isInTriangle s, p
+        candidates = @children__.get t
+        if Sequence.empty candidates
+          t
+        else
+          recur => step candidates.find (s) => @isInTriangle s, p
       resolve step outer
+
+    # The method `subdivide` takes a triangle `t` and a site `p` inside that
+    # triangle and creates a new instance in which `t` is divided into three
+    # new triangles with `p` as a common vertex.
+    subdivide: (t, p) ->
+      [a, b, c] = t.into []
+      n = @position__.length
+      new @constructor(
+        @triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
+        @position__.concat([p]),
+        @sites__.plus(p),
+        @children__.plus([t, seq seq(a, b, n), seq(b, c, n), seq(c, a, n)]))
 
     # The method `plus` creates a new Delaunay triangulation with the given
     # `Point2d` instance added as a site.
@@ -231,7 +243,8 @@ delaunayTriangulation = do ->
       if @sites__.contains p
         this
       else
-        # ...
+        t = @containingTriangle p
+        @subdivide t, p
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
