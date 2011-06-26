@@ -109,6 +109,10 @@ triangulation = do ->
     # as a lazy sequence.
     toSeq: -> @triangles__.toSeq()
 
+    # The method `third` finds the unique third vertex forming a triangle with
+    # the two given ones in the given orientation, if any.
+    third: (a, b) -> @third__.get seq a, b
+
     # The method `find` returns a canonical representation for the unique
     # triangle in this triangulation, if any, which contains the two or three
     # given vertices in the correct order.
@@ -117,7 +121,7 @@ triangulation = do ->
         seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
           find((t) => @triangles__.contains(t))
       else
-        c = @third__.get seq a, b
+        c = @third a, b
         @find a, b, c if c?
 
     # The method `plus` returns a triangulation with the given triangle added
@@ -184,6 +188,10 @@ delaunayTriangulation = do ->
     # virtual vertex.
     toSeq: -> Sequence.select @triangulation__, (t) -> t.forall (n) -> n >= 0
 
+    # The method `third` finds the unique third vertex forming a triangle with
+    # the two given ones in the given orientation, if any.
+    third: (a, b) -> @triangulation__.third a, b
+
     # The method `position` returns the coordinates corresponding to a given
     # vertex number as a `Point2d` instance.
     position: (n) -> @position__[n]
@@ -225,17 +233,67 @@ delaunayTriangulation = do ->
           recur => step candidates.find (s) => @isInTriangle s, p
       resolve step outer
 
-    # The method `subdivide` takes a triangle `t` and a site `p` inside that
-    # triangle and creates a new instance in which `t` is divided into three
-    # new triangles with `p` as a common vertex.
-    subdivide: (t, p) ->
+    # The method `mustFlip` determines whether the triangles adjacent to the
+    # given edge from `a` to `b` violates the Delaunay condition, in which case
+    # it must be flipped.
+    mustFlip: (a, b) ->
+      c = @third a, b
+      d = @third b, a
+
+      if not c? or (a < 0 and b < 0)
+        false
+      else if a < 0
+        @isRightOf(d, c, @position b) < 0
+      else if b < 0
+        @isRightOf(c, d, @position a) < 0
+      else if c < 0 or d < 0
+        false
+      else
+        [pa, pb, pc, pd] = seq(a, b, c, d).map(@position).into []
+        inclusionInCircumCircle(pa, pb, pc, pd) > 0
+
+    # The private function `subdivide` takes a triangulation `T`, a triangle
+    # `t` and a site `p` inside that triangle and creates a new triangulation
+    # in which `t` is divided into three new triangles with `p` as a common
+    # vertex.
+    subdivide = (T, t, p) ->
       [a, b, c] = t.into []
-      n = @position__.length
-      new @constructor(
-        @triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
-        @position__.concat([p]),
-        @sites__.plus(p),
-        @children__.plus([t, seq seq(a, b, n), seq(b, c, n), seq(c, a, n)]))
+      n = T.position__.length
+      new T.constructor(
+        T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
+        T.position__.concat([p]),
+        T.sites__.plus(p),
+        T.children__.plus([t, seq seq(a, b, n), seq(b, c, n), seq(c, a, n)]))
+
+    # The private function `flip` creates a new triangulation from `T` with the
+    # edge defined by the indices `a` and `b` _flipped_. In other words, if the
+    # edge `ab` lies in triangles `abc` and `bad`, then after the flip those
+    # are replaced by new triangle `bcd` and `adc`.
+    flip = (T, a, b) ->
+      c = T.third a, b
+      d = T.third b, a
+      children = seq seq(b, c, d), seq(a, d, c)
+      new T.constructor(
+        T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
+        T.position__,
+        T.sites__,
+        T.children__.plus([seq(a,b,c), children], [seq(b,a,d), children]))
+
+    # The private function `doFlips` takes a triangulation and a stack of
+    # edges. If the topmost edge on the stack needs to be flipped, the function
+    # calls itself recursively with the resulting triangulation and a stack in
+    # which that edge is replaced by the two remaining edges of the opposite
+    # triangle.
+    doFlips = (T, stack) ->
+      if Sequence.empty stack
+        T
+      else
+        [a, b] = stack.first()
+        if T.mustFlip a, b
+          c = T.third a, b
+          recur -> doFlips flip(T, a, b), seq([a,c], [c,b]).concat stack.rest()
+        else
+          recur -> doFlips T, stack.rest()
 
     # The method `plus` creates a new Delaunay triangulation with the given
     # `Point2d` instance added as a site.
@@ -244,7 +302,13 @@ delaunayTriangulation = do ->
         this
       else
         t = @containingTriangle p
-        @subdivide t, p
+        [a, b, c] = t.into []
+        seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
+          if T.isRightOf(u, v, p) == 0
+            w = T.third u, v
+            resolve doFlips flip(T, u, v), seq [u, w], [w, v]
+          else
+            resolve doFlips T, seq [u, v]
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
