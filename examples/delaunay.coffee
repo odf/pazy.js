@@ -99,12 +99,9 @@ seq = (args...) -> new Sequence args
 #
 # The triangulation is abstract in the sense that we do not impose any
 # restrictions on the objects representing vertices.
-#
-# Most of the implementation details are hidden within a closure via the `do
-# ->` construct.
-
 triangulation = do ->
-  # We use a hidden class to encapsulate the implementation details.
+
+  # The hidden class `Triangulation` implements our data structure.
   class Triangulation
 
     # The constructor takes a set of triangles and a map specifying the
@@ -112,7 +109,7 @@ triangulation = do ->
     # an oriented triangle.
     constructor: (@triangles__ = new HashSet(), @third__ = new HashMap()) ->
 
-    # The method `toSeq` returns the triangles contained in the triangulations
+    # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
     toSeq: -> @triangles__.toSeq()
 
@@ -171,27 +168,37 @@ triangulation = do ->
 
 # The function `delaunayTriangulation` creates the Delaunay triangulation of a
 # set of points in the x,y-plane using the so-called incremental flip method.
-# As before, we hide implementation details within a closure.
-
 delaunayTriangulation = do ->
 
   # Again, we use a hidden class to encapsulate the implementation details.
   class Triangulation
-    # The triangle `outer` is a conceptual, 'infinitely large' triangle which
-    # is added to avoid special boundary considerations within the algorithm.
+    # The triangle `outer` is a virtual, 'infinitely large' triangle which is
+    # added internally to avoid special boundary considerations within the
+    # algorithm. To distinguish its (virtual) vertices from regular vertices,
+    # we use negative numbers.
     outer = seq -1, -2, -3
 
     # The constructor arguments are specific to this particular
     # algorithm.
-    constructor: (
-      # The abstract triangulation:
-      @triangulation__ = triangulation(outer),
+    constructor: (args...) ->
+      # The underlying abstract triangulation:
+      @triangulation__ = args[0] || triangulation(outer)
       # Maps vertex numbers to `Point2d` instances:
-      @coords__ = new HashMap(),
+      @position__      = args[1] || new HashMap()
       # The set of all `Point2d` instances present:
-      @points__ = new HashSet(),
+      @points__        = args[2] || new HashSet()
       # Defines the history DAG used to locate which triangle a point is in:
-      @children__ = new HashMap().plus [outer, seq()]) ->
+      @children__      = args[3] || new HashMap().plus [outer, seq()]
+
+    # The method `toSeq` returns the proper (non-virtual) triangles contained
+    # in this triangulation as a lazy sequence. It does so by removing any
+    # triangles from the underlying triangulation object which contain a
+    # virtual vertex.
+    toSeq: -> Sequence.select @triangulation__, (t) -> t.forall (n) -> n >= 0
+
+    # The method `position` returns the coordinates corresponding to a given
+    # vertex number as a `Point2d` instance.
+    position: (n) -> @position__.get n
 
 
 # ----
