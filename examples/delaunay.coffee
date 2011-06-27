@@ -202,7 +202,7 @@ delaunayTriangulation = do ->
     # value to the left, and a zero value on the line.
     isRightOf: (a, b, p) ->
       if a < 0 and b < 0
-        0
+        -1
       else if a < 0
         -@isRightOf b, a, p
       else
@@ -213,7 +213,7 @@ delaunayTriangulation = do ->
              when -3 then new Point2d -1, -1
              else         @position(b).minus r
         rp = p.minus r
-        rs.x * rp.y - rs.y * rp.x
+        rp.x * rs.y - rp.y * rs.x
 
     # The method `isInTriangle` returns true if the given `Point2d` instance
     # `p` is contained in the triangle `t` given as a sequence of site
@@ -240,14 +240,12 @@ delaunayTriangulation = do ->
       c = @third a, b
       d = @third b, a
 
-      if not c? or (a < 0 and b < 0)
+      if (a < 0 and b < 0) or c < 0 or d < 0
         false
       else if a < 0
-        @isRightOf(d, c, @position b) < 0
+        @isRightOf(d, c, @position b) > 0
       else if b < 0
-        @isRightOf(c, d, @position a) < 0
-      else if c < 0 or d < 0
-        false
+        @isRightOf(c, d, @position a) > 0
       else
         [pa, pb, pc, pd] = seq(a, b, c, d).map(@position).into []
         inclusionInCircumCircle(pa, pb, pc, pd) > 0

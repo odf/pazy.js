@@ -121,7 +121,7 @@ describe "An empty Delaunay triangulation", ->
     expect(t.containingTriangle(new Point2d 1, 1).into []).toEqual [-1, -2, -3]
 
 describe "A Delaunay triangulation with one site", ->
-  p = new Point2d 1, 1
+  p = new Point2d 0, 0
   t = delaunayTriangulation(p)
 
   it "should contain that site at position 0", ->
@@ -130,15 +130,22 @@ describe "A Delaunay triangulation with one site", ->
   it "should contain no triangles", ->
     expect(Sequence.empty t).toBeTruthy()
 
-  it "should report a point as in a triangle different from the outer one", ->
-    q = new Point2d 2, 1
-    f = t.containingTriangle(q).into []
-    expect(f.length).toBe 3
-    expect(f).toNotEqual [-1, -2, -3]
+  it "should report any point as left of any virtual edge", ->
+    q = new Point2d 1, 0
+    expect(t.isRightOf -1, -2, q).toBe -1
+
+  it "should report the point (1,0) to the right of edge -3,0", ->
+    q = new Point2d 1, 0
+    expect(t.isRightOf -3, 0, q).toBeGreaterThan 0
+
+  it "should report a point in the correct triangle", ->
+    q = new Point2d 1, 0
+    expect(t.containingTriangle(q).into []).toEqual [-1, -2, 0]
 
 describe "A Delaunay triangulation with three sites", ->
   [p, q, r] = [new Point2d(0, 0), new Point2d(1, 0), new Point2d(1, 1)]
   t = delaunayTriangulation(p, q, r)
+  console.log "t = #{t.toSeq()}"
 
   it "should contain those sites at positions 0, 1 and 2", ->
     expect(t.position 0).toEqual p
@@ -150,5 +157,4 @@ describe "A Delaunay triangulation with three sites", ->
 
   it "should report a point inside the triangle correctly", ->
     x = new Point2d 0.5, 0.25
-    f = t.containingTriangle(x).into []
-    expect(f).toEqual [0, 1, 2]
+    expect(t.containingTriangle(q).into []).toEqual [0, 1, 2]
