@@ -22,7 +22,7 @@ else
 class Point2d
   constructor: (@x, @y) ->
   plus:  (p) -> new Point2d @x + p.x, @y + p.y
-  minus: (p) -> new Point2d @x + p.x, @y + p.y
+  minus: (p) -> new Point2d @x - p.x, @y - p.y
   times: (f) -> new Point2d @x * f, @y * f
   toString:  -> "(#{@x}, #{@y})"
 
@@ -204,7 +204,7 @@ delaunayTriangulation = do ->
       if a < 0 and b < 0
         -1
       else if a < 0
-        -@isRightOf b, a, p
+        -(@isRightOf b, a, p)
       else
         r = @position a
         rs = switch b
