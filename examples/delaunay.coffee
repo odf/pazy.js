@@ -192,6 +192,11 @@ delaunayTriangulation = do ->
     # the two given ones in the given orientation, if any.
     third: (a, b) -> @triangulation__.third a, b
 
+    # The method `find` returns a canonical representation for the unique
+    # triangle in this triangulation, if any, which contains the two or three
+    # given vertices in the correct order.
+    find: (a, b, c) -> @triangulation__.find a, b, c
+
     # The method `position` returns the coordinates corresponding to a given
     # vertex number as a `Point2d` instance.
     position: (n) -> @position__[n]
@@ -201,6 +206,7 @@ delaunayTriangulation = do ->
     # instance) lies on. A positive value means it is to the right, a negative
     # value to the left, and a zero value on the line.
     isRightOf: (a, b, p) ->
+      #console.log "isRightOf #{a}, #{b}, #{p}"
       if a < 0 and b < 0
         -1
       else if a < 0
@@ -213,7 +219,8 @@ delaunayTriangulation = do ->
              when -3 then new Point2d -1, -1
              else         @position(b).minus r
         rp = p.minus r
-        rp.x * rs.y - rp.y * rs.x
+        result = rp.x * rs.y - rp.y * rs.x
+        result
 
     # The method `isInTriangle` returns true if the given `Point2d` instance
     # `p` is contained in the triangle `t` given as a sequence of site
@@ -261,7 +268,7 @@ delaunayTriangulation = do ->
         T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
         T.position__.concat([p]),
         T.sites__.plus(p),
-        T.children__.plus([t, seq seq(a, b, n), seq(b, c, n), seq(c, a, n)]))
+        T.children__.plus([T.find(a,b,c), seq seq(a,b,n), seq(b,c,n), seq(c,a,n)]))
 
     # The private function `flip` creates a new triangulation from `T` with the
     # edge defined by the indices `a` and `b` _flipped_. In other words, if the
@@ -275,7 +282,7 @@ delaunayTriangulation = do ->
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.position__,
         T.sites__,
-        T.children__.plus([seq(a,b,c), children], [seq(b,a,d), children]))
+        T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children]))
 
     # The private function `doFlips` takes a triangulation and a stack of
     # edges. If the topmost edge on the stack needs to be flipped, the function
