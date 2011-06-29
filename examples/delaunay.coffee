@@ -201,16 +201,18 @@ delaunayTriangulation = do ->
     # vertex number as a `Point2d` instance.
     position: (n) -> @position__[n]
 
-    # The method `isRightOf` determines which side of the oriented line given
-    # by the sites with indices `a` and `b` the point `p` (a `Point2d`
-    # instance) lies on. A positive value means it is to the right, a negative
-    # value to the left, and a zero value on the line.
-    isRightOf: (a, b, p) ->
-      #console.log "isRightOf #{a}, #{b}, #{p}"
+    # The method `sideOf` determines which side of the oriented line given by
+    # the sites with indices `a` and `b` the point `p` (a `Point2d` instance)
+    # lies on. A positive value means it is to the right, a negative value to
+    # the left, and a zero value on the line.
+    #
+    # Some special considerations are necessary in the case that `a` or `b` is
+    # one of our three virtual vertices.
+    sideOf: (a, b, p) ->
       if a < 0 and b < 0
         -1
       else if a < 0
-        -(@isRightOf b, a, p)
+        - @sideOf b, a, p
       else
         r = @position a
         rs = switch b
@@ -219,15 +221,14 @@ delaunayTriangulation = do ->
              when -3 then new Point2d -1, -1
              else         @position(b).minus r
         rp = p.minus r
-        result = rp.x * rs.y - rp.y * rs.x
-        result
+        rp.x * rs.y - rp.y * rs.x
 
     # The method `isInTriangle` returns true if the given `Point2d` instance
     # `p` is contained in the triangle `t` given as a sequence of site
     # indices.
     isInTriangle: (t, p) ->
       [a, b, c] = t.into []
-      seq([a, b], [b, c], [c, a]).forall ([r, s]) => @isRightOf(r, s, p) <= 0
+      seq([a, b], [b, c], [c, a]).forall ([r, s]) => @sideOf(r, s, p) <= 0
 
     # The method `containingTriangle` returns the triangle the given point is
     # in.
@@ -243,6 +244,9 @@ delaunayTriangulation = do ->
     # The method `mustFlip` determines whether the triangles adjacent to the
     # given edge from `a` to `b` violates the Delaunay condition, in which case
     # it must be flipped.
+    #
+    # Some special considerations are necessary in the case that virtual
+    # vertices are involved.
     mustFlip: (a, b) ->
       c = @third a, b
       d = @third b, a
@@ -250,9 +254,9 @@ delaunayTriangulation = do ->
       if (a < 0 and b < 0) or c < 0 or d < 0
         false
       else if a < 0
-        @isRightOf(d, c, @position b) > 0
+        @sideOf(d, c, @position b) > 0
       else if b < 0
-        @isRightOf(c, d, @position a) > 0
+        @sideOf(c, d, @position a) > 0
       else
         [pa, pb, pc, pd] = seq(a, b, c, d).map(@position).into []
         inclusionInCircumCircle(pa, pb, pc, pd) > 0
@@ -268,7 +272,9 @@ delaunayTriangulation = do ->
         T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
         T.position__.concat([p]),
         T.sites__.plus(p),
-        T.children__.plus([T.find(a,b,c), seq seq(a,b,n), seq(b,c,n), seq(c,a,n)]))
+        T.children__.plus([T.find(a,b,c),
+                           seq seq(a,b,n), seq(b,c,n), seq(c,a,n)])
+      )
 
     # The private function `flip` creates a new triangulation from `T` with the
     # edge defined by the indices `a` and `b` _flipped_. In other words, if the
@@ -282,7 +288,8 @@ delaunayTriangulation = do ->
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.position__,
         T.sites__,
-        T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children]))
+        T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children])
+      )
 
     # The private function `doFlips` takes a triangulation and a stack of
     # edges. If the topmost edge on the stack needs to be flipped, the function
@@ -309,7 +316,7 @@ delaunayTriangulation = do ->
         t = @containingTriangle p
         [a, b, c] = t.into []
         seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
-          if T.isRightOf(u, v, p) == 0 and not (u < 0 and v < 0)
+          if T.sideOf(u, v, p) == 0
             w = T.third u, v
             resolve doFlips flip(T, u, v), seq [u, w], [w, v]
           else

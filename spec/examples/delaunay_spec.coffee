@@ -132,11 +132,11 @@ describe "A Delaunay triangulation with one site", ->
 
   it "should report any point as left of any virtual edge", ->
     q = new Point2d 1, 0
-    expect(t.isRightOf -1, -2, q).toBe -1
+    expect(t.sideOf -1, -2, q).toBeLessThan 0
 
   it "should report the point (1,0) to the right of edge -3,0", ->
     q = new Point2d 1, 0
-    expect(t.isRightOf -3, 0, q).toBeGreaterThan 0
+    expect(t.sideOf -3, 0, q).toBeGreaterThan 0
 
   it "should report a point in the correct triangle", ->
     q = new Point2d 1, 0
@@ -156,10 +156,10 @@ describe "A Delaunay triangulation with three sites", ->
 
   it "should report points as on the correct sides of edges", ->
     x = new Point2d 0.5, 0.25
-    expect(t.isRightOf -1, -2, x).toBeLessThan 0
-    expect(t.isRightOf 1, -1, x).toBeLessThan 0
-    expect(t.isRightOf -2, 2, x).toBeGreaterThan 0
-    expect(t.isRightOf -2, 1, x).toBeGreaterThan 0
+    expect(t.sideOf -1, -2, x).toBeLessThan 0
+    expect(t.sideOf 1, -1, x).toBeLessThan 0
+    expect(t.sideOf -2, 2, x).toBeGreaterThan 0
+    expect(t.sideOf -2, 1, x).toBeGreaterThan 0
 
   it "should report a point inside the triangle correctly", ->
     x = new Point2d 0.5, 0.25
