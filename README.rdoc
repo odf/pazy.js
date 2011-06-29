@@ -18,8 +18,7 @@ Clojure[http://clojure.org] programming language), several data
 structures described by Chris Okasaki in his PhD thesis, an
 experimental implementation of arbitrary precision integers based on
 lazy sequences, a union-find data structure and some useful primitives
-such as suspend and recur/resolve. The next project I'm looking at are
-finger trees. Wish me luck! :)
+such as suspend and recur/resolve. The latest addition are finger trees.
 
 I am not a specialist in functional programming or data structures,
 and I am fairly new to Javascript, so more than anything else, this is
