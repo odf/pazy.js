@@ -164,3 +164,23 @@ describe "A Delaunay triangulation with three sites", ->
   it "should report a point inside the triangle correctly", ->
     x = new Point2d 0.5, 0.25
     expect(t.containingTriangle(x).into []).toEqual t.find(0, 1, 2).into []
+
+describe "A Delaunay triangulation with four sites", ->
+  [p, q, r, s] =
+    [new Point2d(0, 0), new Point2d(1, 0), new Point2d(1, 1), new Point2d(0, 1)]
+  t = delaunayTriangulation(p, q, r, s)
+
+  it "should contain those sites at positions 0, 1, 2 and 3", ->
+    expect(t.position 0).toEqual p
+    expect(t.position 1).toEqual q
+    expect(t.position 2).toEqual r
+    expect(t.position 3).toEqual s
+
+  it "should contain two triangles", ->
+    expect(Sequence.size t).toBe 2
+
+  it "should report a point inside the correct triangles", ->
+    a = new Point2d 0.75, 0.25
+    b = new Point2d 0.25, 0.75
+    expect(t.containingTriangle(a).into []).toEqual t.find(0, 1, 2).into []
+    expect(t.containingTriangle(b).into []).toEqual t.find(0, 2, 3).into []

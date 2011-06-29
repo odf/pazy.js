@@ -251,14 +251,14 @@ delaunayTriangulation = do ->
       c = @third a, b
       d = @third b, a
 
-      if (a < 0 and b < 0) or c < 0 or d < 0
+      if (a < 0 and b < 0) or not c? or not d? or c < 0 or d < 0
         false
       else if a < 0
         @sideOf(d, c, @position b) > 0
       else if b < 0
         @sideOf(c, d, @position a) > 0
       else
-        [pa, pb, pc, pd] = seq(a, b, c, d).map(@position).into []
+        [pa, pb, pc, pd] = seq(a, b, c, d).map((x) => @position x).into []
         inclusionInCircumCircle(pa, pb, pc, pd) > 0
 
     # The private function `subdivide` takes a triangulation `T`, a triangle
