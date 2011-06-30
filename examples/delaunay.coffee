@@ -17,6 +17,12 @@ else
 
 # ----
 
+# Here's a quick hack for switching traces on and off.
+
+trace = (s) -> # console.log s
+
+# ----
+
 # The class `Point2d` represents points in the x,y-plane and provides just the
 # bare minimum of operations we need here.
 class Point2d
@@ -266,6 +272,7 @@ delaunayTriangulation = do ->
     # in which `t` is divided into three new triangles with `p` as a common
     # vertex.
     subdivide = (T, t, p) ->
+      trace "subdivide [#{T.triangulation__.toSeq()}], #{t}, #{p}"
       [a, b, c] = t.into []
       n = T.position__.length
       new T.constructor(
@@ -281,6 +288,7 @@ delaunayTriangulation = do ->
     # edge `ab` lies in triangles `abc` and `bad`, then after the flip those
     # are replaced by new triangle `bcd` and `adc`.
     flip = (T, a, b) ->
+      trace "flip [#{T.triangulation__.toSeq()}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
       children = seq seq(b, c, d), seq(a, d, c)
@@ -302,7 +310,7 @@ delaunayTriangulation = do ->
       else
         [a, b] = stack.first()
         if T.mustFlip a, b
-          c = T.third a, b
+          c = T.third b, a
           recur -> doFlips flip(T, a, b), seq([a,c], [c,b]).concat stack.rest()
         else
           recur -> doFlips T, stack.rest()
@@ -317,7 +325,7 @@ delaunayTriangulation = do ->
         [a, b, c] = t.into []
         seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
           if T.sideOf(u, v, p) == 0
-            w = T.third u, v
+            w = T.third v, u
             resolve doFlips flip(T, u, v), seq [u, w], [w, v]
           else
             resolve doFlips T, seq [u, v]

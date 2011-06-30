@@ -184,3 +184,39 @@ describe "A Delaunay triangulation with four sites", ->
     b = new Point2d 0.25, 0.75
     expect(t.containingTriangle(a).into []).toEqual t.find(0, 1, 2).into []
     expect(t.containingTriangle(b).into []).toEqual t.find(0, 2, 3).into []
+
+describe "A Delaunay triangulation with four sites", ->
+  [p, q, r, s] =
+    [new Point2d(5, 3), new Point2d(1, 7), new Point2d(9, 5), new Point2d(4, 9)]
+  t = delaunayTriangulation(p, q, r, s)
+
+  it "should contain those sites at positions 0, 1, 2 and 3", ->
+    expect(t.position 0).toEqual p
+    expect(t.position 1).toEqual q
+    expect(t.position 2).toEqual r
+    expect(t.position 3).toEqual s
+
+  it "should contain two triangles", ->
+    expect(Sequence.size t).toBe 2
+
+  Sequence.each t, (triangle) ->
+    [a, b, c] = triangle.into []
+    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+      if r <= s
+        it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
+          expect(t.mustFlip r, s).toBe false
+
+describe "A Delaunay triangulation with random sites", ->
+  rnd = -> Math.floor(Math.random() * 100)
+  sites = (new Point2d(rnd(), rnd()) for i in [1..20])
+  t = delaunayTriangulation sites...
+
+  it "should have triangles", ->
+    expect(Sequence.size t).toBeGreaterThan 0
+
+  Sequence.each t, (triangle) ->
+    [a, b, c] = triangle.into []
+    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+      if r <= s
+        it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
+          expect(t.mustFlip r, s).toBe false
