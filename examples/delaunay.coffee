@@ -23,6 +23,13 @@ trace = (s) -> # console.log s
 
 # ----
 
+# The helper function `seq` creates a sequence from its argument
+# list.
+seq = (args...) -> new Sequence args
+
+
+# ----
+
 # The class `Point2d` represents points in the x,y-plane and provides just the
 # bare minimum of operations we need here.
 class Point2d
@@ -44,6 +51,37 @@ class Point3d
   dot:   (p) -> @x * p.x + @y * p.y + @z * p.z
   cross: (p) -> new Point3d @y*p.z - @z*p.y, @z*p.x - @x*p.z, @x*p.y - @y*p.x
 
+
+# ----
+
+# The class `Triangle` represents an oriented, abstract triangle with no
+# specified origin. In other words, the sequences `a, b, c`, `b, c, a` and `c,
+# a,b` describe the same oriented triangle for given `a`, `b` and `c`, but `a,
+# c, a` does not. The three 'vertices' given in the constructor must be
+# integers which will be interpreted as indices into a more concrete vertex
+# list.
+class Triangle
+  constructor: (a, b, c) ->
+    [@a, @b, @c] =
+      if a < b and a < c
+        [a, b, c]
+      else if b < c
+        [b, c, a]
+      else
+        [c, a, b]
+    h = (@a * 37 + @b) * 37 + @c
+    @hashcode = -> h
+
+  vertices: -> [@a, @b, @c]
+
+  toSeq: -> seq @a, @b, @c
+
+  equals: (other) -> @a == other.a and @b == other.b and @c == other.c
+
+  toString: -> "T(#{@a}, #{@b}, #{@c})"
+
+# Here's a quick shortcut for the constructor.
+tri = (a, b, c) -> new Triangle a, b, c
 
 # ----
 
@@ -86,13 +124,6 @@ inclusionInCircumCircle = (a, b, c, d) ->
 
 # ----
 
-# The helper function `seq` creates a sequence from its argument
-# list.
-seq = (args...) -> new Sequence args
-
-
-# ----
-
 # The function `triangulation` creates an _oriented_ abstract triangulation,
 # i.e. one in which the vertices of each triangle are assigned one out of two
 # possible circular orders. Whenever two triangles share an edge, we moreover
@@ -123,12 +154,8 @@ triangulation = do ->
     # triangle in this triangulation, if any, which contains the two or three
     # given vertices in the correct order.
     find: (a, b, c) ->
-     if c?
-        seq(seq(a, b, c), seq(b, c, a), seq(c, a, b)).
-          find((t) => @triangles__.contains(t))
-      else
-        c = @third a, b
-        @find a, b, c if c?
+      t = tri a, b, if c? then c else @third a, b
+      t if @triangles__.contains t
 
     # The method `plus` returns a triangulation with the given triangle added
     # unless it is already present or creates an orientation mismatch. In the
@@ -141,7 +168,7 @@ triangulation = do ->
         throw new Error 'Orientation mismatch.'
       else
         new Triangulation(
-          @triangles__.plus(seq(a, b, c)),
+          @triangles__.plus(tri(a, b, c)),
           @third__.plusAll(seq [seq(a, b), c], [seq(b, c), a], [seq(c, a), b]))
 
     # The method `minus` returs a triangulation with the given triangle
@@ -172,7 +199,7 @@ delaunayTriangulation = do ->
     # added internally to avoid special boundary considerations within the
     # algorithm. To distinguish its vertices from vertices corresponding to
     # regular sites, we use negative indices.
-    outer = seq -1, -2, -3
+    outer = tri -1, -2, -3
 
     # The constructor is called with implementation specific data for the new
     # instance, specifically:
@@ -183,7 +210,7 @@ delaunayTriangulation = do ->
     # 4. The child relation of the history DAG which is used to locate which
     # triangle a new site is in.
     constructor: (args...) ->
-      @triangulation__ = args[0] || triangulation(outer.into [])
+      @triangulation__ = args[0] || triangulation(outer.vertices())
       @position__      = args[1] || []
       @sites__         = args[2] || new HashSet()
       @children__      = args[3] || new HashMap()
@@ -192,7 +219,8 @@ delaunayTriangulation = do ->
     # in this triangulation as a lazy sequence. It does so by removing any
     # triangles from the underlying triangulation object which contain a
     # virtual vertex.
-    toSeq: -> Sequence.select @triangulation__, (t) -> t.forall (n) -> n >= 0
+    toSeq: ->
+      Sequence.select @triangulation__, (t) -> Sequence.forall t, (n) -> n >= 0
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
@@ -233,7 +261,7 @@ delaunayTriangulation = do ->
     # `p` is contained in the triangle `t` given as a sequence of site
     # indices.
     isInTriangle: (t, p) ->
-      [a, b, c] = t.into []
+      [a, b, c] = t.vertices()
       seq([a, b], [b, c], [c, a]).forall ([r, s]) => @sideOf(r, s, p) <= 0
 
     # The method `containingTriangle` returns the triangle the given point is
@@ -273,14 +301,14 @@ delaunayTriangulation = do ->
     # vertex.
     subdivide = (T, t, p) ->
       trace "subdivide [#{T.triangulation__.toSeq()}], #{t}, #{p}"
-      [a, b, c] = t.into []
+      [a, b, c] = t.vertices()
       n = T.position__.length
       new T.constructor(
         T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
         T.position__.concat([p]),
         T.sites__.plus(p),
         T.children__.plus([T.find(a,b,c),
-                           seq seq(a,b,n), seq(b,c,n), seq(c,a,n)])
+                           seq tri(a,b,n), tri(b,c,n), tri(c,a,n)])
       )
 
     # The private function `flip` creates a new triangulation from `T` with the
@@ -291,7 +319,7 @@ delaunayTriangulation = do ->
       trace "flip [#{T.triangulation__.toSeq()}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
-      children = seq seq(b, c, d), seq(a, d, c)
+      children = seq tri(b, c, d), tri(a, d, c)
       new T.constructor(
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.position__,
@@ -322,7 +350,7 @@ delaunayTriangulation = do ->
         this
       else
         t = @containingTriangle p
-        [a, b, c] = t.into []
+        [a, b, c] = t.vertices()
         seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
           if T.sideOf(u, v, p) == 0
             w = T.third v, u

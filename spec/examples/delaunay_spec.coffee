@@ -56,7 +56,7 @@ describe "A triangulation with one triangle", ->
   t = triangulation([1, 2, 3])
 
   it "should produce a sequence containing only the original triangle", ->
-    expect(t.toSeq().toString()).toEqual "((1, 2, 3))"
+    expect(t.toSeq().toString()).toEqual "(T(1, 2, 3))"
 
   it "should not be empty", ->
     expect(Sequence.empty t).toBeFalsy()
@@ -65,11 +65,11 @@ describe "A triangulation with one triangle", ->
     expect(Sequence.size t).toBe 1
 
   it "should find that triangle again", ->
-    expect(t.find(1, 2, 3).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(1, 2, 3).vertices()).toEqual [1, 2, 3]
 
   it "should find that triangle with its vertices cyclically permuted", ->
-    expect(t.find(2, 3, 1).equals [1, 2, 3]).toBeTruthy()
-    expect(t.find(3, 1, 2).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(2, 3, 1).vertices()).toEqual [1, 2, 3]
+    expect(t.find(3, 1, 2).vertices()).toEqual [1, 2, 3]
 
   it "should not find the same triangle when the orientation is reversed", ->
     expect(t.find 1, 3, 2).toBeUndefined()
@@ -77,9 +77,9 @@ describe "A triangulation with one triangle", ->
     expect(t.find 2, 1, 3).toBeUndefined()
 
   it "should find the three edges included in that triangle", ->
-    expect(t.find(1, 2).equals [1, 2, 3]).toBeTruthy()
-    expect(t.find(2, 3).equals [1, 2, 3]).toBeTruthy()
-    expect(t.find(3, 1).equals [1, 2, 3]).toBeTruthy()
+    expect(t.find(1, 2).vertices()).toEqual [1, 2, 3]
+    expect(t.find(2, 3).vertices()).toEqual [1, 2, 3]
+    expect(t.find(3, 1).vertices()).toEqual [1, 2, 3]
 
   it "should not find the edges in that triangle with reversed orientation", ->
     expect(t.find 1, 3).toBeUndefined()
@@ -118,7 +118,7 @@ describe "An empty Delaunay triangulation", ->
     expect(Sequence.empty t).toBeTruthy()
 
   it "should report any point as in the virtual outer triangle", ->
-    expect(t.containingTriangle(new Point2d 1, 1).into []).toEqual [-1, -2, -3]
+    expect(t.containingTriangle(new Point2d 1, 1).vertices()).toEqual [-3,-1,-2]
 
 describe "A Delaunay triangulation with one site", ->
   p = new Point2d 0, 0
@@ -139,8 +139,8 @@ describe "A Delaunay triangulation with one site", ->
     expect(t.sideOf -3, 0, q).toBeGreaterThan 0
 
   it "should report a point in the correct triangle", ->
-    q = new Point2d 1, 0
-    expect(t.containingTriangle(q).into []).toEqual [-1, -2, 0]
+    q = new Point2d 1, 0.1
+    expect(t.containingTriangle(q).vertices()).toEqual [-2, 0, -1]
 
 describe "A Delaunay triangulation with three sites", ->
   [p, q, r] = [new Point2d(0, 0), new Point2d(1, 0), new Point2d(1, 1)]
@@ -163,7 +163,7 @@ describe "A Delaunay triangulation with three sites", ->
 
   it "should report a point inside the triangle correctly", ->
     x = new Point2d 0.5, 0.25
-    expect(t.containingTriangle(x).into []).toEqual t.find(0, 1, 2).into []
+    expect(t.containingTriangle(x).vertices()).toEqual [0, 1, 2]
 
 describe "A Delaunay triangulation with four sites", ->
   [p, q, r, s] =
@@ -182,8 +182,8 @@ describe "A Delaunay triangulation with four sites", ->
   it "should report a point inside the correct triangles", ->
     a = new Point2d 0.75, 0.25
     b = new Point2d 0.25, 0.75
-    expect(t.containingTriangle(a).into []).toEqual t.find(0, 1, 2).into []
-    expect(t.containingTriangle(b).into []).toEqual t.find(0, 2, 3).into []
+    expect(t.containingTriangle(a).vertices()).toEqual [0, 1, 2]
+    expect(t.containingTriangle(b).vertices()).toEqual [0, 2, 3]
 
 describe "A Delaunay triangulation with four sites", ->
   [p, q, r, s] =
@@ -200,7 +200,7 @@ describe "A Delaunay triangulation with four sites", ->
     expect(Sequence.size t).toBe 2
 
   Sequence.each t, (triangle) ->
-    [a, b, c] = triangle.into []
+    [a, b, c] = triangle.vertices()
     Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
       if r <= s
         it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
@@ -208,14 +208,14 @@ describe "A Delaunay triangulation with four sites", ->
 
 describe "A Delaunay triangulation with random sites", ->
   rnd = -> Math.floor(Math.random() * 100)
-  sites = (new Point2d(rnd(), rnd()) for i in [1..20])
+  sites = (new Point2d(rnd(), rnd()) for i in [1..100])
   t = delaunayTriangulation sites...
 
   it "should have triangles", ->
     expect(Sequence.size t).toBeGreaterThan 0
 
   Sequence.each t, (triangle) ->
-    [a, b, c] = triangle.into []
+    [a, b, c] = triangle.vertices()
     Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
       if r <= s
         it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
