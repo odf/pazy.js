@@ -148,7 +148,7 @@ triangulation = do ->
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
-    third: (a, b) -> @third__.get seq a, b
+    third: (a, b) -> @third__.get [a, b]
 
     # The method `find` returns a canonical representation for the unique
     # triangle in this triangulation, if any, which contains the two or three
@@ -164,12 +164,14 @@ triangulation = do ->
     plus: (a, b, c) ->
       if @find a, b, c
         this
-      else if seq(seq(a, b), seq(b, c), seq(c, a)).find((e) => @third__.get(e)?)
-        throw new Error 'Orientation mismatch.'
+      else if x = seq([a, b], [b, c], [c, a]).find((e) => @third__.get(e)?)
+        [f, g] = x
+        h = @third__.get x
+        throw new Error "Orientation mismatch: #{[a,b,c]} <=> #{[f,g,h]}."
       else
         new Triangulation(
           @triangles__.plus(tri(a, b, c)),
-          @third__.plusAll(seq [seq(a, b), c], [seq(b, c), a], [seq(c, a), b]))
+          @third__.plusAll(seq [[a, b], c], [[b, c], a], [[c, a], b]))
 
     # The method `minus` returs a triangulation with the given triangle
     # removed, if present.
@@ -178,7 +180,7 @@ triangulation = do ->
       if t?
         new Triangulation(
           @triangles__.minus(t),
-          @third__.minusAll(seq seq(a, b), seq(b, c), seq(c, a)))
+          @third__.minusAll seq([a, b], [b, c], [c, a]))
       else
         this
 
@@ -375,3 +377,21 @@ exports.circumCircleCenter      = circumCircleCenter
 exports.inclusionInCircumCircle = inclusionInCircumCircle
 exports.triangulation           = triangulation
 exports.delaunayTriangulation   = delaunayTriangulation
+
+test = ->
+  rnd = -> Math.floor(Math.random() * 100)
+  t = Sequence.range(1, 1000).reduce delaunayTriangulation(),  (s, i) ->
+    s.plus new Point2d rnd(), rnd()
+
+  Sequence.each t, (triangle) ->
+    [a, b, c] = triangle.vertices()
+    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+      if r <= s
+        u = t.position r
+        v = t.position s
+        w = t.position(t.third r, s) or t.third r, s
+        x = t.position(t.third s, r) or t.third s, r
+        if t.mustFlip r, s
+          console.log "Delaunay condition fails for #{u},#{v},#{w},#{x})", ->
+
+test()

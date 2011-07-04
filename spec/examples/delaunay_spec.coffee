@@ -208,8 +208,8 @@ describe "A Delaunay triangulation with four sites", ->
 
 describe "A Delaunay triangulation with random sites", ->
   rnd = -> Math.floor(Math.random() * 100)
-  sites = (new Point2d(rnd(), rnd()) for i in [1..100])
-  t = delaunayTriangulation sites...
+  t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->
+    s.plus new Point2d rnd(), rnd()
 
   it "should have triangles", ->
     expect(Sequence.size t).toBeGreaterThan 0
@@ -218,5 +218,9 @@ describe "A Delaunay triangulation with random sites", ->
     [a, b, c] = triangle.vertices()
     Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
       if r <= s
-        it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
+        u = t.position r
+        v = t.position s
+        w = t.position(t.third r, s) or t.third r, s
+        x = t.position(t.third s, r) or t.third s, r
+        it "should fullfil the Delaunay condition for #{u},#{v},#{w},#{x})", ->
           expect(t.mustFlip r, s).toBe false
