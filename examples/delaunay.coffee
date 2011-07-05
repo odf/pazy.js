@@ -167,7 +167,7 @@ triangulation = do ->
       else if x = seq([a, b], [b, c], [c, a]).find((e) => @third__.get(e)?)
         [f, g] = x
         h = @third__.get x
-        throw new Error "Orientation mismatch: #{[a,b,c]} <=> #{[f,g,h]}."
+        throw new Error "Orientation mismatch."
       else
         new Triangulation(
           @triangles__.plus(tri(a, b, c)),
@@ -340,7 +340,7 @@ delaunayTriangulation = do ->
       else
         [a, b] = stack.first()
         if T.mustFlip a, b
-          c = T.third b, a
+          c = T.third a, b
           recur -> doFlips flip(T, a, b), seq([a,c], [c,b]).concat stack.rest()
         else
           recur -> doFlips T, stack.rest()
@@ -353,10 +353,13 @@ delaunayTriangulation = do ->
       else
         t = @containingTriangle p
         [a, b, c] = t.vertices()
-        seq([a, b], [b, c], [c, a]).reduce subdivide(this, t, p), (T, [u, v]) ->
+        seq([b, a], [c, b], [a, c]).reduce subdivide(this, t, p), (T, [u, v]) ->
           if T.sideOf(u, v, p) == 0
-            w = T.third v, u
-            resolve doFlips flip(T, u, v), seq [u, w], [w, v]
+            w = T.third u, v
+            if w?
+              resolve doFlips flip(T, u, v), seq [u, w], [w, v]
+            else
+              T
           else
             resolve doFlips T, seq [u, v]
 
@@ -380,7 +383,7 @@ exports.delaunayTriangulation   = delaunayTriangulation
 
 test = ->
   rnd = -> Math.floor(Math.random() * 100)
-  t = Sequence.range(1, 1000).reduce delaunayTriangulation(),  (s, i) ->
+  t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->
     s.plus new Point2d rnd(), rnd()
 
   Sequence.each t, (triangle) ->
@@ -394,4 +397,4 @@ test = ->
         if t.mustFlip r, s
           console.log "Delaunay condition fails for #{u},#{v},#{w},#{x})", ->
 
-test()
+#test()
