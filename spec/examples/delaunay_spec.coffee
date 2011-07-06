@@ -206,6 +206,27 @@ describe "A Delaunay triangulation with four sites", ->
         it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
           expect(t.mustFlip r, s).toBe false
 
+describe "A Delaunay triangulation with four sites", ->
+  [p, q, r, s] =
+    [new Point2d(5, 5), new Point2d(9, 5), new Point2d(2, 1), new Point2d(3, 8)]
+  t = delaunayTriangulation(p, q, r, s)
+
+  it "should contain those sites at positions 0, 1, 2 and 3", ->
+    expect(t.position 0).toEqual p
+    expect(t.position 1).toEqual q
+    expect(t.position 2).toEqual r
+    expect(t.position 3).toEqual s
+
+  it "should contain three triangles", ->
+    expect(Sequence.size t).toBe 3
+
+  Sequence.each t, (triangle) ->
+    [a, b, c] = triangle.vertices()
+    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+      if r <= s
+        it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
+          expect(t.mustFlip r, s).toBe false
+
 describe "A Delaunay triangulation with random sites", ->
   rnd = -> Math.floor(Math.random() * 100)
   t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->

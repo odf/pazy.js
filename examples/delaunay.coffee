@@ -19,7 +19,7 @@ else
 
 # Here's a quick hack for switching traces on and off.
 
-trace = (s) -> # console.log s
+trace = (s) -> #console.log s
 
 # ----
 
@@ -287,12 +287,15 @@ delaunayTriangulation = do ->
       c = @third a, b
       d = @third b, a
 
-      if (a < 0 and b < 0) or not c? or not d? or c < 0 or d < 0
+      trace "  mustFlip #{a}, #{b} - c = #{c}. d = #{d}"
+      if (a < 0 and b < 0) or not c? or not d?
         false
       else if a < 0
         @sideOf(d, c, @position b) > 0
       else if b < 0
         @sideOf(c, d, @position a) > 0
+      else if c < 0 or d < 0
+        false
       else
         [pa, pb, pc, pd] = seq(a, b, c, d).map((x) => @position x).into []
         inclusionInCircumCircle(pa, pb, pc, pd) > 0
@@ -383,7 +386,7 @@ exports.delaunayTriangulation   = delaunayTriangulation
 
 test = ->
   rnd = -> Math.floor(Math.random() * 100)
-  t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->
+  t = Sequence.range(1, 1000).reduce delaunayTriangulation(),  (s, i) ->
     s.plus new Point2d rnd(), rnd()
 
   Sequence.each t, (triangle) ->
