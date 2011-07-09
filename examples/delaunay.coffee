@@ -38,6 +38,7 @@ class Point2d
   minus: (p) -> new Point2d @x - p.x, @y - p.y
   times: (f) -> new Point2d @x * f, @y * f
   toString:  -> "(#{@x}, #{@y})"
+  equals: (p) -> @x == p.x and @y == p.y
 
 
 # ----
@@ -385,9 +386,15 @@ exports.triangulation           = triangulation
 exports.delaunayTriangulation   = delaunayTriangulation
 
 test = ->
-  rnd = -> Math.floor(Math.random() * 100)
-  t = Sequence.range(1, 1000).reduce delaunayTriangulation(),  (s, i) ->
-    s.plus new Point2d rnd(), rnd()
+  rnd = -> Math.floor(Math.random() * 20)
+  t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->
+    p = new Point2d rnd(), rnd()
+    try
+      s.plus p
+    catch ex
+      console.log s.position__
+      console.log p
+      throw ex
 
   Sequence.each t, (triangle) ->
     [a, b, c] = triangle.vertices()
