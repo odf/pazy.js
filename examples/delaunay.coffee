@@ -397,19 +397,9 @@ test = (n = 100, m = 10) ->
         s.plus p...
       catch ex
         console.log Sequence.map(s.position__, ([k, p]) -> p).join ', '
+        console.log Sequence.join s, ', '
         console.log p
         throw ex
-
-    Sequence.each t, (triangle) ->
-      [a, b, c] = triangle.vertices()
-      Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
-        if r <= s
-          u = t.position r
-          v = t.position s
-          w = t.position(t.third r, s) or t.third r, s
-          x = t.position(t.third s, r) or t.third s, r
-          if t.mustFlip r, s
-            throw "  Delaunay condition fails for #{u},#{v},#{w},#{x})"
 
 if module? and not module.parent
   args = Sequence.map(process.argv[2..], parseInt)?.into []
