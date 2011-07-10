@@ -353,8 +353,9 @@ delaunayTriangulation = do ->
           recur -> doFlips T, stack.rest()
 
     # The method `plus` creates a new Delaunay triangulation with the given
-    # `Point2d` instance added as a site.
-    plus: (p) ->
+    # (x, y) location added as a site.
+    plus: (x, y) ->
+      p = new Point2d x, y
       if @sites__.contains p
         this
       else
@@ -372,21 +373,18 @@ delaunayTriangulation = do ->
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
-  (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x
+  (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x...
 
 # ----
 
-# We export the classes `Point2d` and `Point3d` and the functions
-# `circumCircleCenter`, `inclusionInCircumCircle` and `triangulation` for
-# testing.
+# Exporting.
 
 exports ?= this.pazy ?= {}
-exports.Point2d = Point2d
-exports.Point3d = Point3d
-exports.circumCircleCenter      = circumCircleCenter
-exports.inclusionInCircumCircle = inclusionInCircumCircle
-exports.triangulation           = triangulation
-exports.delaunayTriangulation   = delaunayTriangulation
+exports.delaunayTriangulation = delaunayTriangulation
+
+# ----
+
+# Some testing.
 
 test = (n = 100, m = 10) ->
   Sequence.range(1, n).each (i) ->
@@ -394,9 +392,9 @@ test = (n = 100, m = 10) ->
 
     rnd = -> Math.floor(Math.random() * 100)
     t = Sequence.range(1, m).reduce delaunayTriangulation(),  (s, j) ->
-      p = new Point2d rnd(), rnd()
+      p = [rnd(), rnd()]
       try
-        s.plus p
+        s.plus p...
       catch ex
         console.log Sequence.map(s.position__, ([k, p]) -> p).join ', '
         console.log p
