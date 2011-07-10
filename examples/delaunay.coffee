@@ -388,26 +388,31 @@ exports.inclusionInCircumCircle = inclusionInCircumCircle
 exports.triangulation           = triangulation
 exports.delaunayTriangulation   = delaunayTriangulation
 
-test = ->
-  rnd = -> Math.floor(Math.random() * 20)
-  t = Sequence.range(1, 200).reduce delaunayTriangulation(),  (s, i) ->
-    p = new Point2d rnd(), rnd()
-    try
-      s.plus p
-    catch ex
-      console.log s.position__
-      console.log p
-      throw ex
+test = (n = 100, m = 10) ->
+  Sequence.range(1, n).each (i) ->
+    console.log "Run #{i}"
 
-  Sequence.each t, (triangle) ->
-    [a, b, c] = triangle.vertices()
-    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
-      if r <= s
-        u = t.position r
-        v = t.position s
-        w = t.position(t.third r, s) or t.third r, s
-        x = t.position(t.third s, r) or t.third s, r
-        if t.mustFlip r, s
-          console.log "Delaunay condition fails for #{u},#{v},#{w},#{x})", ->
+    rnd = -> Math.floor(Math.random() * 100)
+    t = Sequence.range(1, m).reduce delaunayTriangulation(),  (s, j) ->
+      p = new Point2d rnd(), rnd()
+      try
+        s.plus p
+      catch ex
+        console.log Sequence.map(s.position__, ([k, p]) -> p).join ', '
+        console.log p
+        throw ex
 
-#test()
+    Sequence.each t, (triangle) ->
+      [a, b, c] = triangle.vertices()
+      Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+        if r <= s
+          u = t.position r
+          v = t.position s
+          w = t.position(t.third r, s) or t.third r, s
+          x = t.position(t.third s, r) or t.third s, r
+          if t.mustFlip r, s
+            throw "  Delaunay condition fails for #{u},#{v},#{w},#{x})"
+
+if module? and not module.parent
+  args = Sequence.map(process.argv[2..], parseInt)?.into []
+  test args...

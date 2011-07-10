@@ -227,10 +227,19 @@ describe "A Delaunay triangulation with four sites", ->
         it "should fullfil the Delaunay condition for edge (#{r},#{s})", ->
           expect(t.mustFlip r, s).toBe false
 
+guard = (f) ->
+  try
+    f()
+  catch ex
+    console.log ex.message
+    console.log "" + ex.stack
+    throw ex
+
 describe "A Delaunay triangulation with random sites", ->
-  rnd = -> Math.floor(Math.random() * 100)
-  t = Sequence.range(1, 500).reduce delaunayTriangulation(),  (s, i) ->
-    s.plus new Point2d rnd(), rnd()
+  t = guard ->
+    rnd = -> Math.floor(Math.random() * 100)
+    Sequence.range(1, 500).reduce delaunayTriangulation(),  (s, i) ->
+      s.plus new Point2d rnd(), rnd()
 
   it "should have triangles", ->
     expect(Sequence.size t).toBeGreaterThan 0
