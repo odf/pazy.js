@@ -9,11 +9,11 @@
 # package system).
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
-  { recur, resolve }   = require 'functional'
-  { Sequence }         = require 'sequence'
-  { HashSet, HashMap } = require 'indexed'
+  { recur, resolve }           = require 'functional'
+  { Sequence }                 = require 'sequence'
+  { IntMap, HashSet, HashMap } = require 'indexed'
 else
-  { recur, resolve, Sequence, HashSet, HashMap } = this.pazy
+  { recur, resolve, Sequence, IntMap, HashSet, HashMap } = this.pazy
 
 # ----
 
@@ -214,9 +214,10 @@ delaunayTriangulation = do ->
     # triangle a new site is in.
     constructor: (args...) ->
       @triangulation__ = args[0] || triangulation(outer.vertices())
-      @position__      = args[1] || []
-      @sites__         = args[2] || new HashSet()
-      @children__      = args[3] || new HashMap()
+      @position__      = args[1] || new IntMap()
+      @nextIndex__     = args[2] || 0
+      @sites__         = args[3] || new HashSet()
+      @children__      = args[4] || new HashMap()
 
     # The method `toSeq` returns the proper (non-virtual) triangles contained
     # in this triangulation as a lazy sequence. It does so by removing any
@@ -236,7 +237,7 @@ delaunayTriangulation = do ->
 
     # The method `position` returns the coordinates corresponding to a given
     # vertex number as a `Point2d` instance.
-    position: (n) -> @position__[n]
+    position: (n) -> @position__.get n
 
     # The method `sideOf` determines which side of the oriented line given by
     # the sites with indices `a` and `b` the point `p` (a `Point2d` instance)
@@ -308,10 +309,11 @@ delaunayTriangulation = do ->
     subdivide = (T, t, p) ->
       trace "subdivide [#{T.triangulation__.toSeq()}], #{t}, #{p}"
       [a, b, c] = t.vertices()
-      n = T.position__.length
+      n = T.nextIndex__
       new T.constructor(
         T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
-        T.position__.concat([p]),
+        T.position__.plus([n, p]),
+        n + 1,
         T.sites__.plus(p),
         T.children__.plus([T.find(a,b,c),
                            seq tri(a,b,n), tri(b,c,n), tri(c,a,n)])
@@ -329,6 +331,7 @@ delaunayTriangulation = do ->
       new T.constructor(
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.position__,
+        T.nextIndex__,
         T.sites__,
         T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children])
       )
