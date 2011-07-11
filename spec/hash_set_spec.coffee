@@ -343,32 +343,12 @@ describe "A HashSet", ->
         expect(h.size()).toBeGreaterThan 0
 
   describe "with a peculiar sequence of additions and deletions", ->
-    class Triangle
-      constructor: (@a, @b, @c) ->
-      toSeq: -> new Sequence [@a, @b, @c]
-      toString: -> "T(#{@a}, #{@b}, #{@c})"
+    items = (n * 0x10000000 + 0x07ffffff for n in [0...9])
 
-    moves = [
-      ['plus',0,1,13]
-      ['plus',0,7,2]
-      ['plus',0,13,14]
-      ['plus',0,14,7]
-      ['plus',1,6,13]
-      ['plus',2,4,15]
-      ['plus',2,7,15]
-      ['plus',2,10,4]
-      ['plus',2,15,12]
-      ['minus',0,7,2]
-      ['minus',2,4,15]
-      ['minus',2,7,15]
-    ]
-
-    T = Sequence.reduce moves, new HashSet(), (s, [mode, a, b, c]) ->
-      t = new Triangle a, b, c
-      if mode == 'minus' then s.minus t else s.plus t
+    T = new HashSet().plus(items...).minus items[1..3]...
 
     it "should contain the correct number of items", ->
       expect(Sequence.size T).toBe 6
 
     it "should contain the correct number after one item is removed", ->
-      expect(Sequence.size T.minus new Triangle 2, 10, 4).toBe 5
+      expect(Sequence.size T.minus items[4]).toBe 5
