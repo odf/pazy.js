@@ -1,14 +1,14 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }        = require('sequence')
+  { seq }             = require('sequence')
   { IntSet, HashSet } = require('indexed')
   require 'sequence_extras'
 else
-  { Sequence, IntSet, HashSet } = this.pazy
+  { seq, IntSet, HashSet } = this.pazy
 
 
-describe "An empty sequence created with the new operator", ->
-  s = new Sequence(null)
+describe "An empty sequence", ->
+  s = seq null
 
   it "should have no first element", ->
     expect(s.first()).toBe undefined
@@ -81,7 +81,7 @@ describe "An empty sequence created with the new operator", ->
 
   it "should test equal to any other empty sequence", ->
     expect(s.equals null).toBe true
-    expect(s.equals new Sequence()).toBe true
+    expect(s.equals seq()).toBe true
     expect(s.equals []).toBe true
 
   it "should not test equal to a non-empty sequence", ->
@@ -139,7 +139,7 @@ describe "An empty sequence created with the new operator", ->
 
 
 describe "A sequence made of the numbers 1 and 2", ->
-  s = new Sequence [1, 2]
+  s = seq [1, 2]
 
   it "should have the elements 1 and 2 in that order", ->
     expect(s.into []).toEqual [1,2]
@@ -198,7 +198,7 @@ describe "A sequence of ten times the letter 'A'", ->
       expect(s.get(i)).toBe 'A'
 
 describe "A sequence made from the array ['a', 's', 'd', 'f']", ->
-  s = new Sequence ['a', 's', 'd', 'f']
+  s = seq ['a', 's', 'd', 'f']
 
   it "should have size 4", ->
     expect(s.size()).toBe 4
@@ -304,7 +304,7 @@ describe "A sequence containing the first 10 triangle numbers", ->
     expect(s.last()).toEqual 55
 
   it "should produce the correct sequence when multiplied with its reverse", ->
-    t = new Sequence [55,135,216,280,315]
+    t = seq [55,135,216,280,315]
     expect(s.mul(s.reverse()).equals(t.concat(t.reverse()))).toBe true
 
   it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
