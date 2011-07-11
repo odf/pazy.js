@@ -216,7 +216,7 @@ class ArrayNode
     if node?
       new ArrayNode(@progeny, i, node, @size - 1)
     else
-      remaining = (j for j in [1...@progeny.length] when j != i and @progeny[j])
+      remaining = (j for j in [0...@progeny.length] when j != i and @progeny[j])
       if remaining.length <= 4
         bitmap = Sequence.reduce(remaining, 0, (b, j) -> b | (1 << j))
         array  = (@progeny[j] for j in remaining)
