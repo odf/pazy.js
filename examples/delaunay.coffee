@@ -12,14 +12,15 @@ if typeof(require) != 'undefined'
   { recur, resolve }           = require 'functional'
   { Sequence }                 = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
+  { Queue }                    = require 'queue'
 else
-  { recur, resolve, Sequence, IntMap, HashSet, HashMap } = this.pazy
+  { recur, resolve, Sequence, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
 
 # Here's a quick hack for switching traces on and off.
 
-trace = (s) -> #console.log s
+trace = (s) -> console.log s
 
 # ----
 
@@ -141,7 +142,10 @@ triangulation = do ->
     # The constructor takes a set of triangles and a map specifying the
     # associated third triangle vertex for any oriented edge that is part of
     # an oriented triangle.
-    constructor: (@triangles__ = new HashSet(), @third__ = new HashMap()) ->
+    constructor: (args...) ->
+      @triangles__ = args[0] or new HashSet()
+      @third__     = args[1] or new HashMap()
+      @log__       = args[2] or new Queue()
 
     # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
@@ -168,20 +172,27 @@ triangulation = do ->
       else if x = seq([a, b], [b, c], [c, a]).find((e) => @third__.get(e)?)
         [f, g] = x
         h = @third__.get x
+        trace "  Log at error:\n#{Sequence.join @log__, "\n"}"
+        trace "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
         throw new Error "Orientation mismatch."
       else
         new Triangulation(
           @triangles__.plus(tri(a, b, c)),
-          @third__.plusAll(seq [[a, b], c], [[b, c], a], [[c, a], b]))
+          @third__.plusAll(seq [[a, b], c], [[b, c], a], [[c, a], b]),
+          @log__.push(["plus", a, b, c]))
 
-    # The method `minus` returs a triangulation with the given triangle
+    # The method `minus` returns a triangulation with the given triangle
     # removed, if present.
     minus: (a, b, c) ->
       t = @find a, b, c
       if t?
-        new Triangulation(
-          @triangles__.minus(t),
-          @third__.minusAll seq([a, b], [b, c], [c, a]))
+        triangles = @triangles__.minus(t)
+        third = @third__.minusAll seq [a, b], [b, c], [c, a]
+        if Sequence.size(triangles) < Sequence.size(@triangles__) - 1
+          trace "  Log at error:\n#{Sequence.join @log__, "\n"}"
+          trace "  Error in minus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
+          throw new Error "Too many triangles disappeared"
+        new Triangulation triangles, third, @log__.push(["minus", a, b, c])
       else
         this
 
@@ -289,7 +300,6 @@ delaunayTriangulation = do ->
       c = @third a, b
       d = @third b, a
 
-      trace "  mustFlip #{a}, #{b} - c = #{c}. d = #{d}"
       if (a < 0 and b < 0) or not c? or not d?
         false
       else if a < 0
@@ -307,7 +317,7 @@ delaunayTriangulation = do ->
     # in which `t` is divided into three new triangles with `p` as a common
     # vertex.
     subdivide = (T, t, p) ->
-      trace "subdivide [#{T.triangulation__.toSeq()}], #{t}, #{p}"
+      trace "subdivide [#{T.triangulation__.toSeq().join ', '}], #{t}, #{p}"
       [a, b, c] = t.vertices()
       n = T.nextIndex__
       new T.constructor(
@@ -324,7 +334,7 @@ delaunayTriangulation = do ->
     # edge `ab` lies in triangles `abc` and `bad`, then after the flip those
     # are replaced by new triangle `bcd` and `adc`.
     flip = (T, a, b) ->
-      trace "flip [#{T.triangulation__.toSeq()}], #{a}, #{b}"
+      trace "flip [#{T.triangulation__.toSeq().join ', '}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
       children = seq tri(b, c, d), tri(a, d, c)
@@ -386,6 +396,78 @@ exports.delaunayTriangulation = delaunayTriangulation
 
 # Some testing.
 
+# --- TEST FOR TRIANGLE SEQUENCE SUSPECTED TO TRIGGER BUG
+
+if false
+  triplets = [
+    [ 0,  1, 13]
+    [ 0,  2, 12]
+    [ 0, 12,  1]
+    [ 0, 13, 14]
+    [ 0, 14,  7]
+    [ 1,  6, 13]
+    [ 2,  7, 15]
+    [ 2, 15, 12]
+    [ 3,  4,  5]
+    [ 3,  5,  8]
+    [ 3,  8,  4]
+    [ 4, 10, 11]
+    [ 4, 11,  5]
+    [ 4, 15, 10]
+    [ 5,  9,  8]
+    [ 5, 11, 14]
+    [ 5, 14,  9]
+    [ 6,  9, 13]
+    [ 7, 10, 15]
+    [ 7, 11, 10]
+    [ 7, 14, 11]
+    [ 9, 14, 13]
+    [-1,  4,  8]
+    [-1, 12, 15]
+    [-1, 15,  4]
+    [-2,  1, 12]
+    [-2,  6,  1]
+    [-2,  9,  6]
+    [-3,  8,  9]
+    [-2, 12, -1]
+    [-3,  9, -2]
+    [-3, -1,  8]
+  ]
+
+  t = triangulation triplets...
+  console.log Sequence.join t, ', '
+  console.log Sequence.join t.minus(2, 7, 15), ', '
+
+# --- TEST FOR SITE SEQUENCE FOUND TO TRIGGER BUG
+
+if true
+  sites = [
+    [70, 80]
+    [ 6, 91]
+    [91, 92]
+    [33,  5]
+    [67,  3]
+    [32, 11]
+    [ 5, 83]
+    [65, 37]
+    [33,  2]
+    [ 5, 49]
+    [66, 31]
+    [62, 34]
+    [93, 98]
+    [28, 66]
+    [39, 54]
+    [97, 87]
+    [16, 81]
+  ]
+
+  try
+    delaunayTriangulation sites...
+  catch ex
+    console.log ex.stack
+
+# --- GENERIC TEST ---
+
 test = (n = 100, m = 10) ->
   Sequence.range(1, n).each (i) ->
     console.log "Run #{i}"
@@ -401,6 +483,6 @@ test = (n = 100, m = 10) ->
         console.log p
         throw ex
 
-if module? and not module.parent
+if module? and not module.parent and false
   args = Sequence.map(process.argv[2..], parseInt)?.into []
   test args...

@@ -110,6 +110,35 @@ describe "A Delaunay triangulation with four sites", ->
   checkEdges t
 
 
+describe "A Delaunay triangulation with many sites", ->
+  sites = [
+    [70, 80]
+    [ 6, 91]
+    [91, 92]
+    [33,  5]
+    [67,  3]
+    [32, 11]
+    [ 5, 83]
+    [65, 37]
+    [33,  2]
+    [ 5, 49]
+    [66, 31]
+    [62, 34]
+    [93, 98]
+    [28, 66]
+    [39, 54]
+    [97, 87]
+    [16, 81]
+  ]
+
+  t = guard -> delaunayTriangulation sites...
+
+  it "should contain triangles", ->
+    expect(Sequence.size t).toBeGreaterThan 0
+
+  checkEdges t
+
+
 describe "A Delaunay triangulation with random sites", ->
   t = guard ->
     rnd = -> Math.floor(Math.random() * 100)
