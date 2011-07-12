@@ -301,7 +301,7 @@ describe "A sequence", ->
 
     it "should produce the correct sequence when multiplied with its reverse", ->
       t = seq [55,135,216,280,315]
-      expect(s.mul(s.reverse()).equals(t.concat(t.reverse()))).toBe true
+      expect(s.mul(s.reverse()).equals t.concat t.reverse()).toBe true
 
     it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
           when interleaved with the sequence 1,2,3,4""", ->
@@ -378,10 +378,10 @@ describe "A sequence", ->
 
     describe "when interleaved with the fibonacci numbers startin at 2", ->
       fib = Seq.conj 0, -> Seq.conj 1, -> fib.rest().add fib
-      seq = primes.interleave fib.drop 3
+      s = primes.interleave fib.drop 3
 
       it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
-        expect(seq.take(12).into []).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
+        expect(s.take(12).into []).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
 
   describe "which is forced", ->
     log = []

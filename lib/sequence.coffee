@@ -73,7 +73,7 @@ class Sequence
     if s then resolve step s, n else null
 
   @method 'dropWhile', (s, pred) ->
-    step = (t) -> if t and pred t.first() then recur -> step t.rest() else s
+    step = (t) -> if t and pred t.first() then recur -> step t.rest() else t
     if s then resolve step s else null
 
   @method 'get', (s, n) -> if n >= 0 then @drop__(s, n)?.first()
