@@ -203,12 +203,20 @@ class Sequence
     '(' + Sequence.join(t, ', ') + if more then ', ...)' else ')'
 
 
-class ArraySeq extends Sequence
-  constructor: (@a, @i) ->
-    first = @a[@i]
-    rest  = if @i < @a.length-1 then new ArraySeq(@a, @i+1) else null
-    @first = -> first
-    @rest  = -> rest
+skip = (a, i) ->
+  if i >= a.length or a[i] != undefined
+    fromArray a, i
+  else
+    recur -> skip a, i+1
+
+fromArray = (a, i) ->
+  if i >= a.length
+    null
+  else if a[i] == undefined
+    resolve skip a, i
+  else
+    Sequence.conj a[i], -> fromArray a, i+1
+
 
 seq = (src) ->
   if not src?
@@ -216,9 +224,9 @@ seq = (src) ->
   else if typeof src.toSeq == 'function'
     src.toSeq()
   else if typeof src.first == 'function' and typeof src.rest == 'function'
-    new Sequence src.first, src.rest
+    Sequence.conj src.first(), src.rest
   else if typeof src.length == 'number'
-    if src.length > 0 then new ArraySeq(src, 0) else null
+    fromArray src, 0
   else
     throw new Error("cannot make a sequence from #{src}")
 
