@@ -6,12 +6,12 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { seq }     = require('sequence')
-  { HashSet } = require('indexed')
+  { Sequence } = require('sequence')
+  { HashSet }  = require('indexed')
 else
   { seq, HashSet } = this.pazy
 
-seq([1]).constructor.method 'uniq', (s, seen = new HashSet()) ->
+Sequence.method 'uniq', (s, seen = new HashSet()) ->
   if s
     x = s.first()
     if seen.contains x

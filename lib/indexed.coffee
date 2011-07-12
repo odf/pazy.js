@@ -24,9 +24,9 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Sequence } = require('sequence')
+  { Sequence, seq } = require('sequence')
 else
-  { Sequence } = this.pazy
+  { Sequence, seq } = this.pazy
 
 
 # --------------------------------------------------------------------
@@ -366,6 +366,13 @@ class IntMap extends Collection
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
+isSeq = (s) ->
+  try
+    seq s
+    true
+  catch ex
+    false
+
 hashCode = (obj) ->
   if not obj?
     0
@@ -375,7 +382,7 @@ hashCode = (obj) ->
     obj
   else if typeof(obj) == 'string' and obj.length <= 1
     if obj.length == 0 then 1 else obj.charCodeAt(0)
-  else if Sequence.accepts(obj)
+  else if isSeq obj
     Sequence.reduce obj, 0, (code, x) -> (code * 37 + hashCode(x)) & 0xffffffff
   else if typeof(obj.toString) == "function"
     hashCode obj.toString()
@@ -388,7 +395,7 @@ hashCode = (obj) ->
 equalKeys = (obj1, obj2) ->
   if typeof(obj1) == 'string' or typeof(obj2) == 'string'
     obj1 == obj2
-  else if Sequence.accepts(obj1) and Sequence.accepts(obj2)
+  else if isSeq(obj1) and isSeq(obj2)
     not Sequence.find(Sequence.combine(obj1, obj2, equalKeys), (a) -> not a)?
   else if obj1? and typeof(obj1.equals) == "function"
     obj1.equals(obj2)

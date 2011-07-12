@@ -69,7 +69,7 @@ class Sequence
       null
 
   @method 'drop', (s, n) ->
-    step = (t, n) -> if t and n > 0 then recur -> step t.rest(), n - 1 else s
+    step = (t, n) -> if t and n > 0 then recur -> step t.rest(), n - 1 else t
     if s then resolve step s, n else null
 
   @method 'dropWhile', (s, pred) ->
@@ -114,7 +114,7 @@ class Sequence
   @method 'sum',     (s) -> @reduce__ s, 0, (a,b) -> a + b
   @method 'product', (s) -> @reduce__ s, 1, (a,b) -> a * b
 
-  @method 'fold', (s, op) -> @reduce__ s.rest(), s.first(), op
+  @method 'fold', (s, op) -> @reduce__ s?.rest(), s?.first(), op
 
   @method 'max', (s) -> @fold__ s, (a,b) -> if b > a then b else a
   @method 'min', (s) -> @fold__ s, (a,b) -> if b < a then b else a
@@ -154,7 +154,7 @@ class Sequence
     else
       t
 
-  @method 'flatten', (seq) ->
+  @method 'flatten', (s) ->
     if s and seq s.first()
       @lazyConcat__ seq(s.first()), => @flatten__ s.rest()
     else if s?.rest()
@@ -188,25 +188,25 @@ class Sequence
       @reduce__ s, target, (t, item) -> t.plus item
     else if typeof target.length == 'number'
       a = (x for x in target)
-      @each__ seq, (x) -> a.push x
+      @each__ s, (x) -> a.push x
       a
     else
       throw new Error('cannot inject into #{target}')
 
   @method 'join', (s, glue) -> @into__(s, []).join glue
 
-  toString: (limit = 10) ->
-    [s, more] = if limit > 0
-      [@take(limit), @get(limit)?]
+  @method 'toString', (s, limit = 10) ->
+    [t, more] = if limit > 0
+      [@take__(s, limit), @get__(s, limit)?]
     else
-      [this, false]
-    '(' + Sequence.join(s, ', ') + if more then ', ...)' else ')'
+      [s, false]
+    '(' + Sequence.join(t, ', ') + if more then ', ...)' else ')'
 
 
 class ArraySeq extends Sequence
   constructor: (@a, @i) ->
     first = @a[@i]
-    rest  = if @i < @a.length then new ArraySeq(@a, @i+1) else null
+    rest  = if @i < @a.length-1 then new ArraySeq(@a, @i+1) else null
     @first = -> first
     @rest  = -> rest
 
@@ -228,4 +228,5 @@ seq = (src) ->
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
+exports.Sequence = Sequence
 exports.seq = seq
