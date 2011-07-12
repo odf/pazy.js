@@ -11,7 +11,7 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require 'functional'
-  { Sequence }       = require 'sequence'
+  { seq, Sequence }  = require 'sequence'
 else
   { recur, resolve, Sequence } = this.pazy
 
@@ -100,7 +100,7 @@ mul = (a, b) ->
 
 divmod = (r, s) ->
   scale = Math.floor BASE / (s.last() + 1)
-  [r_, s_] = (new Sequence seqTimesDigit(x, scale) for x in [r, s])
+  [r_, s_] = (seq seqTimesDigit(x, scale) for x in [r, s])
   [m, d] = [s_.size(), s_.last() + 1]
 
   step = (q, h, t) ->
@@ -130,7 +130,7 @@ pow = (r, s) ->
       if s.first() % 2 == 1
         recur -> step(mul(p, r), r, sub(s, ONE))
       else
-        recur -> step(p, new Sequence(mul(r, r)), div(s, TWO))
+        recur -> step(p, seq(mul(r, r)), div(s, TWO))
     else
       p
   resolve step(ONE, r, s)
@@ -141,7 +141,7 @@ sqrt = (s) ->
     Sequence.conj Math.floor Math.sqrt s.first()
   else
     step = (r) ->
-      rn = new Sequence div(add(r, div(s, r)), TWO)
+      rn = seq div(add(r, div(s, r)), TWO)
       if cmp(r, rn) then recur -> step(rn) else rn
     resolve step s.take n >> 1
 
@@ -156,11 +156,11 @@ class LongInt
       if m then Sequence.conj(m % BASE, -> make_digits(Math.floor m / BASE))
 
     [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
-    @digits__ = cleanup new Sequence make_digits m
+    @digits__ = cleanup seq make_digits m
 
   create = (digits, sign) ->
     n = new LongInt()
-    n.digits__ = cleanup new Sequence digits
+    n.digits__ = cleanup seq digits
     n.sign__   = if n.digits__? then sign else 1
     n
 
