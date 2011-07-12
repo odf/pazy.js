@@ -10,24 +10,17 @@
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
   { recur, resolve }           = require 'functional'
-  { Sequence }                 = require 'sequence'
+  { seq, Sequence }            = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
   { Queue }                    = require 'queue'
 else
-  { recur, resolve, Sequence, IntMap, HashSet, HashMap, Queue } = this.pazy
+  { recur, resolve, seq, Sequence, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
 
 # Here's a quick hack for switching traces on and off.
 
 trace = (s) -> #console.log s
-
-# ----
-
-# The helper function `seq` creates a sequence from its argument
-# list.
-seq = (args...) -> new Sequence args
-
 
 # ----
 
@@ -76,7 +69,7 @@ class Triangle
 
   vertices: -> [@a, @b, @c]
 
-  toSeq: -> seq @a, @b, @c
+  toSeq: -> seq [@a, @b, @c]
 
   equals: (other) -> @a == other.a and @b == other.b and @c == other.c
 
@@ -168,14 +161,14 @@ triangulation = do ->
     plus: (a, b, c) ->
       if @find a, b, c
         this
-      else if x = seq([a, b], [b, c], [c, a]).find((e) => @third__.get(e)?)
+      else if x = seq([[a, b], [b, c], [c, a]]).find((e) => @third__.get(e)?]
         [f, g] = x
         h = @third__.get x
         trace "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
         throw new Error "Orientation mismatch."
       else
         triangles = @triangles__.plus tri a, b, c
-        third = @third__.plusAll seq [[a, b], c], [[b, c], a], [[c, a], b]
+        third = @third__.plusAll seq [[[a, b], c], [[b, c], a], [[c, a], b]]
         new Triangulation triangles, third
 
     # The method `minus` returns a triangulation with the given triangle
@@ -184,7 +177,7 @@ triangulation = do ->
       t = @find a, b, c
       if t?
         triangles = @triangles__.minus t
-        third = @third__.minusAll seq [a, b], [b, c], [c, a]
+        third = @third__.minusAll seq [[a, b], [b, c], [c, a]]
         new Triangulation triangles, third
       else
         this
@@ -270,7 +263,7 @@ delaunayTriangulation = do ->
     # indices.
     isInTriangle: (t, p) ->
       [a, b, c] = t.vertices()
-      seq([a, b], [b, c], [c, a]).forall ([r, s]) => @sideOf(r, s, p) <= 0
+      seq([[a, b], [b, c], [c, a]]).forall ([r, s]) => @sideOf(r, s, p) <= 0
 
     # The method `containingTriangle` returns the triangle the given point is
     # in.
@@ -302,7 +295,7 @@ delaunayTriangulation = do ->
       else if c < 0 or d < 0
         false
       else
-        [pa, pb, pc, pd] = seq(a, b, c, d).map((x) => @position x).into []
+        [pa, pb, pc, pd] = seq([a, b, c, d]).map((x) => @position x).into []
         inclusionInCircumCircle(pa, pb, pc, pd) > 0
 
     # The private function `subdivide` takes a triangulation `T`, a triangle
@@ -319,7 +312,7 @@ delaunayTriangulation = do ->
         n + 1,
         T.sites__.plus(p),
         T.children__.plus([T.find(a,b,c),
-                           seq tri(a,b,n), tri(b,c,n), tri(c,a,n)])
+                           seq [tri(a,b,n), tri(b,c,n), tri(c,a,n)]])
       )
 
     # The private function `flip` creates a new triangulation from `T` with the
@@ -330,7 +323,7 @@ delaunayTriangulation = do ->
       trace "flip [#{T.triangulation__.toSeq().join ', '}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
-      children = seq tri(b, c, d), tri(a, d, c)
+      children = seq [tri(b, c, d), tri(a, d, c)]
       new T.constructor(
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.position__,
@@ -351,7 +344,7 @@ delaunayTriangulation = do ->
         [a, b] = stack.first()
         if T.mustFlip a, b
           c = T.third a, b
-          recur -> doFlips flip(T, a, b), seq([a,c], [c,b]).concat stack.rest()
+          recur -> doFlips flip(T, a, b), seq([[a,c], [c,b]]).concat stack.rest()
         else
           recur -> doFlips T, stack.rest()
 
@@ -364,15 +357,15 @@ delaunayTriangulation = do ->
       else
         t = @containingTriangle p
         [a, b, c] = t.vertices()
-        seq([b, a], [c, b], [a, c]).reduce subdivide(this, t, p), (T, [u, v]) ->
+        seq([[b,a], [c,b], [a,c]]).reduce subdivide(this, t, p), (T, [u, v]) ->
           if T.sideOf(u, v, p) == 0
             w = T.third u, v
             if w?
-              resolve doFlips flip(T, u, v), seq [u, w], [w, v]
+              resolve doFlips flip(T, u, v), seq [[u, w], [w, v]]
             else
               T
           else
-            resolve doFlips T, seq [u, v]
+            resolve doFlips T, seq [[u, v]]
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
