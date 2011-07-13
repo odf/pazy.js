@@ -34,6 +34,8 @@ fromArray = (a, i) ->
 seq = (src) ->
   if not src?
     null
+  else if src.constructor == Sequence
+    src
   else if typeof src.toSeq == 'function'
     src.toSeq()
   else if typeof src.first == 'function' and typeof src.rest == 'function'
@@ -44,8 +46,10 @@ seq = (src) ->
     throw new Error("cannot make a sequence from #{src}")
 
 
-seq.conj = (first, rest = (-> null), mode = null) ->
-  if mode == 'forced'
+seq.conj = (first, rest, mode) ->
+  if not rest?
+    new Sequence (-> first), -> null
+  else if mode == 'forced'
     r = rest()
     new Sequence (-> first), -> r
   else
@@ -68,7 +72,7 @@ seq.method = method = (name, f) ->
   seq["#{name}__"] = (s, args...) -> f.call(seq, s,      args...)
   Sequence::[name] = (args...)    -> f.call(seq, this,   args...)
 
-seq.operator = operator = (name, f) ->
+seq.combinator = combinator = (name, f) ->
   seq[name]        = (s, t, args...) -> f.call(seq, seq(s), seq(t), args...)
   seq["#{name}__"] = (s, t, args...) -> f.call(seq, s,      t,      args...)
   Sequence::[name] = (t, args...)    -> f.call(seq, this,   seq(t), args...)
@@ -147,7 +151,7 @@ method 'fold', (s, op) -> @reduce__ s?.rest(), s?.first(), op
 method 'max', (s) -> @fold__ s, (a,b) -> if b > a then b else a
 method 'min', (s) -> @fold__ s, (a,b) -> if b < a then b else a
 
-operator 'combine', (s, t, op) ->
+combinator 'combine', (s, t, op) ->
   if not s
     @map__ t, (a) -> op null, a
   else if not t
@@ -156,27 +160,27 @@ operator 'combine', (s, t, op) ->
     @conj op(s.first(), t.first()), =>
       @combine__ s.rest(), t.rest(), op
 
-operator 'add', (s, t) -> @combine__ s, t, (a,b) -> a + b
-operator 'sub', (s, t) -> @combine__ s, t, (a,b) -> a - b
-operator 'mul', (s, t) -> @combine__ s, t, (a,b) -> a * b
-operator 'div', (s, t) -> @combine__ s, t, (a,b) -> a / b
+combinator 'add', (s, t) -> @combine__ s, t, (a,b) -> a + b
+combinator 'sub', (s, t) -> @combine__ s, t, (a,b) -> a - b
+combinator 'mul', (s, t) -> @combine__ s, t, (a,b) -> a * b
+combinator 'div', (s, t) -> @combine__ s, t, (a,b) -> a / b
 
-operator 'equals', (s, t) ->
+combinator 'equals', (s, t) ->
   not @find__(@combine__(s, t, (a, b) -> a == b), (a) -> not a)?
 
-operator 'interleave', (s, t) ->
+combinator 'interleave', (s, t) ->
   if s
     @conj s.first(), => @interleave__ t, s.rest()
   else
     t
 
-operator 'lazyConcat', (s, next) ->
+combinator 'lazyConcat', (s, next) ->
   if s
     @conj s.first(), => @lazyConcat__ s.rest(), next
   else
     next()
 
-operator 'concat', (s, t) ->
+combinator 'concat', (s, t) ->
   if s
     @lazyConcat__ s, -> t
   else
@@ -192,16 +196,16 @@ method 'flatten', (s) ->
 
 method 'flatMap', (s, func) -> @flatten__ @map__ s, func
 
-operator 'cartesian', (s, t) -> @flatMap__ s, (a) => @map__ t, (b) -> [a,b]
+combinator 'cartesian', (s, t) -> @flatMap__ s, (a) => @map__ t, (b) -> [a,b]
 
 method 'each', (s, func) ->
   step = (t) -> if t then func(t.first()); recur -> step t.rest()
-  if s then resolve step s
+  resolve step s
 
 method 'reverse', (s) ->
   step = (r, t) =>
     if t then recur => step @conj(t.first(), -> r), t.rest() else r
-  if s then resolve step null, s else null
+  resolve step null, s
 
 method 'forced', (s) ->
   if s
@@ -211,7 +215,7 @@ method 'forced', (s) ->
 
 method 'into', (s, target) ->
   if not target?
-    @reduce__ s, null, (s, item) -> @conj item, -> s
+    s
   else if typeof target.plus == 'function'
     @reduce__ s, target, (t, item) -> t.plus item
   else if typeof target.length == 'number'
