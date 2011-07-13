@@ -538,7 +538,6 @@ if (typeof exports !== "undefined" && exports !== null) {
 } else {
   exports = (_ref4 = this.pazy) != null ? _ref4 : this.pazy = {};
 };
-exports.Sequence = seq;
 exports.seq = seq;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
@@ -751,10 +750,8 @@ ArrayNode = (function() {
   function ArrayNode(progeny, i, node, size) {
     this.size = size;
     this.progeny = util.arrayWith(progeny, i, node);
-    this.elements = seq.select(this.progeny, function(x) {
-      return x;
-    }).flatMap(function(n) {
-      return n.elements;
+    this.elements = seq.flatMap(this.progeny, function(n) {
+      return n != null ? n.elements : void 0;
     });
   }
   ArrayNode.prototype.get = function(shift, key, data) {
@@ -1390,6 +1387,13 @@ FingerTreeType = (function() {
       };
       Instance.prototype.find = function(p) {
         return this.split(p)[1];
+      };
+      Instance.prototype.toSeq = function() {
+        return this.data.reduceRight((function(x, s) {
+          return seq.conj(x, function() {
+            return s;
+          });
+        }), null);
       };
       Instance.prototype.toString = function() {
         return this.data.reduceLeft("", function(s, x) {
