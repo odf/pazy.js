@@ -190,10 +190,7 @@ class ProxyNode
 class ArrayNode
   constructor: (progeny, i, node, @size) ->
     @progeny  = util.arrayWith(progeny, i, node)
-    @elements = seq.select(@progeny, (x) -> x).flatMap (n) -> n.elements
-
-    #TODO - why does this not work:
-    #@elements = seq.flatMap @progeny, (n) -> n?.elements
+    @elements = seq.flatMap @progeny, (n) -> n?.elements
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
