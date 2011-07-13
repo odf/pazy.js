@@ -1,12 +1,11 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence, seq }   = require('sequence')
+  { seq }   = require('sequence')
   { IntSet, HashSet } = require('indexed')
   require 'sequence_extras'
 else
   { seq, IntSet, HashSet } = this.pazy
 
-Seq = Sequence
 
 describe "A sequence", ->
   describe "made of the numbers 1 and 2", ->
@@ -56,106 +55,106 @@ describe "A sequence", ->
     s = seq null
 
     it "should be empty", ->
-      expect(Seq.empty s).toBe true
+      expect(seq.empty s).toBe true
 
     it "should have length 0", ->
-      expect(Seq.size s).toBe 0
+      expect(seq.size s).toBe 0
 
     it "should return undefined when asked for its last element", ->
-      expect(Seq.last s).toBe undefined
+      expect(seq.last s).toBe undefined
 
     it "should return null when asked for its leading two-element sublist", ->
-      expect(Seq.take s, 2).toBe null
+      expect(seq.take s, 2).toBe null
 
     it "should return null when takeWhile is applied", ->
-      expect(Seq.takeWhile s, (x) -> true).toBe null
+      expect(seq.takeWhile s, (x) -> true).toBe null
 
     it "should return null when asked to drop zero elements", ->
-      expect(Seq.drop s, 0).toBe null
+      expect(seq.drop s, 0).toBe null
 
     it "should return null when asked to drop two elements", ->
-      expect(Seq.drop s, 2).toBe null
+      expect(seq.drop s, 2).toBe null
 
     it "should return null when dropWhile is applied", ->
-      expect(Seq.dropWhile s, (x) -> false).toBe null
+      expect(seq.dropWhile s, (x) -> false).toBe null
 
     it "should return undefined when asked to grab any element by an index", ->
-      expect(Seq.get s, i).toBe undefined for i in [-1..2]
+      expect(seq.get s, i).toBe undefined for i in [-1..2]
 
     it "should return null when anything is selected", ->
-      expect(Seq.select s, (x) -> true).toBe null
+      expect(seq.select s, (x) -> true).toBe null
 
     it "should return undefined on find", ->
-      expect(Seq.find s, (x) -> true).toBe undefined
+      expect(seq.find s, (x) -> true).toBe undefined
 
     it "should return true on forall", ->
-      expect(Seq.forall s, (x) -> true).toBe true
+      expect(seq.forall s, (x) -> true).toBe true
 
     it "should return null on map", ->
-      expect(Seq.map s, (x) -> x * x).toBe null
+      expect(seq.map s, (x) -> x * x).toBe null
 
     it "should return null on accumulate", ->
-      expect(Seq.accumulate s, (s, x) -> s * x).toBe null
+      expect(seq.accumulate s, (s, x) -> s * x).toBe null
 
     it "should return null on sums", ->
-      expect(Seq.sums s).toBe null
+      expect(seq.sums s).toBe null
 
     it "should return 0 on sum", ->
-      expect(Seq.sum s).toBe 0
+      expect(seq.sum s).toBe 0
 
     it "should return 0 on product", ->
-      expect(Seq.product s).toBe 1
+      expect(seq.product s).toBe 1
 
     it "should return undefined on max", ->
-      expect(Seq.max s).toBe undefined
+      expect(seq.max s).toBe undefined
 
     it "should return undefined on min", ->
-      expect(Seq.min s).toBe undefined
+      expect(seq.min s).toBe undefined
 
     it "should leave a sequence it is combined with as is", ->
-      expect(Seq.combine(s, [1..5], (a, b) -> a + b).into []).toEqual [1..5]
+      expect(seq.combine(s, [1..5], (a, b) -> a + b).into []).toEqual [1..5]
 
     it "should leave a sequence it is added to as is", ->
-      expect(Seq.add(s, [1..5]).into []).toEqual [1..5]
+      expect(seq.add(s, [1..5]).into []).toEqual [1..5]
 
     it "should test equal to any other empty sequence", ->
-      expect(Seq.equals s, null).toBe true
-      expect(Seq.equals s, seq()).toBe true
-      expect(Seq.equals s, []).toBe true
+      expect(seq.equals s, null).toBe true
+      expect(seq.equals s, seq()).toBe true
+      expect(seq.equals s, []).toBe true
 
     it "should not test equal to a non-empty sequence", ->
-      expect(Seq.equals s, [1]).toBe false
+      expect(seq.equals s, [1]).toBe false
 
     it "should reproduce any sequence it is interleaved with", ->
-      expect(Seq.interleave(s, [1..5]).into []).toEqual [1..5]
-      expect(Seq.interleave([1..5], s).into []).toEqual [1..5]
+      expect(seq.interleave(s, [1..5]).into []).toEqual [1..5]
+      expect(seq.interleave([1..5], s).into []).toEqual [1..5]
 
     it "should reproduce any sequence it is concatenated with", ->
-      expect(Seq.concat(s, [1..5]).into []).toEqual [1..5]
-      expect(Seq.concat([1..5], s).into []).toEqual [1..5]
+      expect(seq.concat(s, [1..5]).into []).toEqual [1..5]
+      expect(seq.concat([1..5], s).into []).toEqual [1..5]
 
     it "should return null on flatten", ->
-      expect(Seq.flatten s).toEqual null
+      expect(seq.flatten s).toEqual null
 
     it "should be skipped over when flattening", ->
-      expect(Seq.flatten([[1,2], s, [3,4], s, [5,6]]).into []).toEqual [1..6]
+      expect(seq.flatten([[1,2], s, [3,4], s, [5,6]]).into []).toEqual [1..6]
 
     it "should have null as its cartesian product with any other sequence", ->
-      expect(Seq.cartesian s, [1..5]).toBe null
+      expect(seq.cartesian s, [1..5]).toBe null
 
     it "should still be empty when uniq is applied", ->
-      expect(Seq.uniq s).toBe null
+      expect(seq.uniq s).toBe null
 
     it "should not pass any elements into a function applied via each", ->
       log = []
-      Seq.each s, (x) -> log.push x
+      seq.each s, (x) -> log.push x
       expect(log).toEqual []
 
     it "should return null when reversed", ->
-      expect(Seq.reverse s).toBe null
+      expect(seq.reverse s).toBe null
 
     it "should return null on forced", ->
-      expect(Seq.forced s).toBe null
+      expect(seq.forced s).toBe null
 
     it "should leave any empty sequences empty when injected into them", ->
       class List
@@ -166,19 +165,19 @@ describe "A sequence", ->
           @empty = -> empty
         plus:  (x) -> new List(x, this)
 
-      expect(Seq.into s, []).toEqual []
-      expect(Seq.into s, null).toBe null
-      expect(Seq.into(s, new List()).empty()).toBe true
+      expect(seq.into s, []).toEqual []
+      expect(seq.into s, null).toBe null
+      expect(seq.into(s, new List()).empty()).toBe true
 
     it "should print as ()", ->
-      expect(Seq.toString s).toEqual '()'
+      expect(seq.toString s).toEqual '()'
 
     it "should produce an empty string if joined with --", ->
-      expect(Seq.join s, '--').toEqual ''
+      expect(seq.join s, '--').toEqual ''
 
 
   describe "of ten times the letter 'A'", ->
-    s = Sequence.constant('A').take(10)
+    s = seq.constant('A').take(10)
 
     it "should have size 10", ->
       expect(s.size()).toBe 10
@@ -189,7 +188,7 @@ describe "A sequence", ->
     it "should end with an 'A'", ->
       expect(s.last()).toBe 'A'
 
-    Sequence.range(0,9).each (i) ->
+    seq.range(0,9).each (i) ->
       it "should have an 'A' at position #{i}", ->
         expect(s.get(i)).toBe 'A'
 
@@ -266,7 +265,7 @@ describe "A sequence", ->
         expect(t.into []).toEqual ['f', 'd', 's', 'a', 'a', 's', 'd', 'f']
 
   describe "containing the squares of the numbers from 101 to 110", ->
-    s = Seq.range(101, 110).map (n) -> n * n
+    s = seq.range(101, 110).map (n) -> n * n
 
     it "should start with 10201", ->
       expect(s.first()).toEqual 10201
@@ -283,7 +282,7 @@ describe "A sequence", ->
     it "should have 5 odd elements", ->
       expect(s.select((n) -> n % 2 == 1).size()).toBe 5
 
-    it "should produce the partial seq 10201, 10404, 10609 on take(3)", ->
+    it "should produce the partial sequence 10201, 10404, 10609 on take(3)", ->
       expect(s.take(3).into []).toEqual [10201, 10404, 10609]
 
     it "should produce a sequence of 4 elements smaller than 11000", ->
@@ -291,7 +290,7 @@ describe "A sequence", ->
         .toEqual [10201, 10404, 10609, 10816]
 
   describe "containing the first 10 triangle numbers", ->
-    s = Seq.range(1, 10).sums()
+    s = seq.range(1, 10).sums()
 
     it "should have 10 elements", ->
       expect(s.size()).toEqual 10
@@ -305,11 +304,11 @@ describe "A sequence", ->
 
     it """should produce the numbers 1,1,3,2,6,3,10,4,15,21,28,36,45,55
           when interleaved with the sequence 1,2,3,4""", ->
-      expect(s.interleave(Seq.range(1,4)).into [])
+      expect(s.interleave(seq.range(1,4)).into [])
         .toEqual [1,1,3,2,6,3,10,4,15,21,28,36,45,55]
 
   describe "containing pairs (a,b) with a in 1,2 and b in 1,2,3", ->
-    s = Seq.range(1, 2).cartesian Seq.range(1, 3)
+    s = seq.range(1, 2).cartesian seq.range(1, 3)
 
     it "should have six elements", ->
       expect(s.size()).toBe 6
@@ -327,7 +326,7 @@ describe "A sequence", ->
       expect(s.flatten().uniq().into []).toEqual [1,2,3]
 
   describe "implementing the Fibonacci numbers", ->
-    s = (Seq.conj 0, -> Seq.conj 1, -> s.rest().add s)
+    s = (seq.conj 0, -> seq.conj 1, -> s.rest().add s)
 
     it "should print as '(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)'", ->
       expect(s.toString()).toEqual "(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...)"
@@ -368,7 +367,7 @@ describe "A sequence", ->
     isPrime = (n) ->
       n < 4 or primes.takeWhile((m) -> m * m <= n).forall (m) -> n % m
 
-    primes = Seq.from(2).select(isPrime)
+    primes = seq.from(2).select(isPrime)
 
     it "should start with the number 2, 3, 5, 7, 11, 13, 17, 19, 23 and 29", ->
       expect(primes.take(10).into []).toEqual [2,3,5,7,11,13,17,19,23,29]
@@ -377,7 +376,7 @@ describe "A sequence", ->
       expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
     describe "when interleaved with the fibonacci numbers startin at 2", ->
-      fib = Seq.conj 0, -> Seq.conj 1, -> fib.rest().add fib
+      fib = seq.conj 0, -> seq.conj 1, -> fib.rest().add fib
       s = primes.interleave fib.drop 3
 
       it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
@@ -385,7 +384,7 @@ describe "A sequence", ->
 
   describe "which is forced", ->
     log = []
-    s = Seq.range(0, 9).map((x) -> log.push(x); x * x).forced()
+    s = seq.range(0, 9).map((x) -> log.push(x); x * x).forced()
 
     it "should be executed completely before members are accessed", ->
       expect(log).toEqual [0..9]
@@ -399,7 +398,7 @@ describe "A sequence", ->
 
   describe "with default semantics", ->
     log = []
-    s = Seq.range(0, 9).map((x) -> log.push(x); x * x)
+    s = seq.range(0, 9).map((x) -> log.push(x); x * x)
 
     it "should only have the first member evaluated up front", ->
       expect(log).toEqual [0]
@@ -416,7 +415,7 @@ describe "A sequence", ->
     a = [[1,2,3],[],[4],null,[5,6],[7,[8,9]]]
 
     it "should produce the correct result when flattened", ->
-      expect(Seq.flatten(a).into []).toEqual [1,2,3,4,5,6,7,[8,9]]
+      expect(seq.flatten(a).into []).toEqual [1,2,3,4,5,6,7,[8,9]]
 
   describe "from an array with some holes in it", ->
     a = [0..3]
@@ -424,10 +423,10 @@ describe "A sequence", ->
     delete a[0]
 
     it "should be compacted", ->
-      expect(Seq.into a, []).toEqual [1,2,3,6]
+      expect(seq.into a, []).toEqual [1,2,3,6]
 
   describe "from an IntSet", ->
     s = new IntSet().plus 5, 3, 7, 2
 
     it "should be sorted", ->
-      expect(Seq.into s, []).toEqual [2,3,5,7]
+      expect(seq.into s, []).toEqual [2,3,5,7]

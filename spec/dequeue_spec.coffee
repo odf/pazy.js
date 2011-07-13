@@ -1,13 +1,13 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence } = require('sequence')
-  { Dequeue }  = require('dequeue')
+  { seq }     = require('sequence')
+  { Dequeue } = require('dequeue')
 else
-  { Sequence, Dequeue } = pazy
+  { seq, Dequeue } = pazy
 
 describe "A dequeue", ->
   describe "A with the elements 0 to 9", ->
-    dequeue = Sequence.reduce [0..9], new Dequeue(), (q, x) -> q.before(x)
+    dequeue = seq.reduce [0..9], new Dequeue(), (q, x) -> q.before(x)
 
     it "should have 10 elements", ->
       expect(dequeue.size()).toBe 10
@@ -37,7 +37,7 @@ describe "A dequeue", ->
       expect(dequeue.after().size()).toBe 10
 
   describe "with the elements 0 to 9 in reverse order", ->
-    dequeue = Sequence.reduce [0..9], new Dequeue(), (q, x) -> q.after(x)
+    dequeue = seq.reduce [0..9], new Dequeue(), (q, x) -> q.after(x)
 
     it "should have 10 elements", ->
       expect(dequeue.size()).toBe 10

@@ -10,9 +10,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('functional')
-  { Sequence }       = require('sequence')
+  { seq }            = require('sequence')
 else
-  { recur, resolve, Sequence } = this.pazy
+  { recur, resolve, seq } = this.pazy
 
 list = (car, cdr) ->
   first: -> car
@@ -26,7 +26,7 @@ class RandomAccessList
     @::[name] = -> val = code.apply(this); (@[name] = -> val)()
 
   @cached 'size', ->
-    if @trees then Sequence.reduce(@trees, 0, (s, [w,t]) -> s + w) else 0
+    if @trees then seq.reduce(@trees, 0, (s, [w,t]) -> s + w) else 0
 
   half = (w) -> Math.floor w/2
 
@@ -97,7 +97,7 @@ class RandomAccessList
         [w, t] = s.first()
         if i < w
           newTree = resolve updateTree(null, w, t, i)
-          Sequence.reverse(list([w, newTree], r)).concat(s.rest()).forced()
+          seq.reverse(list([w, newTree], r)).concat(s.rest()).forced()
         else
           recur -> step(list(s.first(), r), s.rest(), i - w)
       else

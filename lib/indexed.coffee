@@ -24,9 +24,9 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Sequence, seq } = require('sequence')
+  { seq } = require('sequence')
 else
-  { Sequence, seq } = this.pazy
+  { seq } = this.pazy
 
 
 # --------------------------------------------------------------------
@@ -89,7 +89,7 @@ class BitmapIndexedNode
     else
       [bitmap, progeny, size]
 
-    @elements = Sequence.flatMap @progeny, (n) -> n?.elements
+    @elements = seq.flatMap @progeny, (n) -> n?.elements
 
   get: (shift, key, data) ->
     [bit, i] = util.bitPosAndIndex(@bitmap, key, shift)
@@ -190,10 +190,10 @@ class ProxyNode
 class ArrayNode
   constructor: (progeny, i, node, @size) ->
     @progeny  = util.arrayWith(progeny, i, node)
-    @elements = Sequence.select(@progeny, (x) -> x).flatMap (n) -> n.elements
+    @elements = seq.select(@progeny, (x) -> x).flatMap (n) -> n.elements
 
     #TODO - why does this not work:
-    #@elements = Sequence.flatMap @progeny, (n) -> n?.elements
+    #@elements = seq.flatMap @progeny, (n) -> n?.elements
 
   get: (shift, key, data) ->
     i = util.mask(key, shift)
@@ -218,7 +218,7 @@ class ArrayNode
     else
       remaining = (j for j in [0...@progeny.length] when j != i and @progeny[j])
       if remaining.length <= 4
-        bitmap = Sequence.reduce(remaining, 0, (b, j) -> b | (1 << j))
+        bitmap = seq.reduce(remaining, 0, (b, j) -> b | (1 << j))
         array  = (@progeny[j] for j in remaining)
         new BitmapIndexedNode(bitmap, array, @size - 1)
       else
@@ -257,23 +257,23 @@ class Collection
   plus: -> @plusAll arguments
 
   # Like plus, but takes a sequence of keys
-  plusAll: (seq) -> @update_ Sequence.reduce seq, @root, @constructor.plusOne
+  plusAll: (s) -> @update_ seq.reduce s, @root, @constructor.plusOne
 
   # Returns a new set with the given keys removed, or this set if it
   # does not contain any of them.
   minus: -> @minusAll arguments
 
   # Like plus, but takes a sequence of keys
-  minusAll: (seq) -> @update_ Sequence.reduce seq, @root, @constructor.minusOne
+  minusAll: (s) -> @update_ seq.reduce s, @root, @constructor.minusOne
 
   # Creates a mapped collection of the same type
-  map: (fun) -> new @constructor().plusAll Sequence.map @entries, fun
+  map: (fun) -> new @constructor().plusAll seq.map @entries, fun
 
   # The sequence of entries.
   toSeq: -> @entries
 
   # Returns the elements in this set as an array.
-  toArray: -> Sequence.into @entries, []
+  toArray: -> seq.into @entries, []
 
   # Returns a string representation of this collection.
   toString: -> "#{@constructor.name}(#{@root})"
@@ -286,7 +286,7 @@ class Collection
 # A leaf node containing a single integer.
 class IntLeaf
   constructor: (@key) ->
-    @elements = Sequence.conj @key
+    @elements = seq.conj @key
 
   size: 1
 
@@ -324,7 +324,7 @@ class IntSet extends Collection
 # A leaf node with an integer key and arbitrary value.
 class IntLeafWithValue
   constructor: (@key, @value) ->
-    @elements = Sequence.conj [@key, @value]
+    @elements = seq.conj [@key, @value]
 
   size: 1
 
@@ -383,7 +383,7 @@ hashCode = (obj) ->
   else if typeof(obj) == 'string' and obj.length <= 1
     if obj.length == 0 then 1 else obj.charCodeAt(0)
   else if isSeq obj
-    Sequence.reduce obj, 0, (code, x) -> (code * 37 + hashCode(x)) & 0xffffffff
+    seq.reduce obj, 0, (code, x) -> (code * 37 + hashCode(x)) & 0xffffffff
   else if typeof(obj.toString) == "function"
     hashCode obj.toString()
   else
@@ -396,7 +396,7 @@ equalKeys = (obj1, obj2) ->
   if typeof(obj1) == 'string' or typeof(obj2) == 'string'
     obj1 == obj2
   else if isSeq(obj1) and isSeq(obj2)
-    not Sequence.find(Sequence.combine(obj1, obj2, equalKeys), (a) -> not a)?
+    not seq.find(seq.combine(obj1, obj2, equalKeys), (a) -> not a)?
   else if obj1? and typeof(obj1.equals) == "function"
     obj1.equals(obj2)
   else if obj2? and typeof(obj2.equals) == "function"
@@ -411,10 +411,10 @@ class CollisionNode
   constructor: (@hash, @bucket) ->
     @bucket   = [] unless @bucket?
     @size     = @bucket.length
-    @elements = Sequence.flatMap @bucket, (n) -> n?.elements
+    @elements = seq.flatMap @bucket, (n) -> n?.elements
 
   get: (shift, hash, key) ->
-    leaf = Sequence.find @bucket, (v) -> equalKeys(v.key, key)
+    leaf = seq.find @bucket, (v) -> equalKeys(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
   plus: (shift, hash, leaf) ->
@@ -428,7 +428,7 @@ class CollisionNode
   minus: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
-      when 2    then Sequence.find @bucket, (v) -> not equalKeys(v.key, key)
+      when 2    then seq.find @bucket, (v) -> not equalKeys(v.key, key)
       else           new CollisionNode(hash, this.bucketWithout(key))
 
   toString: -> "#{@bucket.join("|")}"
@@ -444,7 +444,7 @@ class CollisionNode
 # A leaf node contains a single key and also caches its hash value.
 class HashLeaf
   constructor: (@hash, @key) ->
-    @elements = Sequence.conj @key
+    @elements = seq.conj @key
 
   size: 1
 
@@ -494,7 +494,7 @@ class HashSet extends Collection
 # hash value for the key.
 class HashLeafWithValue
   constructor: (@hash, @key, @value) ->
-    @elements = Sequence.conj [@key, @value]
+    @elements = seq.conj [@key, @value]
 
   size: 1
 

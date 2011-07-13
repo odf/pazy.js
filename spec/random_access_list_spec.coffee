@@ -1,13 +1,13 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }          = require('sequence')
-  { RandomAccessList }  = require('random_access_list')
+  { seq }              = require('sequence')
+  { RandomAccessList } = require('random_access_list')
 else
-  { Sequence, RandomAccessList } = pazy
+  { seq, RandomAccessList } = pazy
 
 
 describe "A queue with the elements 0 to 99 back to front", ->
-  list = Sequence.reduce [0..99], new RandomAccessList(), (q, x) -> q.cons(x)
+  list = seq.reduce [0..99], new RandomAccessList(), (q, x) -> q.cons(x)
 
   it "should have size 100", ->
     expect(list.size()).toBe 100

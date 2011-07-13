@@ -1,20 +1,20 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }              = require('sequence')
+  { seq }                   = require('sequence')
   { CountedSeq, SortedSeq } = require('finger_tree')
 else
-  { Sequence, CountedSeq, SortedSeq } = pazy
+  { seq, CountedSeq, SortedSeq } = pazy
 
-asSeq = (x) -> x.reduceRight ((a, b) -> Sequence.conj a, -> b), null
+asSeq = (x) -> x.reduceRight ((a, b) -> seq.conj a, -> b), null
 sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
 
 leftSeq  = (t) ->
-  Sequence.conj(t.first(), -> leftSeq t.rest()) unless t.isEmpty()
+  seq.conj(t.first(), -> leftSeq t.rest()) unless t.isEmpty()
 
 rightSeq = (t) ->
-  Sequence.conj(t.last(), -> rightSeq t.init()) unless t.isEmpty()
+  seq.conj(t.last(), -> rightSeq t.init()) unless t.isEmpty()
 
-asArray  = (t) -> Sequence.into leftSeq(t), []
+asArray  = (t) -> seq.into leftSeq(t), []
 
 
 describe "A finger tree containing a single element", ->
@@ -25,7 +25,7 @@ describe "A finger tree containing a single element", ->
 
 
 describe "A finger tree made by prepending elements from a sequence", ->
-  tree = Sequence.reduce [1..10], CountedSeq.build(), (s, x) -> s.after x
+  tree = seq.reduce [1..10], CountedSeq.build(), (s, x) -> s.after x
 
   it "should have the right size", ->
     expect(tree.size()).toBe 10

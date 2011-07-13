@@ -9,9 +9,9 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Sequence } = require('sequence')
+  { seq } = require('sequence')
 else
-  { Sequence } = this.pazy
+  { seq } = this.pazy
 
 
 class Dequeue
@@ -25,12 +25,12 @@ class Dequeue
       deq.lf = i = (lf + lr) >> 1
       deq.lr     = lf + lr - i
       deq.front  = front.take i
-      deq.rear   = Sequence.concat rear, front.drop(i).reverse()
+      deq.rear   = seq.concat rear, front.drop(i).reverse()
     else if lr > c * lf + 1
       deq.lr = i = (lf + lr) >> 1
       deq.lf     = lf + lr - i
       deq.rear   = rear.take i
-      deq.front  = Sequence.concat front, rear.drop(i).reverse()
+      deq.front  = seq.concat front, rear.drop(i).reverse()
     else
       deq.lf    = lf
       deq.lr    = lr
@@ -44,13 +44,13 @@ class Dequeue
     if typeof x == 'undefined'
       this
     else
-      create Sequence.conj(x, (=> @front)), @lf + 1, @rear, @lr
+      create seq.conj(x, (=> @front)), @lf + 1, @rear, @lr
 
   before: (x) ->
     if typeof x == 'undefined'
       this
     else
-      create @front, @lf, Sequence.conj(x, (=> @rear)), @lr + 1
+      create @front, @lf, seq.conj(x, (=> @rear)), @lr + 1
 
   first: ->
     if @front then @front.first() else if @rear then @rear.first()

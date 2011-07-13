@@ -4,16 +4,16 @@
 # execution time O(log n) per operation for adding an element and O(n)
 # for extracting a sorted result.
 #
-# Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require('functional')
-  { Sequence }       = require('sequence')
+  { seq }       = require('sequence')
 else
-  { recur, resolve, Sequence } = this.pazy
+  { recur, resolve, seq } = this.pazy
 
 
 class Sortable
@@ -28,11 +28,11 @@ class Sortable
       if bits % 2 > 0
         recur -> addSeg(merge(less, seg, segs.first()), segs.rest(), bits >> 1)
       else
-        Sequence.conj seg, (-> segs), 'forced'
+        seq.conj seg, (-> segs), 'forced'
 
     if arguments.length > 0
-      Sequence.reduce arguments, this, (s, x) ->
-        newSegs = resolve addSeg(Sequence.conj(x), s.segs, s.size())
+      seq.reduce arguments, this, (s, x) ->
+        newSegs = resolve addSeg(seq.conj(x), s.segs, s.size())
         new Sortable(less, s.size() + 1, newSegs)
     else
       this
@@ -41,9 +41,9 @@ class Sortable
 
   merge = (less, xs, ys) ->
     if xs and (not ys or less(xs.first(), ys.first()))
-      Sequence.conj xs.first(), (-> merge(less, xs.rest(), ys))
+      seq.conj xs.first(), (-> merge(less, xs.rest(), ys))
     else if ys
-      Sequence.conj ys.first(), (-> merge(less, xs, ys.rest()))
+      seq.conj ys.first(), (-> merge(less, xs, ys.rest()))
 
 
 # --------------------------------------------------------------------

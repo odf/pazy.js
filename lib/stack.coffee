@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------
-# A simple stack implemented via a Sequence.
+# A simple stack implemented via a sequence.
 #
 # Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
@@ -7,19 +7,19 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Sequence } = require('sequence')
+  { seq } = require('sequence')
 else
-  { Sequence } = this.pazy
+  { seq } = this.pazy
 
 
 class Stack
-  constructor: (s) -> @seq = s
+  constructor: (@s) ->
 
-  push: (x) -> new Stack Sequence.conj x, => @seq
+  push: (x) -> new Stack seq.conj x, => @s
 
-  first: -> @seq?.first()
+  first: -> @s?.first()
 
-  rest: -> if @seq then new Stack @seq.rest()
+  rest: -> new Stack @s?.rest()
 
 
 # --------------------------------------------------------------------

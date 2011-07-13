@@ -1,9 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence } = require 'sequence'
-  { HashSet }  = require 'indexed'
+  { seq }     = require 'sequence'
+  { HashSet } = require 'indexed'
 else
-  { Sequence, HashSet } = pazy
+  { seq, HashSet } = pazy
 
 
 class FunnyKey
@@ -348,7 +348,7 @@ describe "A HashSet", ->
     T = new HashSet().plus(items...).minus items[1..3]...
 
     it "should contain the correct number of items", ->
-      expect(Sequence.size T).toBe 6
+      expect(seq.size T).toBe 6
 
     it "should contain the correct number after one item is removed", ->
-      expect(Sequence.size T.minus items[4]).toBe 5
+      expect(seq.size T.minus items[4]).toBe 5

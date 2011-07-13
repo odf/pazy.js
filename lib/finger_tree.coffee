@@ -7,10 +7,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { Sequence }                = require('sequence')
+  { seq }                     = require('sequence')
   { recur, resolve, suspend } = require('functional')
 else
-  { Sequence, recur, resolve, suspend } = pazy
+  { seq, recur, resolve, suspend } = pazy
 
 class Void
 
@@ -24,14 +24,14 @@ class DefaultExtensions
 
 class FingerTreeType
   constructor: (measure, extensions = DefaultExtensions) ->
-    @build = -> Sequence.reduce arguments, empty, (s, a) -> s.plus a
+    @build = -> seq.reduce arguments, empty, (s, a) -> s.plus a
 
     single = (x) -> if x == Empty or x.constructor in internal
         x.measure()
       else
         measure.single(x)
 
-    norm = -> Sequence.reduce arguments, measure.empty, (n, x) ->
+    norm = -> seq.reduce arguments, measure.empty, (n, x) ->
       if x? then measure.sum n, single x else n
 
     rev = (x) -> if x?.constructor in [Node2, Node3] then x.reverse() else x
@@ -261,7 +261,7 @@ class FingerTreeType
       reduceRight = (op) -> (x, z) -> x.reduceRight(op, z)
 
       asTree = (s) -> s.reduceLeft Empty, (a, b) -> a.before b
-      asSeq  = (s) -> s.reduceRight ((a, b) -> Sequence.conj a, -> b), null
+      asSeq  = (s) -> s.reduceRight ((a, b) -> seq.conj a, -> b), null
 
       constructor: (@l, @m, @r) ->
 
@@ -325,21 +325,21 @@ class FingerTreeType
         else if n == 1 or n < 0
           throw new Error "this should not happen"
         else if n == 2 or n % 3 == 1
-          Sequence.conj new Node2(s.take(2).into([])...), -> nodes n-2, s.drop 2
+          seq.conj new Node2(s.take(2).into([])...), -> nodes n-2, s.drop 2
         else
-          Sequence.conj new Node3(s.take(3).into([])...), -> nodes n-3, s.drop 3
+          seq.conj new Node3(s.take(3).into([])...), -> nodes n-3, s.drop 3
 
       app3 = (tLeft, list, tRight) ->
         if tLeft == Empty
-          Sequence.reduce Sequence.reverse(list), tRight, (t, x) -> t.after x
+          seq.reduce seq.reverse(list), tRight, (t, x) -> t.after x
         else if tRight == Empty
-          Sequence.reduce list, tLeft, (t, x) -> t.before x
+          seq.reduce list, tLeft, (t, x) -> t.before x
         else if tLeft.constructor == Single
           app3(Empty, list, tRight).after tLeft.a
         else if tRight.constructor == Single
           app3(tLeft, list, Empty).before tRight.a
         else
-          tmp = Sequence.flatten [asSeq(tLeft.r), list,  asSeq(tRight.l)]
+          tmp = seq.flatten [asSeq(tLeft.r), list,  asSeq(tRight.l)]
           s = nodes tmp.size(), tmp
           new Deep tLeft.l, suspend(-> app3 tLeft.m(), s, tRight.m()), tRight.r
 

@@ -11,9 +11,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
   { recur, resolve } = require 'functional'
-  { seq, Sequence }  = require 'sequence'
+  { seq }  = require 'sequence'
 else
-  { recur, resolve, Sequence } = this.pazy
+  { recur, resolve, seq } = this.pazy
 
 # -- Call with '--test' for some quick-and-dirty testing
 
@@ -30,23 +30,23 @@ if quicktest
 else
   log = (str) ->
 
-  [BASE, HALFBASE] = Sequence.from(1)
+  [BASE, HALFBASE] = seq.from(1)
     .map((n) -> [Math.pow(10, 2 * n), Math.pow(10, n)])
     .takeWhile(([b,h]) -> 2 * b - 2 != 2 * b - 1)
     .last()
 
 # -- Useful constants
 
-ZERO = Sequence.conj 0
-ONE  = Sequence.conj 1
-TWO  = Sequence.conj 2
+ZERO = seq.conj 0
+ONE  = seq.conj 1
+TWO  = seq.conj 2
 
 # -- Internal helper functions that operate on (sequences of) digits/limbs
 
 cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
 cmp = (r, s) ->
-  d = Sequence.combine(r, s, (a, b) -> a - b)
+  d = seq.combine(r, s, (a, b) -> a - b)
   d?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
 
 add = (r, s, c = 0) ->
@@ -54,7 +54,7 @@ add = (r, s, c = 0) ->
     [r_, s_] = [r or ZERO, s or ZERO]
     x = r_.first() + s_.first() + c
     [digit, carry] = if x >= BASE then [x - BASE, 1] else [x, 0]
-    Sequence.conj(digit, -> add(r_.rest(), s_.rest(), carry))
+    seq.conj(digit, -> add(r_.rest(), s_.rest(), carry))
   else
     s or r
 
@@ -64,7 +64,7 @@ sub = (r, s) ->
       [r_, s_] = [r or ZERO, s or ZERO]
       x = r_.first() - s_.first() - b
       [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
-      Sequence.conj(digit, -> step(r_.rest(), s_.rest(), borrow))
+      seq.conj(digit, -> step(r_.rest(), s_.rest(), borrow))
     else
       s or r
   cleanup step(r, s)
@@ -87,13 +87,13 @@ seqTimesDigit = (s, d, c = 0) ->
   if c or s
     s_ = s or ZERO
     [lo, hi] = digitTimesDigit(d, s_.first())
-    Sequence.conj(lo + c, -> seqTimesDigit(s_.rest(), d, hi))
+    seq.conj(lo + c, -> seqTimesDigit(s_.rest(), d, hi))
 
 mul = (a, b) ->
   step = (r, a, b) ->
     if a
       t = add(r, seqTimesDigit(b, a.first())) or ZERO
-      Sequence.conj(t.first(), -> step(t.rest(), a.rest(), b))
+      seq.conj(t.first(), -> step(t.rest(), a.rest(), b))
     else
       r
   step null, a, b
@@ -111,12 +111,12 @@ divmod = (r, s) ->
       (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
 
     if f
-      recur -> step(add(q, Sequence.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
+      recur -> step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
     else if t
-      recur -> step(Sequence.conj(0, -> q),
-                    Sequence.conj(t.first(), -> h), t.rest())
+      recur -> step(seq.conj(0, -> q),
+                    seq.conj(t.first(), -> h), t.rest())
     else
-      [cleanup(q), h && div(h, Sequence.conj(scale))]
+      [cleanup(q), h && div(h, seq.conj(scale))]
 
   resolve step(null, null, r_.reverse())
 
@@ -138,7 +138,7 @@ pow = (r, s) ->
 sqrt = (s) ->
   n = s.size()
   if n == 1
-    Sequence.conj Math.floor Math.sqrt s.first()
+    seq.conj Math.floor Math.sqrt s.first()
   else
     step = (r) ->
       rn = seq div(add(r, div(s, r)), TWO)
@@ -153,7 +153,7 @@ class LongInt
 
   constructor: (n = 0) ->
     make_digits = (m) ->
-      if m then Sequence.conj(m % BASE, -> make_digits(Math.floor m / BASE))
+      if m then seq.conj(m % BASE, -> make_digits(Math.floor m / BASE))
 
     [m, @sign__] = if n < 0 then [-n, -1] else [n, 1]
     @digits__ = cleanup seq make_digits m

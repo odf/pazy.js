@@ -8,9 +8,9 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { Sequence } = require('sequence')
+  { seq } = require('sequence')
 else
-  { Sequence } = this.pazy
+  { seq } = this.pazy
 
 
 class Queue
@@ -24,14 +24,14 @@ class Queue
       @front = @rear = @schedule = null
 
   rotate = (f, r, a) ->
-    a1 = Sequence.conj r.first(), (-> a)
+    a1 = seq.conj r.first(), (-> a)
     if f
-      Sequence.conj f.first(), (-> rotate f.rest(), r.rest(), a1)
+      seq.conj f.first(), (-> rotate f.rest(), r.rest(), a1)
     else
       a1
 
   push: (x) ->
-    new Queue(@front, Sequence.conj(x, (=> @rear)), @schedule)
+    new Queue(@front, seq.conj(x, (=> @rear)), @schedule)
 
   first: -> @front?.first()
 
