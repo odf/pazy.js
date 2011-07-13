@@ -1,5 +1,5 @@
 (function() {
-  var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, combinator, d, digitTimesDigit, div, divmod, dump, equalKeys, fromArray, hashCode, isSeq, log, memo, method, mod, mul, pow, quicktest, rdump, recur, resolve, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+  var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, combinator, d, digitTimesDigit, div, divmod, dump, equal, fromArray, hashCode, log, memo, method, mod, mul, pow, quicktest, rdump, recur, resolve, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref20, _ref21, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -45,9 +45,10 @@
   };
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
+    equal = require('core_extensions').equal;
     _ref2 = require('functional'), recur = _ref2.recur, resolve = _ref2.resolve;
   } else {
-    _ref3 = this.pazy, recur = _ref3.recur, resolve = _ref3.resolve;
+    _ref3 = this.pazy, equal = _ref3.equal, recur = _ref3.recur, resolve = _ref3.resolve;
   }
   Sequence = (function() {
     function Sequence(first, rest) {
@@ -81,12 +82,12 @@
       return null;
     } else if (src.constructor === Sequence) {
       return src;
+    } else if (typeof src.length === 'number') {
+      return fromArray(src, 0);
     } else if (typeof src.toSeq === 'function') {
       return src.toSeq();
     } else if (typeof src.first === 'function' && typeof src.rest === 'function') {
       return seq.conj(src.first(), src.rest);
-    } else if (typeof src.length === 'number') {
-      return fromArray(src, 0);
     } else {
       throw new Error("cannot make a sequence from " + src);
     }
@@ -405,11 +406,9 @@
     });
   });
   combinator('equals', function(s, t) {
-    return !(this.find__(this.combine__(s, t, function(a, b) {
-      return a === b;
-    }), function(a) {
-      return !a;
-    }) != null);
+    return this.forall__(this.combine__(s, t, equal), function(a) {
+      return a;
+    });
   });
   combinator('interleave', function(s, t) {
     if (s) {
@@ -542,31 +541,32 @@
   exports.seq = seq;
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
+    _ref5 = require('core_extensions'), equal = _ref5.equal, hashCode = _ref5.hashCode;
     seq = require('sequence').seq;
   } else {
-    seq = this.pazy.seq;
+    _ref6 = this.pazy, equal = _ref6.equal, hashCode = _ref6.hashCode, seq = _ref6.seq;
   }
   util = {
     arrayWith: function(a, i, x) {
-      var j, _ref5, _results;
+      var j, _ref7, _results;
       _results = [];
-      for (j = 0, _ref5 = a.length; 0 <= _ref5 ? j < _ref5 : j > _ref5; 0 <= _ref5 ? j++ : j--) {
+      for (j = 0, _ref7 = a.length; 0 <= _ref7 ? j < _ref7 : j > _ref7; 0 <= _ref7 ? j++ : j--) {
         _results.push((j === i ? x : a[j]));
       }
       return _results;
     },
     arrayWithInsertion: function(a, i, x) {
-      var j, _ref5, _results;
+      var j, _ref7, _results;
       _results = [];
-      for (j = 0, _ref5 = a.length; 0 <= _ref5 ? j <= _ref5 : j >= _ref5; 0 <= _ref5 ? j++ : j--) {
+      for (j = 0, _ref7 = a.length; 0 <= _ref7 ? j <= _ref7 : j >= _ref7; 0 <= _ref7 ? j++ : j--) {
         _results.push((j < i ? a[j] : j > i ? a[j - 1] : x));
       }
       return _results;
     },
     arrayWithout: function(a, i) {
-      var j, _ref5, _results;
+      var j, _ref7, _results;
       _results = [];
-      for (j = 0, _ref5 = a.length; 0 <= _ref5 ? j < _ref5 : j > _ref5; 0 <= _ref5 ? j++ : j--) {
+      for (j = 0, _ref7 = a.length; 0 <= _ref7 ? j < _ref7 : j > _ref7; 0 <= _ref7 ? j++ : j--) {
         if (j !== i) {
           _results.push(a[j]);
         }
@@ -613,22 +613,22 @@
   };
   BitmapIndexedNode = (function() {
     function BitmapIndexedNode(bitmap, progeny, size) {
-      var _ref5;
-      _ref5 = arguments.length === 0 ? [0, [], 0] : [bitmap, progeny, size], this.bitmap = _ref5[0], this.progeny = _ref5[1], this.size = _ref5[2];
+      var _ref7;
+      _ref7 = arguments.length === 0 ? [0, [], 0] : [bitmap, progeny, size], this.bitmap = _ref7[0], this.progeny = _ref7[1], this.size = _ref7[2];
       this.elements = seq.flatMap(this.progeny, function(n) {
         return n != null ? n.elements : void 0;
       });
     }
     BitmapIndexedNode.prototype.get = function(shift, key, data) {
-      var bit, i, _ref5;
-      _ref5 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref5[0], i = _ref5[1];
+      var bit, i, _ref7;
+      _ref7 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref7[0], i = _ref7[1];
       if ((this.bitmap & bit) !== 0) {
         return this.progeny[i].get(shift + 5, key, data);
       }
     };
     BitmapIndexedNode.prototype.plus = function(shift, key, leaf) {
-      var array, b, bit, i, m, n, newArray, node, progeny, v, _ref5;
-      _ref5 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref5[0], i = _ref5[1];
+      var array, b, bit, i, m, n, newArray, node, progeny, v, _ref7;
+      _ref7 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref7[0], i = _ref7[1];
       if ((this.bitmap & bit) === 0) {
         n = util.bitCount(this.bitmap);
         if (n < 8) {
@@ -658,8 +658,8 @@
       }
     };
     BitmapIndexedNode.prototype.minus = function(shift, key, data) {
-      var bit, bits, i, newArray, newBitmap, newSize, node, v, _ref5;
-      _ref5 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref5[0], i = _ref5[1];
+      var bit, bits, i, newArray, newBitmap, newSize, node, v, _ref7;
+      _ref7 = util.bitPosAndIndex(this.bitmap, key, shift), bit = _ref7[0], i = _ref7[1];
       v = this.progeny[i];
       node = v.minus(shift + 5, key, data);
       if (node != null) {
@@ -781,9 +781,9 @@
         return new ArrayNode(this.progeny, i, node, this.size - 1);
       } else {
         remaining = (function() {
-          var _ref5, _results;
+          var _ref7, _results;
           _results = [];
-          for (j = 0, _ref5 = this.progeny.length; 0 <= _ref5 ? j < _ref5 : j > _ref5; 0 <= _ref5 ? j++ : j--) {
+          for (j = 0, _ref7 = this.progeny.length; 0 <= _ref7 ? j < _ref7 : j > _ref7; 0 <= _ref7 ? j++ : j--) {
             if (j !== i && this.progeny[j]) {
               _results.push(j);
             }
@@ -816,11 +816,11 @@
       }
       pre = prefix + ' ';
       buf = (function() {
-        var _i, _len, _ref5, _results;
-        _ref5 = this.progeny;
+        var _i, _len, _ref7, _results;
+        _ref7 = this.progeny;
         _results = [];
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          x = _ref5[_i];
+        for (_i = 0, _len = _ref7.length; _i < _len; _i++) {
+          x = _ref7[_i];
           if (x != null) {
             _results.push(x.toString(pre));
           }
@@ -838,22 +838,22 @@
   })();
   Collection = (function() {
     function Collection(root) {
-      var _ref5, _ref6;
+      var _ref7, _ref8;
       this.root = root;
-            if ((_ref5 = this.root) != null) {
-        _ref5;
+            if ((_ref7 = this.root) != null) {
+        _ref7;
       } else {
         this.root = EmptyNode;
       };
-      this.entries = (_ref6 = this.root) != null ? _ref6.elements : void 0;
+      this.entries = (_ref8 = this.root) != null ? _ref8.elements : void 0;
     }
     Collection.prototype.size = function() {
       return this.root.size;
     };
     Collection.prototype.each = function(func) {
-      var _ref5;
+      var _ref7;
       if (func != null) {
-        return (_ref5 = this.entries) != null ? _ref5.each(func) : void 0;
+        return (_ref7 = this.entries) != null ? _ref7.each(func) : void 0;
       } else {
         return this;
       }
@@ -990,56 +990,6 @@
     };
     return IntMap;
   })();
-  isSeq = function(s) {
-    try {
-      seq(s);
-      return true;
-    } catch (ex) {
-      return false;
-    }
-  };
-  hashCode = function(obj) {
-    if (!(obj != null)) {
-      return 0;
-    } else if (typeof obj.hashCode === "function" && util.isKey(obj.hashCode())) {
-      return obj.hashCode();
-    } else if (util.isKey(obj)) {
-      return obj;
-    } else if (typeof obj === 'string' && obj.length <= 1) {
-      if (obj.length === 0) {
-        return 1;
-      } else {
-        return obj.charCodeAt(0);
-      }
-    } else if (isSeq(obj)) {
-      return seq.reduce(obj, 0, function(code, x) {
-        return (code * 37 + hashCode(x)) & 0xffffffff;
-      });
-    } else if (typeof obj.toString === "function") {
-      return hashCode(obj.toString());
-    } else {
-      try {
-        return hashCode(String(obj));
-      } catch (ex) {
-        return hashCode(Object.prototype.toString.call(obj));
-      }
-    }
-  };
-  equalKeys = function(obj1, obj2) {
-    if (typeof obj1 === 'string' || typeof obj2 === 'string') {
-      return obj1 === obj2;
-    } else if (isSeq(obj1) && isSeq(obj2)) {
-      return !(seq.find(seq.combine(obj1, obj2, equalKeys), function(a) {
-        return !a;
-      }) != null);
-    } else if ((obj1 != null) && typeof obj1.equals === "function") {
-      return obj1.equals(obj2);
-    } else if ((obj2 != null) && typeof obj2.equals === "function") {
-      return obj2.equals(obj1);
-    } else {
-      return obj1 === obj2;
-    }
-  };
   CollisionNode = (function() {
     function CollisionNode(hash, bucket) {
       this.hash = hash;
@@ -1055,7 +1005,7 @@
     CollisionNode.prototype.get = function(shift, hash, key) {
       var leaf;
       leaf = seq.find(this.bucket, function(v) {
-        return equalKeys(v.key, key);
+        return equal(v.key, key);
       });
       if (leaf != null) {
         return leaf.get(shift, hash, key);
@@ -1078,7 +1028,7 @@
           return null;
         case 2:
           return seq.find(this.bucket, function(v) {
-            return !equalKeys(v.key, key);
+            return !equal(v.key, key);
           });
         default:
           return new CollisionNode(hash, this.bucketWithout(key));
@@ -1088,12 +1038,12 @@
       return "" + (this.bucket.join("|"));
     };
     CollisionNode.prototype.bucketWithout = function(key) {
-      var item, _i, _len, _ref5, _results;
-      _ref5 = this.bucket;
+      var item, _i, _len, _ref7, _results;
+      _ref7 = this.bucket;
       _results = [];
-      for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-        item = _ref5[_i];
-        if (!equalKeys(item.key, key)) {
+      for (_i = 0, _len = _ref7.length; _i < _len; _i++) {
+        item = _ref7[_i];
+        if (!equal(item.key, key)) {
           _results.push(item);
         }
       }
@@ -1109,7 +1059,7 @@
     }
     HashLeaf.prototype.size = 1;
     HashLeaf.prototype.get = function(shift, hash, key) {
-      if (equalKeys(key, this.key)) {
+      if (equal(key, this.key)) {
         return true;
       }
     };
@@ -1168,13 +1118,13 @@
     }
     HashLeafWithValue.prototype.size = 1;
     HashLeafWithValue.prototype.get = function(shift, hash, key) {
-      if (equalKeys(key, this.key)) {
+      if (equal(key, this.key)) {
         return this.value;
       }
     };
     HashLeafWithValue.prototype.plus = function(shift, hash, leaf) {
       var base;
-      if (equalKeys(this.key, leaf.key)) {
+      if (equal(this.key, leaf.key)) {
         return leaf;
       } else {
         if (hash === this.hash) {
@@ -1226,7 +1176,7 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref5 = this.pazy) != null ? _ref5 : this.pazy = {};
+    exports = (_ref7 = this.pazy) != null ? _ref7 : this.pazy = {};
   };
   exports.IntSet = IntSet;
   exports.IntMap = IntMap;
@@ -1237,7 +1187,7 @@
     seq = require('sequence').seq;
     HashSet = require('indexed').HashSet;
   } else {
-    _ref6 = this.pazy, seq = _ref6.seq, HashSet = _ref6.HashSet;
+    _ref8 = this.pazy, seq = _ref8.seq, HashSet = _ref8.HashSet;
   }
   seq.method('uniq', function(s, seen) {
     var x;
@@ -1260,7 +1210,7 @@
   if (typeof require !== 'undefined') {
     require.paths.unshift('#{__dirname}/../lib');
     seq = require('sequence').seq;
-    _ref7 = require('functional'), recur = _ref7.recur, resolve = _ref7.resolve, suspend = _ref7.suspend;
+    _ref9 = require('functional'), recur = _ref9.recur, resolve = _ref9.resolve, suspend = _ref9.suspend;
   } else {
     seq = pazy.seq, recur = pazy.recur, resolve = pazy.resolve, suspend = pazy.suspend;
   }
@@ -1309,8 +1259,8 @@
         });
       };
       single = function(x) {
-        var _ref8;
-        if (x === Empty || (_ref8 = x.constructor, __indexOf.call(internal, _ref8) >= 0)) {
+        var _ref10;
+        if (x === Empty || (_ref10 = x.constructor, __indexOf.call(internal, _ref10) >= 0)) {
           return x.measure();
         } else {
           return measure.single(x);
@@ -1326,8 +1276,8 @@
         });
       };
       rev = function(x) {
-        var _ref8;
-        if ((_ref8 = x != null ? x.constructor : void 0) === Node2 || _ref8 === Node3) {
+        var _ref10;
+        if ((_ref10 = x != null ? x.constructor : void 0) === Node2 || _ref10 === Node3) {
           return x.reverse();
         } else {
           return x;
@@ -1366,9 +1316,9 @@
           return this.data.measure();
         };
         Instance.prototype.split = function(p) {
-          var l, r, x, _ref8;
+          var l, r, x, _ref10;
           if (this.data !== Empty && p(norm(this.data))) {
-            _ref8 = this.data.split(p, measure.empty), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+            _ref10 = this.data.split(p, measure.empty), l = _ref10[0], x = _ref10[1], r = _ref10[2];
             return [new Instance(l), x, new Instance(r)];
           } else {
             return [this, void 0, new Instance(Empty)];
@@ -1378,8 +1328,8 @@
           return this.split(p)[0];
         };
         Instance.prototype.dropUntil = function(p) {
-          var l, r, x, _ref8;
-          _ref8 = this.split(p), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+          var l, r, x, _ref10;
+          _ref10 = this.split(p), l = _ref10[0], x = _ref10[1], r = _ref10[2];
           if (x === void 0) {
             return r;
           } else {
@@ -1769,9 +1719,9 @@
           return op1(this.l, op2(this.m(), op1(this.r, z)));
         };
         Deep.prototype.after = function(x) {
-          var a, b, c, d, l, _ref8;
+          var a, b, c, d, l, _ref10;
           if (this.l.constructor === Digit4) {
-            _ref8 = this.l, a = _ref8.a, b = _ref8.b, c = _ref8.c, d = _ref8.d;
+            _ref10 = this.l, a = _ref10.a, b = _ref10.b, c = _ref10.c, d = _ref10.d;
             l = new Digit2(x, a);
             return new Deep(l, suspend(__bind(function() {
               return this.m().after(new Node3(b, c, d));
@@ -1781,9 +1731,9 @@
           }
         };
         Deep.prototype.before = function(x) {
-          var a, b, c, d, r, _ref8;
+          var a, b, c, d, r, _ref10;
           if (this.r.constructor === Digit4) {
-            _ref8 = this.r, a = _ref8.a, b = _ref8.b, c = _ref8.c, d = _ref8.d;
+            _ref10 = this.r, a = _ref10.a, b = _ref10.b, c = _ref10.c, d = _ref10.d;
             r = new Digit2(d, x);
             return new Deep(this.l, suspend(__bind(function() {
               return this.m().before(new Node3(a, b, c));
@@ -1883,10 +1833,10 @@
           return app3(this, null, t);
         };
         Deep.prototype.split = function(p, i) {
-          var i1, i2, l, ml, mr, r, x, xs, _ref10, _ref11, _ref8, _ref9;
+          var i1, i2, l, ml, mr, r, x, xs, _ref10, _ref11, _ref12, _ref13;
           i1 = measure.sum(i, norm(this.l));
           if (p(i1)) {
-            _ref8 = this.l.split(p, i), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+            _ref10 = this.l.split(p, i), l = _ref10[0], x = _ref10[1], r = _ref10[2];
             return [
               asTree(l), x, deepL(r, suspend(__bind(function() {
                 return this.m();
@@ -1895,8 +1845,8 @@
           } else {
             i2 = measure.sum(i1, norm(this.m()));
             if (p(i2)) {
-              _ref9 = this.m().split(p, i1), ml = _ref9[0], xs = _ref9[1], mr = _ref9[2];
-              _ref10 = xs.asDigit().split(p, measure.sum(i1, norm(ml))), l = _ref10[0], x = _ref10[1], r = _ref10[2];
+              _ref11 = this.m().split(p, i1), ml = _ref11[0], xs = _ref11[1], mr = _ref11[2];
+              _ref12 = xs.asDigit().split(p, measure.sum(i1, norm(ml))), l = _ref12[0], x = _ref12[1], r = _ref12[2];
               return [
                 deepR(this.l, (function() {
                   return ml;
@@ -1905,7 +1855,7 @@
                 }), this.r)
               ];
             } else {
-              _ref11 = this.r.split(p, i2), l = _ref11[0], x = _ref11[1], r = _ref11[2];
+              _ref13 = this.r.split(p, i2), l = _ref13[0], x = _ref13[1], r = _ref13[2];
               return [
                 deepR(this.l, suspend(__bind(function() {
                   return this.m();
@@ -1948,10 +1898,10 @@
       });
     };
     CountedExtensions.prototype.splitAt = function(i) {
-      var l, r, x, _ref8;
-      _ref8 = this.split(function(m) {
+      var l, r, x, _ref10;
+      _ref10 = this.split(function(m) {
         return m > i;
-      }), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+      }), l = _ref10[0], x = _ref10[1], r = _ref10[2];
       return [l, r.after(x)];
     };
     return CountedExtensions;
@@ -1995,33 +1945,33 @@
         return new s.constructor(s.data.concat(t.data));
       };
       _Class.prototype.partition = function(k) {
-        var l, r, x, _ref8;
-        _ref8 = this.split(function(m) {
+        var l, r, x, _ref10;
+        _ref10 = this.split(function(m) {
           return !less(m, k);
-        }), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+        }), l = _ref10[0], x = _ref10[1], r = _ref10[2];
         return [l, after(r, x)];
       };
       _Class.prototype.insert = function(k) {
-        var l, r, _ref8;
-        _ref8 = this.partition(k), l = _ref8[0], r = _ref8[1];
+        var l, r, _ref10;
+        _ref10 = this.partition(k), l = _ref10[0], r = _ref10[1];
         return concat(l, after(r, k));
       };
       _Class.prototype.deleteAll = function(k) {
-        var l, r, _ref8;
-        _ref8 = this.partition(k), l = _ref8[0], r = _ref8[1];
+        var l, r, _ref10;
+        _ref10 = this.partition(k), l = _ref10[0], r = _ref10[1];
         return concat(l, r.dropUntil(function(m) {
           return less(k, m);
         }));
       };
       merge = function(s, t1, t2) {
-        var k, l, r, x, _ref8;
+        var k, l, r, x, _ref10;
         if (t2.isEmpty()) {
           return concat(s, t1);
         } else {
           k = t2.first();
-          _ref8 = t1.split(function(m) {
+          _ref10 = t1.split(function(m) {
             return less(k, m);
-          }), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+          }), l = _ref10[0], x = _ref10[1], r = _ref10[2];
           return recur(function() {
             var a;
             a = concat(s, before(l, k));
@@ -2033,14 +1983,14 @@
         return resolve(merge(this.empty(), this, other));
       };
       intersect = function(s, t1, t2) {
-        var k, l, r, x, _ref8;
+        var k, l, r, x, _ref10;
         if (t2.isEmpty()) {
           return s;
         } else {
           k = t2.first();
-          _ref8 = t1.split(function(m) {
+          _ref10 = t1.split(function(m) {
             return !less(m, k);
-          }), l = _ref8[0], x = _ref8[1], r = _ref8[2];
+          }), l = _ref10[0], x = _ref10[1], r = _ref10[2];
           if (less(k, x)) {
             return recur(function() {
               return intersect(s, t2.rest(), after(r, x));
@@ -2077,7 +2027,7 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref8 = this.pazy) != null ? _ref8 : this.pazy = {};
+    exports = (_ref10 = this.pazy) != null ? _ref10 : this.pazy = {};
   };
   exports.FingerTreeType = FingerTreeType;
   exports.CountedSeq = CountedSeq;
@@ -2085,10 +2035,10 @@
   exports.SortedSeq = new SortedSeqType();
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
-    _ref9 = require('functional'), recur = _ref9.recur, resolve = _ref9.resolve;
+    _ref11 = require('functional'), recur = _ref11.recur, resolve = _ref11.resolve;
     HashMap = require('indexed').HashMap;
   } else {
-    _ref10 = this.pazy, recur = _ref10.recur, resolve = _ref10.resolve, HashMap = _ref10.HashMap;
+    _ref12 = this.pazy, recur = _ref12.recur, resolve = _ref12.resolve, HashMap = _ref12.HashMap;
   }
   Partition = (function() {
     var make;
@@ -2159,7 +2109,7 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref11 = this.pazy) != null ? _ref11 : this.pazy = {};
+    exports = (_ref13 = this.pazy) != null ? _ref13 : this.pazy = {};
   };
   exports.Partition = Partition;
   if (typeof require !== 'undefined') {
@@ -2178,19 +2128,19 @@
       }, this)));
     };
     Stack.prototype.first = function() {
-      var _ref12;
-      return (_ref12 = this.s) != null ? _ref12.first() : void 0;
+      var _ref14;
+      return (_ref14 = this.s) != null ? _ref14.first() : void 0;
     };
     Stack.prototype.rest = function() {
-      var _ref12;
-      return new Stack((_ref12 = this.s) != null ? _ref12.rest() : void 0);
+      var _ref14;
+      return new Stack((_ref14 = this.s) != null ? _ref14.rest() : void 0);
     };
     return Stack;
   })();
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref12 = this.pazy) != null ? _ref12 : this.pazy = {};
+    exports = (_ref14 = this.pazy) != null ? _ref14 : this.pazy = {};
   };
   exports.Stack = Stack;
   if (typeof require !== 'undefined') {
@@ -2202,9 +2152,9 @@
   Queue = (function() {
     var rotate;
     function Queue(f, r, s) {
-      var _ref13;
+      var _ref15;
       if (s) {
-        _ref13 = [f, r, s.rest()], this.front = _ref13[0], this.rear = _ref13[1], this.schedule = _ref13[2];
+        _ref15 = [f, r, s.rest()], this.front = _ref15[0], this.rear = _ref15[1], this.schedule = _ref15[2];
       } else if (f || r) {
         this.front = this.schedule = rotate(f, r, null);
         this.rear = null;
@@ -2231,8 +2181,8 @@
       }, this))), this.schedule);
     };
     Queue.prototype.first = function() {
-      var _ref13;
-      return (_ref13 = this.front) != null ? _ref13.first() : void 0;
+      var _ref15;
+      return (_ref15 = this.front) != null ? _ref15.first() : void 0;
     };
     Queue.prototype.rest = function() {
       if (this.front) {
@@ -2244,15 +2194,15 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref13 = this.pazy) != null ? _ref13 : this.pazy = {};
+    exports = (_ref15 = this.pazy) != null ? _ref15 : this.pazy = {};
   };
   exports.Queue = Queue;
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
-    _ref14 = require('functional'), recur = _ref14.recur, resolve = _ref14.resolve;
+    _ref16 = require('functional'), recur = _ref16.recur, resolve = _ref16.resolve;
     seq = require('sequence').seq;
   } else {
-    _ref15 = this.pazy, recur = _ref15.recur, resolve = _ref15.resolve, seq = _ref15.seq;
+    _ref17 = this.pazy, recur = _ref17.recur, resolve = _ref17.resolve, seq = _ref17.seq;
   }
   quicktest = (typeof process !== "undefined" && process !== null ? process.argv[2] : void 0) === '--test';
   rdump = function(s) {
@@ -2262,47 +2212,47 @@
     return rdump(s != null ? s.reverse() : void 0);
   };
   if (quicktest) {
-    _ref16 = [10000, 100], BASE = _ref16[0], HALFBASE = _ref16[1];
+    _ref18 = [10000, 100], BASE = _ref18[0], HALFBASE = _ref18[1];
     log = function(str) {
       return console.log(str);
     };
   } else {
     log = function(str) {};
-    _ref17 = seq.from(1).map(function(n) {
+    _ref19 = seq.from(1).map(function(n) {
       return [Math.pow(10, 2 * n), Math.pow(10, n)];
     }).takeWhile(function(_arg) {
       var b, h;
       b = _arg[0], h = _arg[1];
       return 2 * b - 2 !== 2 * b - 1;
-    }).last(), BASE = _ref17[0], HALFBASE = _ref17[1];
+    }).last(), BASE = _ref19[0], HALFBASE = _ref19[1];
   }
   ZERO = seq.conj(0);
   ONE = seq.conj(1);
   TWO = seq.conj(2);
   cleanup = function(s) {
-    var _ref18, _ref19;
-    return (s != null ? (_ref18 = s.reverse()) != null ? (_ref19 = _ref18.dropWhile(function(x) {
+    var _ref20, _ref21;
+    return (s != null ? (_ref20 = s.reverse()) != null ? (_ref21 = _ref20.dropWhile(function(x) {
       return x === 0;
-    })) != null ? _ref19.reverse() : void 0 : void 0 : void 0) || null;
+    })) != null ? _ref21.reverse() : void 0 : void 0 : void 0) || null;
   };
   cmp = function(r, s) {
-    var d, _ref18, _ref19;
+    var d, _ref20, _ref21;
     d = seq.combine(r, s, function(a, b) {
       return a - b;
     });
-    return (d != null ? (_ref18 = d.reverse()) != null ? (_ref19 = _ref18.dropWhile(function(x) {
+    return (d != null ? (_ref20 = d.reverse()) != null ? (_ref21 = _ref20.dropWhile(function(x) {
       return x === 0;
-    })) != null ? _ref19.first() : void 0 : void 0 : void 0) || 0;
+    })) != null ? _ref21.first() : void 0 : void 0 : void 0) || 0;
   };
   add = function(r, s, c) {
-    var carry, digit, r_, s_, x, _ref18, _ref19;
+    var carry, digit, r_, s_, x, _ref20, _ref21;
     if (c == null) {
       c = 0;
     }
     if (c || (r && s)) {
-      _ref18 = [r || ZERO, s || ZERO], r_ = _ref18[0], s_ = _ref18[1];
+      _ref20 = [r || ZERO, s || ZERO], r_ = _ref20[0], s_ = _ref20[1];
       x = r_.first() + s_.first() + c;
-      _ref19 = x >= BASE ? [x - BASE, 1] : [x, 0], digit = _ref19[0], carry = _ref19[1];
+      _ref21 = x >= BASE ? [x - BASE, 1] : [x, 0], digit = _ref21[0], carry = _ref21[1];
       return seq.conj(digit, function() {
         return add(r_.rest(), s_.rest(), carry);
       });
@@ -2313,14 +2263,14 @@
   sub = function(r, s) {
     var step;
     step = function(r, s, b) {
-      var borrow, digit, r_, s_, x, _ref18, _ref19;
+      var borrow, digit, r_, s_, x, _ref20, _ref21;
       if (b == null) {
         b = 0;
       }
       if (b || (r && s)) {
-        _ref18 = [r || ZERO, s || ZERO], r_ = _ref18[0], s_ = _ref18[1];
+        _ref20 = [r || ZERO, s || ZERO], r_ = _ref20[0], s_ = _ref20[1];
         x = r_.first() - s_.first() - b;
-        _ref19 = x < 0 ? [x + BASE, 1] : [x, 0], digit = _ref19[0], borrow = _ref19[1];
+        _ref21 = x < 0 ? [x + BASE, 1] : [x, 0], digit = _ref21[0], borrow = _ref21[1];
         return seq.conj(digit, function() {
           return step(r_.rest(), s_.rest(), borrow);
         });
@@ -2334,26 +2284,26 @@
     return [n % HALFBASE, Math.floor(n / HALFBASE)];
   };
   digitTimesDigit = function(a, b) {
-    var a0, a1, b0, b1, carry, lo, m0, m1, tmp, _ref18, _ref19, _ref20, _ref21;
+    var a0, a1, b0, b1, carry, lo, m0, m1, tmp, _ref20, _ref21, _ref22, _ref23;
     if (b < BASE / a) {
       return [a * b, 0];
     } else {
-      _ref18 = split(a), a0 = _ref18[0], a1 = _ref18[1];
-      _ref19 = split(b), b0 = _ref19[0], b1 = _ref19[1];
-      _ref20 = split(a0 * b1 + b0 * a1), m0 = _ref20[0], m1 = _ref20[1];
+      _ref20 = split(a), a0 = _ref20[0], a1 = _ref20[1];
+      _ref21 = split(b), b0 = _ref21[0], b1 = _ref21[1];
+      _ref22 = split(a0 * b1 + b0 * a1), m0 = _ref22[0], m1 = _ref22[1];
       tmp = a0 * b0 + m0 * HALFBASE;
-      _ref21 = tmp < BASE ? [tmp, 0] : [tmp - BASE, 1], lo = _ref21[0], carry = _ref21[1];
+      _ref23 = tmp < BASE ? [tmp, 0] : [tmp - BASE, 1], lo = _ref23[0], carry = _ref23[1];
       return [lo, a1 * b1 + m1 + carry];
     }
   };
   seqTimesDigit = function(s, d, c) {
-    var hi, lo, s_, _ref18;
+    var hi, lo, s_, _ref20;
     if (c == null) {
       c = 0;
     }
     if (c || s) {
       s_ = s || ZERO;
-      _ref18 = digitTimesDigit(d, s_.first()), lo = _ref18[0], hi = _ref18[1];
+      _ref20 = digitTimesDigit(d, s_.first()), lo = _ref20[0], hi = _ref20[1];
       return seq.conj(lo + c, function() {
         return seqTimesDigit(s_.rest(), d, hi);
       });
@@ -2375,19 +2325,19 @@
     return step(null, a, b);
   };
   divmod = function(r, s) {
-    var d, m, r_, s_, scale, step, x, _ref18, _ref19;
+    var d, m, r_, s_, scale, step, x, _ref20, _ref21;
     scale = Math.floor(BASE / (s.last() + 1));
-    _ref18 = (function() {
-      var _i, _len, _ref18, _results;
-      _ref18 = [r, s];
+    _ref20 = (function() {
+      var _i, _len, _ref20, _results;
+      _ref20 = [r, s];
       _results = [];
-      for (_i = 0, _len = _ref18.length; _i < _len; _i++) {
-        x = _ref18[_i];
+      for (_i = 0, _len = _ref20.length; _i < _len; _i++) {
+        x = _ref20[_i];
         _results.push(seq(seqTimesDigit(x, scale)));
       }
       return _results;
-    })(), r_ = _ref18[0], s_ = _ref18[1];
-    _ref19 = [s_.size(), s_.last() + 1], m = _ref19[0], d = _ref19[1];
+    })(), r_ = _ref20[0], s_ = _ref20[1];
+    _ref21 = [s_.size(), s_.last() + 1], m = _ref21[0], d = _ref21[1];
     step = function(q, h, t) {
       var f, n;
       f = (h != null ? h.size() : void 0) < m ? 0 : (n = ((h != null ? h.last() : void 0) * ((h != null ? h.size() : void 0) > m ? BASE : 1)) || 0, (Math.floor(n / d)) || (cmp(h, s_) >= 0 ? 1 : 0));
@@ -2460,7 +2410,7 @@
       return BASE;
     };
     function LongInt(n) {
-      var m, make_digits, _ref18;
+      var m, make_digits, _ref20;
       if (n == null) {
         n = 0;
       }
@@ -2471,7 +2421,7 @@
           });
         }
       };
-      _ref18 = n < 0 ? [-n, -1] : [n, 1], m = _ref18[0], this.sign__ = _ref18[1];
+      _ref20 = n < 0 ? [-n, -1] : [n, 1], m = _ref20[0], this.sign__ = _ref20[1];
       this.digits__ = cleanup(seq(make_digits(m)));
     }
     create = function(digits, sign) {
@@ -2491,15 +2441,15 @@
       }
     };
     LongInt.prototype.toString = function() {
-      var buf, rev, zeroes, _ref18, _ref19, _ref20;
+      var buf, rev, zeroes, _ref20, _ref21, _ref22;
       zeroes = BASE.toString().slice(1);
-      rev = (_ref18 = this.digits__) != null ? (_ref19 = _ref18.reverse()) != null ? _ref19.dropWhile(function(d) {
+      rev = (_ref20 = this.digits__) != null ? (_ref21 = _ref20.reverse()) != null ? _ref21.dropWhile(function(d) {
         return d === 0;
       }) : void 0 : void 0;
       buf = [rev != null ? rev.first().toString() : void 0];
       if (rev != null) {
-        if ((_ref20 = rev.rest()) != null) {
-          _ref20.each(function(d) {
+        if ((_ref22 = rev.rest()) != null) {
+          _ref22.each(function(d) {
             var t;
             t = d.toString();
             return buf.push("" + zeroes.slice(t.length) + t);
@@ -2516,7 +2466,7 @@
       return buf.join('');
     };
     LongInt.prototype.toNumber = function() {
-      var rev, step, _ref18, _ref19;
+      var rev, step, _ref20, _ref21;
       step = function(n, s) {
         if (s) {
           return recur(function() {
@@ -2526,7 +2476,7 @@
           return n;
         }
       };
-      rev = (_ref18 = this.digits__) != null ? (_ref19 = _ref18.reverse()) != null ? _ref19.dropWhile(function(d) {
+      rev = (_ref20 = this.digits__) != null ? (_ref21 = _ref20.reverse()) != null ? _ref21.dropWhile(function(d) {
         return d === 0;
       }) : void 0 : void 0;
       return this.sign() * resolve(step(0, rev));
@@ -2537,11 +2487,11 @@
         var args, x;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         return code.apply(this, (function() {
-          var _i, _len, _ref18, _results;
-          _ref18 = args.slice(0, arity - 1);
+          var _i, _len, _ref20, _results;
+          _ref20 = args.slice(0, arity - 1);
           _results = [];
-          for (_i = 0, _len = _ref18.length; _i < _len; _i++) {
-            x = _ref18[_i];
+          for (_i = 0, _len = _ref20.length; _i < _len; _i++) {
+            x = _ref20[_i];
             _results.push(LongInt.make(x));
           }
           return _results;
@@ -2625,7 +2575,7 @@
       }
     });
     LongInt.operator(['gcd'], 2, function(other) {
-      var a, b, step, _ref18;
+      var a, b, step, _ref20;
       step = function(a, b) {
         if (b.cmp(0) > 0) {
           return recur(function() {
@@ -2635,7 +2585,7 @@
           return a;
         }
       };
-      _ref18 = [this.abs(), other.abs()], a = _ref18[0], b = _ref18[1];
+      _ref20 = [this.abs(), other.abs()], a = _ref20[0], b = _ref20[1];
       if (a.cmp(b) > 0) {
         return resolve(step(a, b));
       } else {
@@ -2647,7 +2597,7 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref18 = this.pazy) != null ? _ref18 : this.pazy = {};
+    exports = (_ref20 = this.pazy) != null ? _ref20 : this.pazy = {};
   };
   exports.LongInt = LongInt;
   if (quicktest) {
@@ -2675,7 +2625,7 @@
   Rational = (function() {
     var convert;
     function Rational(num, den, quick) {
-      var n, sgn, _ref19, _ref20;
+      var n, sgn, _ref21, _ref22;
       if (num == null) {
         num = 0;
       }
@@ -2689,9 +2639,9 @@
       if (sgn === 0) {
         throw new Error("denominator is zero");
       } else if (sgn < 0) {
-        _ref19 = [LongInt.make(num).neg(), LongInt.make(den).neg()], n = _ref19[0], d = _ref19[1];
+        _ref21 = [LongInt.make(num).neg(), LongInt.make(den).neg()], n = _ref21[0], d = _ref21[1];
       } else {
-        _ref20 = [LongInt.make(num), LongInt.make(den)], n = _ref20[0], d = _ref20[1];
+        _ref22 = [LongInt.make(num), LongInt.make(den)], n = _ref22[0], d = _ref22[1];
       }
       if (quick) {
         this.num__ = n;
@@ -2732,11 +2682,11 @@
         var args, x;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
         return code.apply(this, (function() {
-          var _i, _len, _ref19, _results;
-          _ref19 = args.slice(0, arity - 1);
+          var _i, _len, _ref21, _results;
+          _ref21 = args.slice(0, arity - 1);
           _results = [];
-          for (_i = 0, _len = _ref19.length; _i < _len; _i++) {
-            x = _ref19[_i];
+          for (_i = 0, _len = _ref21.length; _i < _len; _i++) {
+            x = _ref21[_i];
             _results.push(convert(x));
           }
           return _results;
@@ -2795,7 +2745,7 @@
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
   } else {
-    exports = (_ref19 = this.pazy) != null ? _ref19 : this.pazy = {};
+    exports = (_ref21 = this.pazy) != null ? _ref21 : this.pazy = {};
   };
   exports.Rational = Rational;
 }).call(this);

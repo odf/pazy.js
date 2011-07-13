@@ -24,9 +24,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { seq } = require('sequence')
+  { equal, hashCode } = require 'core_extensions'
+  { seq }             = require('sequence')
 else
-  { seq } = this.pazy
+  { equal, hashCode, seq } = this.pazy
 
 
 # --------------------------------------------------------------------
@@ -363,45 +364,6 @@ class IntMap extends Collection
 # Support for collections that use hashing.
 # --------------------------------------------------------------------
 
-isSeq = (s) ->
-  try
-    seq s
-    true
-  catch ex
-    false
-
-hashCode = (obj) ->
-  if not obj?
-    0
-  else if typeof(obj.hashCode) == "function" and util.isKey(obj.hashCode())
-    obj.hashCode()
-  else if util.isKey(obj)
-    obj
-  else if typeof(obj) == 'string' and obj.length <= 1
-    if obj.length == 0 then 1 else obj.charCodeAt(0)
-  else if isSeq obj
-    seq.reduce obj, 0, (code, x) -> (code * 37 + hashCode(x)) & 0xffffffff
-  else if typeof(obj.toString) == "function"
-    hashCode obj.toString()
-  else
-    try
-      hashCode String(obj)
-    catch ex
-      hashCode Object::toString.call(obj)
-
-equalKeys = (obj1, obj2) ->
-  if typeof(obj1) == 'string' or typeof(obj2) == 'string'
-    obj1 == obj2
-  else if isSeq(obj1) and isSeq(obj2)
-    not seq.find(seq.combine(obj1, obj2, equalKeys), (a) -> not a)?
-  else if obj1? and typeof(obj1.equals) == "function"
-    obj1.equals(obj2)
-  else if obj2? and typeof(obj2.equals) == "function"
-    obj2.equals(obj1)
-  else
-    obj1 == obj2
-
-
 # A collision node contains several leaf nodes, stored in an array
 # @bucket, in which all keys share a common hash value.
 class CollisionNode
@@ -411,7 +373,7 @@ class CollisionNode
     @elements = seq.flatMap @bucket, (n) -> n?.elements
 
   get: (shift, hash, key) ->
-    leaf = seq.find @bucket, (v) -> equalKeys(v.key, key)
+    leaf = seq.find @bucket, (v) -> equal(v.key, key)
     leaf.get(shift, hash, key) if leaf?
 
   plus: (shift, hash, leaf) ->
@@ -425,13 +387,13 @@ class CollisionNode
   minus: (shift, hash, key) ->
     switch @bucket.length
       when 0, 1 then null
-      when 2    then seq.find @bucket, (v) -> not equalKeys(v.key, key)
+      when 2    then seq.find @bucket, (v) -> not equal(v.key, key)
       else           new CollisionNode(hash, this.bucketWithout(key))
 
   toString: -> "#{@bucket.join("|")}"
 
   bucketWithout: (key) ->
-    item for item in @bucket when not equalKeys(item.key, key)
+    item for item in @bucket when not equal(item.key, key)
 
 
 # --------------------------------------------------------------------
@@ -445,7 +407,7 @@ class HashLeaf
 
   size: 1
 
-  get:  (shift, hash, key) -> true if equalKeys(key, @key)
+  get:  (shift, hash, key) -> true if equal(key, @key)
 
   plus: (shift, hash, leaf) ->
     if hash == @hash
@@ -495,10 +457,10 @@ class HashLeafWithValue
 
   size: 1
 
-  get:  (shift, hash, key) -> @value if equalKeys(key, @key)
+  get:  (shift, hash, key) -> @value if equal(key, @key)
 
   plus: (shift, hash, leaf) ->
-    if equalKeys(@key, leaf.key)
+    if equal(@key, leaf.key)
       leaf
     else
       if hash == @hash

@@ -8,9 +8,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
+  { equal }          = require 'core_extensions'
   { recur, resolve } = require('functional')
 else
-  { recur, resolve } = this.pazy
+  { equal, recur, resolve } = this.pazy
 
 
 class Sequence
@@ -36,12 +37,12 @@ seq = (src) ->
     null
   else if src.constructor == Sequence
     src
+  else if typeof src.length == 'number'
+    fromArray src, 0
   else if typeof src.toSeq == 'function'
     src.toSeq()
   else if typeof src.first == 'function' and typeof src.rest == 'function'
     seq.conj src.first(), src.rest
-  else if typeof src.length == 'number'
-    fromArray src, 0
   else
     throw new Error("cannot make a sequence from #{src}")
 
@@ -165,8 +166,7 @@ combinator 'sub', (s, t) -> @combine__ s, t, (a,b) -> a - b
 combinator 'mul', (s, t) -> @combine__ s, t, (a,b) -> a * b
 combinator 'div', (s, t) -> @combine__ s, t, (a,b) -> a / b
 
-combinator 'equals', (s, t) ->
-  not @find__(@combine__(s, t, (a, b) -> a == b), (a) -> not a)?
+combinator 'equals', (s, t) -> @forall__ @combine__(s, t, equal), (a) -> a
 
 combinator 'interleave', (s, t) ->
   if s
