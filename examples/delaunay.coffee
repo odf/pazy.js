@@ -10,11 +10,11 @@
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
   { recur, resolve }           = require 'functional'
-  { seq, Sequence }            = require 'sequence'
+  { seq }                      = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
   { Queue }                    = require 'queue'
 else
-  { recur, resolve, seq, Sequence, IntMap, HashSet, HashMap, Queue } = this.pazy
+  { recur, resolve, seq, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
 
@@ -184,7 +184,7 @@ triangulation = do ->
 
   # Here we define our access point. The function `triangulation` takes a list
   # of triangles, each given as an array of three abstract vertices.
-  (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x...
+  (args...) -> seq.reduce args, new Triangulation(), (t, x) -> t.plus x...
 
 
 # ----
@@ -221,7 +221,7 @@ delaunayTriangulation = do ->
     # triangles from the underlying triangulation object which contain a
     # virtual vertex.
     toSeq: ->
-      Sequence.select @triangulation__, (t) -> Sequence.forall t, (n) -> n >= 0
+      seq.select @triangulation__, (t) -> seq.forall t, (n) -> n >= 0
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
@@ -270,7 +270,7 @@ delaunayTriangulation = do ->
     containingTriangle: (p) ->
       step = (t) =>
         candidates = @children__.get t
-        if Sequence.empty candidates
+        if seq.empty candidates
           t
         else
           recur => step candidates.find (s) => @isInTriangle s, p
@@ -338,7 +338,7 @@ delaunayTriangulation = do ->
     # which that edge is replaced by the two remaining edges of the opposite
     # triangle.
     doFlips = (T, stack) ->
-      if Sequence.empty stack
+      if seq.empty stack
         T
       else
         [a, b] = stack.first()
@@ -369,7 +369,7 @@ delaunayTriangulation = do ->
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
-  (args...) -> Sequence.reduce args, new Triangulation(), (t, x) -> t.plus x...
+  (args...) -> seq.reduce args, new Triangulation(), (t, x) -> t.plus x...
 
 # ----
 
@@ -383,20 +383,20 @@ exports.delaunayTriangulation = delaunayTriangulation
 # Some testing.
 
 test = (n = 100, m = 10) ->
-  Sequence.range(1, n).each (i) ->
+  seq.range(1, n).each (i) ->
     console.log "Run #{i}"
 
     rnd = -> Math.floor(Math.random() * 100)
-    t = Sequence.range(1, m).reduce delaunayTriangulation(),  (s, j) ->
+    t = seq.range(1, m).reduce delaunayTriangulation(),  (s, j) ->
       p = [rnd(), rnd()]
       try
         s.plus p...
       catch ex
-        console.log Sequence.map(s.position__, ([k, p]) -> p).join ', '
-        console.log Sequence.join s, ', '
+        console.log seq.map(s.position__, ([k, p]) -> p).join ', '
+        console.log seq.join s, ', '
         console.log p
         throw ex
 
 if module? and not module.parent
-  args = Sequence.map(process.argv[2..], parseInt)?.into []
+  args = seq.map(process.argv[2..], parseInt)?.into []
   test args...

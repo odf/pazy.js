@@ -1,10 +1,10 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
   require.paths.unshift('#{__dirname}/../examples')
-  { Sequence } = require 'sequence'
-  { delaunayTriangulation }           = require 'delaunay'
+  { seq }                   = require 'sequence'
+  { delaunayTriangulation } = require 'delaunay'
 else
-  { Sequence, delaunayTriangulation } = pazy
+  { seq, delaunayTriangulation } = pazy
 
 guard = (f) ->
   try
@@ -17,9 +17,9 @@ guard = (f) ->
 position = (t, i) -> p = t.position(i); [p.x, p.y]
 
 checkEdges = (t) ->
-  Sequence.each t, (triangle) ->
+  seq.each t, (triangle) ->
     [a, b, c] = triangle.vertices()
-    Sequence.each [[a, b], [b, c], [c, a]], ([r, s]) ->
+    seq.each [[a, b], [b, c], [c, a]], ([r, s]) ->
       if r <= s
         u = t.position r
         v = t.position s
@@ -33,7 +33,7 @@ describe "An empty Delaunay triangulation", ->
   t = delaunayTriangulation()
 
   it "should produce an empty sequence of triangles", ->
-    expect(Sequence.empty t).toBeTruthy()
+    expect(seq.empty t).toBeTruthy()
 
   it "should report any point as in the virtual outer triangle", ->
     expect(t.containingTriangle(1, 1).vertices()).toEqual [-3,-1,-2]
@@ -46,7 +46,7 @@ describe "A Delaunay triangulation with one site", ->
     expect(position t, 0).toEqual [0, 0]
 
   it "should contain no triangles", ->
-    expect(Sequence.empty t).toBeTruthy()
+    expect(seq.empty t).toBeTruthy()
 
 
 describe "A Delaunay triangulation with three sites", ->
@@ -59,7 +59,7 @@ describe "A Delaunay triangulation with three sites", ->
     expect(position t, 2).toEqual r
 
   it "should contain one triangle", ->
-    expect(Sequence.size t).toBe 1
+    expect(seq.size t).toBe 1
 
 
 describe "A Delaunay triangulation with four sites", ->
@@ -73,7 +73,7 @@ describe "A Delaunay triangulation with four sites", ->
     expect(position t, 3).toEqual s
 
   it "should contain two triangles", ->
-    expect(Sequence.size t).toBe 2
+    expect(seq.size t).toBe 2
 
   checkEdges t
 
@@ -89,7 +89,7 @@ describe "A Delaunay triangulation with four sites", ->
     expect(position t, 3).toEqual s
 
   it "should contain two triangles", ->
-    expect(Sequence.size t).toBe 2
+    expect(seq.size t).toBe 2
 
   checkEdges t
 
@@ -105,7 +105,7 @@ describe "A Delaunay triangulation with four sites", ->
     expect(position t, 3).toEqual s
 
   it "should contain three triangles", ->
-    expect(Sequence.size t).toBe 3
+    expect(seq.size t).toBe 3
 
   checkEdges t
 
@@ -120,7 +120,7 @@ describe "A Delaunay triangulation with many sites", ->
   t = guard -> delaunayTriangulation sites...
 
   it "should contain triangles", ->
-    expect(Sequence.size t).toBeGreaterThan 0
+    expect(seq.size t).toBeGreaterThan 0
 
   checkEdges t
 
@@ -128,10 +128,10 @@ describe "A Delaunay triangulation with many sites", ->
 describe "A Delaunay triangulation with random sites", ->
   t = guard ->
     rnd = -> Math.floor(Math.random() * 100)
-    Sequence.range(1, 500).reduce delaunayTriangulation(),  (s, i) ->
+    seq.range(1, 500).reduce delaunayTriangulation(),  (s, i) ->
       s.plus rnd(), rnd()
 
   it "should have triangles", ->
-    expect(Sequence.size t).toBeGreaterThan 0
+    expect(seq.size t).toBeGreaterThan 0
 
   checkEdges t
