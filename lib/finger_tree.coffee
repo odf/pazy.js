@@ -70,6 +70,8 @@ class FingerTreeType
 
       find:      (p) -> @split(p)[1]
 
+      toSeq: -> @data.reduceRight ((x, s) -> seq.conj x, -> s), null
+
       toString: -> @data.reduceLeft "", (s, x) -> s + ' ' + x
 
 

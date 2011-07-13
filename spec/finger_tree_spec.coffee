@@ -5,16 +5,13 @@ if typeof(require) != 'undefined'
 else
   { seq, CountedSeq, SortedSeq } = pazy
 
-asSeq = (x) -> x.reduceRight ((a, b) -> seq.conj a, -> b), null
 sum   = (x) -> x.reduceLeft 0, (a, b) -> a + b
 
-leftSeq  = (t) ->
-  seq.conj(t.first(), -> leftSeq t.rest()) unless t.isEmpty()
+leftSeq  = (t) -> seq.conj(t.first(), -> leftSeq t.rest()) unless t.isEmpty()
 
-rightSeq = (t) ->
-  seq.conj(t.last(), -> rightSeq t.init()) unless t.isEmpty()
+rightSeq = (t) -> seq.conj(t.last(), -> rightSeq t.init()) unless t.isEmpty()
 
-asArray  = (t) -> seq.into leftSeq(t), []
+asArray  = (t) -> seq.into t, []
 
 
 describe "A finger tree containing a single element", ->
