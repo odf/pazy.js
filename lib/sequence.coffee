@@ -240,5 +240,4 @@ method 'toString', (s, limit = 10) ->
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
-exports.Sequence = seq # quick hack for backward compatibility
 exports.seq = seq
