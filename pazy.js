@@ -1,4 +1,4 @@
-var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, d, digitTimesDigit, div, divmod, dump, equalKeys, hashCode, log, mod, mul, pow, quicktest, rdump, recur, resolve, seqTimesDigit, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, d, digitTimesDigit, div, divmod, dump, equalKeys, fromArray, hashCode, isSeq, log, memo, method, mod, mul, operator, pow, quicktest, rdump, recur, resolve, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
   for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
   function ctor() { this.constructor = child; }
@@ -49,553 +49,512 @@ if (typeof require !== 'undefined') {
   _ref3 = this.pazy, recur = _ref3.recur, resolve = _ref3.resolve;
 }
 Sequence = (function() {
-  var make;
-  function Sequence(src) {
-    var dummy, n, partial, seq;
-    if (!(src != null)) {
-      this.first = function() {};
-      this.rest = function() {
-        return null;
-      };
-    } else if (typeof src.toSeq === 'function') {
-      seq = src.toSeq();
-      if (seq != null) {
-        this.first = function() {
-          return seq.first();
-        };
-        this.rest = function() {
-          return seq.rest();
-        };
-      } else {
-        this.first = function() {};
-        this.rest = function() {
-          return null;
-        };
-      }
-    } else if (typeof src.first === 'function' && typeof src.rest === 'function') {
-      this.first = function() {
-        return src.first();
-      };
-      this.rest = function() {
-        return src.rest();
-      };
-    } else if (typeof src.length === 'number') {
-      n = src.length;
-      partial = function(i) {
-        while (i < n && typeof src[i] === 'undefined') {
-          i += 1;
-        }
-        if (i < n) {
-          return Sequence.conj(src[i], function() {
-            return partial(i + 1);
-          });
-        } else {
-          return null;
-        }
-      };
-      dummy = partial(0);
-      if (dummy) {
-        this.first = function() {
-          return dummy.first();
-        };
-        this.rest = function() {
-          return dummy.rest();
-        };
-      } else {
-        this.first = function() {};
-        this.rest = function() {
-          return null;
-        };
-      }
-    } else {
-      throw new Error("cannot make a sequence from " + src);
-    }
+  function Sequence(first, rest) {
+    this.first = first;
+    this.rest = rest;
   }
-  Sequence.accepts = function(src) {
-    return !(src != null) || typeof src.toSeq === 'function' || (typeof src.first === 'function' && typeof src.rest === 'function') || typeof src.length === 'number';
-  };
-  Sequence.conj = function(first, rest, mode) {
-    var r;
-    if (rest == null) {
-      rest = (function() {
-        return null;
-      });
-    }
-    if (mode == null) {
-      mode = null;
-    }
-    if (mode === 'forced') {
-      r = rest();
-      return new Sequence({
-        first: function() {
-          return first;
-        },
-        rest: function() {
-          return r;
-        }
-      });
-    } else {
-      return new Sequence({
-        first: function() {
-          return first;
-        },
-        rest: function() {
-          var val;
-          val = rest();
-          return (this.rest = function() {
-            return val;
-          })();
-        }
-      });
-    }
-  };
-  Sequence.from = function(start) {
-    return Sequence.conj(start, __bind(function() {
-      return this.from(start + 1);
-    }, this));
-  };
-  Sequence.range = function(start, end) {
-    return this.take__(this.from(start), end - start + 1);
-  };
-  Sequence.constant = function(value) {
-    return Sequence.conj(value, __bind(function() {
-      return this.constant(value);
-    }, this));
-  };
-  make = function(seq) {
-    var res;
-    if (seq && (res = new Sequence(seq)) && !res.empty()) {
-      return res;
-    } else {
-      return null;
-    }
-  };
-  Sequence.prototype.S__ = Sequence;
-  Sequence.memo = function(name, f) {
-    this[name] = function(seq) {
-      return f.call(this, make(seq));
-    };
-    this["" + name + "__"] = function(seq) {
-      return f.call(this, seq);
-    };
-    return this.prototype[name] = function() {
-      var x;
-      x = f.call(this.S__, this);
-      return (this[name] = function() {
-        return x;
-      })();
-    };
-  };
-  Sequence.method = function(name, f) {
-    this[name] = function() {
-      var args, seq;
-      seq = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return f.call.apply(f, [this, make(seq)].concat(__slice.call(args)));
-    };
-    this["" + name + "__"] = function() {
-      var args, seq;
-      seq = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return f.call.apply(f, [this, seq].concat(__slice.call(args)));
-    };
-    return this.prototype[name] = function() {
-      var args;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return f.call.apply(f, [this.S__, this].concat(__slice.call(args)));
-    };
-  };
-  Sequence.operator = function(name, f) {
-    this[name] = function() {
-      var args, other, seq;
-      seq = arguments[0], other = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      return f.call.apply(f, [this, make(seq), make(other)].concat(__slice.call(args)));
-    };
-    this["" + name + "__"] = function() {
-      var args, other, seq;
-      seq = arguments[0], other = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-      return f.call.apply(f, [this, seq, other].concat(__slice.call(args)));
-    };
-    return this.prototype[name] = function() {
-      var args, other;
-      other = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      return f.call.apply(f, [this.S__, this, make(other)].concat(__slice.call(args)));
-    };
-  };
-  Sequence.method('empty', function(seq) {
-    return !(seq != null) || typeof (seq.first()) === 'undefined';
-  });
-  Sequence.memo('size', function(seq) {
-    var step;
-    step = function(s, n) {
-      if (s) {
-        return recur(function() {
-          return step(s.rest(), n + 1);
-        });
-      } else {
-        return n;
-      }
-    };
-    if (this.empty__(seq)) {
-      return 0;
-    } else {
-      return resolve(step(seq, 0));
-    }
-  });
-  Sequence.memo('last', function(seq) {
-    var step;
-    step = function(s) {
-      if (s.rest()) {
-        return recur(function() {
-          return step(s.rest());
-        });
-      } else {
-        return s.first();
-      }
-    };
-    if (!this.empty__(seq)) {
-      return resolve(step(seq));
-    }
-  });
-  Sequence.method('take', function(seq, n) {
-    if (this.empty__(seq) || n <= 0) {
-      return null;
-    } else {
-      return Sequence.conj(seq.first(), __bind(function() {
-        return this.take__(seq.rest(), n - 1);
-      }, this));
-    }
-  });
-  Sequence.method('takeWhile', function(seq, pred) {
-    if (this.empty__(seq) || !pred(seq.first())) {
-      return null;
-    } else {
-      return Sequence.conj(seq.first(), __bind(function() {
-        return this.takeWhile__(seq.rest(), pred);
-      }, this));
-    }
-  });
-  Sequence.method('drop', function(seq, n) {
-    var step;
-    step = function(s, n) {
-      if (s && n > 0) {
-        return recur(function() {
-          return step(s.rest(), n - 1);
-        });
-      } else {
-        return s;
-      }
-    };
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      return resolve(step(seq, n));
-    }
-  });
-  Sequence.method('dropWhile', function(seq, pred) {
-    var step;
-    step = function(s) {
-      if (s && pred(s.first())) {
-        return recur(function() {
-          return step(s.rest());
-        });
-      } else {
-        return s;
-      }
-    };
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      return resolve(step(seq));
-    }
-  });
-  Sequence.method('get', __bind(function(seq, n) {
-    var _ref4;
-    if (n >= 0) {
-      return (_ref4 = this.drop__(seq, n)) != null ? _ref4.first() : void 0;
-    }
-  }, Sequence));
-  Sequence.method('select', function(seq, pred) {
-    if (this.empty__(seq)) {
-      return null;
-    } else if (pred(seq.first())) {
-      return Sequence.conj(seq.first(), __bind(function() {
-        return this.select__(seq.rest(), pred);
-      }, this));
-    } else if (seq.rest()) {
-      return this.select__(this.dropWhile__(seq.rest(), function(x) {
-        return !pred(x);
-      }), pred);
-    } else {
-      return null;
-    }
-  });
-  Sequence.method('find', function(seq, pred) {
-    var _ref4;
-    return (_ref4 = this.select__(seq, pred)) != null ? _ref4.first() : void 0;
-  });
-  Sequence.method('forall', function(seq, pred) {
-    return !this.select__(seq, function(x) {
-      return !pred(x);
-    });
-  });
-  Sequence.method('map', function(seq, func) {
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      return Sequence.conj(func(seq.first()), __bind(function() {
-        return this.map__(seq.rest(), func);
-      }, this));
-    }
-  });
-  Sequence.method('accumulate', function(seq, start, op) {
-    var first;
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      first = op(start, seq.first());
-      return Sequence.conj(first, __bind(function() {
-        return this.accumulate__(seq.rest(), first, op);
-      }, this));
-    }
-  });
-  Sequence.method('sums', function(seq) {
-    return this.accumulate__(seq, 0, function(a, b) {
-      return a + b;
-    });
-  });
-  Sequence.method('products', function(seq) {
-    return this.accumulate__(seq, 1, function(a, b) {
-      return a * b;
-    });
-  });
-  Sequence.method('reduce', function(seq, start, op) {
-    if (this.empty__(seq)) {
-      return start;
-    } else {
-      return this.accumulate__(seq, start, op).last();
-    }
-  });
-  Sequence.method('sum', function(seq) {
-    return this.reduce__(seq, 0, function(a, b) {
-      return a + b;
-    });
-  });
-  Sequence.method('product', function(seq) {
-    return this.reduce__(seq, 1, function(a, b) {
-      return a * b;
-    });
-  });
-  Sequence.method('fold', function(seq, op) {
-    return this.reduce__(seq.rest(), seq.first(), op);
-  });
-  Sequence.method('max', function(seq) {
-    return this.fold__(seq, function(a, b) {
-      if (b > a) {
-        return b;
-      } else {
-        return a;
-      }
-    });
-  });
-  Sequence.method('min', function(seq) {
-    return this.fold__(seq, function(a, b) {
-      if (b < a) {
-        return b;
-      } else {
-        return a;
-      }
-    });
-  });
-  Sequence.operator('combine', function(seq, other, op) {
-    if (this.empty__(seq)) {
-      return Sequence.map(other, function(a) {
-        return op(null, a);
-      });
-    } else if (this.empty__(other)) {
-      return Sequence.map(seq, function(a) {
-        return op(a, null);
-      });
-    } else {
-      return Sequence.conj(op(seq.first(), other.first()), __bind(function() {
-        return this.combine__(seq.rest(), other.rest(), op);
-      }, this));
-    }
-  });
-  Sequence.operator('add', function(seq, other) {
-    return this.combine__(seq, other, function(a, b) {
-      return a + b;
-    });
-  });
-  Sequence.operator('sub', function(seq, other) {
-    return this.combine__(seq, other, function(a, b) {
-      return a - b;
-    });
-  });
-  Sequence.operator('mul', function(seq, other) {
-    return this.combine__(seq, other, function(a, b) {
-      return a * b;
-    });
-  });
-  Sequence.operator('div', function(seq, other) {
-    return this.combine__(seq, other, function(a, b) {
-      return a / b;
-    });
-  });
-  Sequence.operator('equals', function(seq, other) {
-    return !(this.find__(this.combine__(seq, other, function(a, b) {
-      return a === b;
-    }), function(a) {
-      return !a;
-    }) != null);
-  });
-  Sequence.operator('interleave', function(seq, other) {
-    if (this.empty__(seq)) {
-      return other;
-    } else {
-      return Sequence.conj(seq.first(), __bind(function() {
-        return this.interleave__(other, seq.rest());
-      }, this));
-    }
-  });
-  Sequence.operator('lazyConcat', function(seq, next) {
-    if (seq) {
-      return Sequence.conj(seq.first(), __bind(function() {
-        return this.lazyConcat__(seq.rest(), next);
-      }, this));
-    } else {
-      return next();
-    }
-  });
-  Sequence.operator('concat', function(seq, other) {
-    if (this.empty__(seq)) {
-      return other;
-    } else {
-      return this.lazyConcat__(seq, function() {
-        return other;
-      });
-    }
-  });
-  Sequence.method('flatten', function(seq) {
-    if (this.empty__(seq)) {
-      return null;
-    } else if (seq.first()) {
-      return this.lazyConcat__(make(seq.first()), __bind(function() {
-        return this.flatten__(seq.rest());
-      }, this));
-    } else if (seq.rest()) {
-      return this.flatten__(this.dropWhile__(seq.rest(), function(x) {
-        var _ref4;
-        return !((_ref4 = make(x)) != null ? _ref4.first() : void 0);
-      }));
-    } else {
-      return null;
-    }
-  });
-  Sequence.method('flatMap', function(seq, func) {
-    return this.flatten__(this.map__(seq, func));
-  });
-  Sequence.operator('cartesian', function(seq, other) {
-    return this.flatMap__(seq, __bind(function(a) {
-      return this.map__(other, function(b) {
-        return [a, b];
-      });
-    }, this));
-  });
-  Sequence.method('each', function(seq, func) {
-    var step;
-    step = function(s) {
-      if (s) {
-        func(s.first());
-        return recur(function() {
-          return step(s.rest());
-        });
-      }
-    };
-    if (!this.empty__(seq)) {
-      return resolve(step(seq));
-    }
-  });
-  Sequence.method('reverse', function(seq) {
-    var step;
-    step = __bind(function(r, s) {
-      if (s) {
-        return recur(__bind(function() {
-          return step(Sequence.conj(s.first(), function() {
-            return r;
-          }), s.rest());
-        }, this));
-      } else {
-        return r;
-      }
-    }, this);
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      return resolve(step(null, seq));
-    }
-  });
-  Sequence.method('forced', function(seq) {
-    if (this.empty__(seq)) {
-      return null;
-    } else {
-      return Sequence.conj(seq.first(), (__bind(function() {
-        return this.forced__(seq.rest());
-      }, this)), 'forced');
-    }
-  });
-  Sequence.method('into', function(seq, target) {
-    var a, x;
-    if (!(target != null)) {
-      return this.reduce__(seq, null, function(s, item) {
-        return Sequence.conj(item, function() {
-          return s;
-        });
-      });
-    } else if (typeof target.plus === 'function') {
-      return this.reduce__(seq, target, function(s, item) {
-        return s.plus(item);
-      });
-    } else if (typeof target.length === 'number') {
-      a = (function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = target.length; _i < _len; _i++) {
-          x = target[_i];
-          _results.push(x);
-        }
-        return _results;
-      })();
-      this.each__(seq, function(x) {
-        return a.push(x);
-      });
-      return a;
-    } else {
-      throw new Error('cannot inject into #{target}');
-    }
-  });
-  Sequence.method('join', function(seq, glue) {
-    return this.into__(seq, []).join(glue);
-  });
-  Sequence.prototype.toString = function(limit) {
-    var more, s, _ref4;
-    if (limit == null) {
-      limit = 10;
-    }
-    _ref4 = limit > 0 ? [this.take(limit), this.get(limit) != null] : [this, false], s = _ref4[0], more = _ref4[1];
-    return '(' + Sequence.join(s, ', ') + (more ? ', ...)' : ')');
-  };
   return Sequence;
-}).call(this);
+})();
+skip = function(a, i) {
+  if (i >= a.length || a[i] !== void 0) {
+    return fromArray(a, i);
+  } else {
+    return recur(function() {
+      return skip(a, i + 1);
+    });
+  }
+};
+fromArray = function(a, i) {
+  if (i >= a.length) {
+    return null;
+  } else if (a[i] === void 0) {
+    return resolve(skip(a, i));
+  } else {
+    return seq.conj(a[i], function() {
+      return fromArray(a, i + 1);
+    });
+  }
+};
+seq = function(src) {
+  if (!(src != null)) {
+    return null;
+  } else if (typeof src.toSeq === 'function') {
+    return src.toSeq();
+  } else if (typeof src.first === 'function' && typeof src.rest === 'function') {
+    return seq.conj(src.first(), src.rest);
+  } else if (typeof src.length === 'number') {
+    return fromArray(src, 0);
+  } else {
+    throw new Error("cannot make a sequence from " + src);
+  }
+};
+seq.conj = function(first, rest, mode) {
+  var r;
+  if (rest == null) {
+    rest = (function() {
+      return null;
+    });
+  }
+  if (mode == null) {
+    mode = null;
+  }
+  if (mode === 'forced') {
+    r = rest();
+    return new Sequence((function() {
+      return first;
+    }), function() {
+      return r;
+    });
+  } else {
+    return new Sequence((function() {
+      return first;
+    }), function() {
+      var val;
+      val = rest();
+      return (this.rest = function() {
+        return val;
+      })();
+    });
+  }
+};
+seq.from = function(start) {
+  return seq.conj(start, __bind(function() {
+    return seq.from(start + 1);
+  }, this));
+};
+seq.range = function(start, end) {
+  return seq.take__(seq.from(start), end - start + 1);
+};
+seq.constant = function(value) {
+  return seq.conj(value, __bind(function() {
+    return seq.constant(value);
+  }, this));
+};
+seq.memo = memo = function(name, f) {
+  seq[name] = function(s) {
+    return f.call(seq, seq(s));
+  };
+  seq["" + name + "__"] = function(s) {
+    return f.call(seq, s);
+  };
+  return Sequence.prototype[name] = function() {
+    var x;
+    x = f.call(seq, this);
+    return (this[name] = function() {
+      return x;
+    })();
+  };
+};
+seq.method = method = function(name, f) {
+  seq[name] = function() {
+    var args, s;
+    s = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    return f.call.apply(f, [seq, seq(s)].concat(__slice.call(args)));
+  };
+  seq["" + name + "__"] = function() {
+    var args, s;
+    s = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    return f.call.apply(f, [seq, s].concat(__slice.call(args)));
+  };
+  return Sequence.prototype[name] = function() {
+    var args;
+    args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    return f.call.apply(f, [seq, this].concat(__slice.call(args)));
+  };
+};
+seq.operator = operator = function(name, f) {
+  seq[name] = function() {
+    var args, s, t;
+    s = arguments[0], t = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+    return f.call.apply(f, [seq, seq(s), seq(t)].concat(__slice.call(args)));
+  };
+  seq["" + name + "__"] = function() {
+    var args, s, t;
+    s = arguments[0], t = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+    return f.call.apply(f, [seq, s, t].concat(__slice.call(args)));
+  };
+  return Sequence.prototype[name] = function() {
+    var args, t;
+    t = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    return f.call.apply(f, [seq, this, seq(t)].concat(__slice.call(args)));
+  };
+};
+method('empty', function(s) {
+  return !(s != null);
+});
+memo('size', function(s) {
+  var step;
+  step = function(t, n) {
+    if (t) {
+      return recur(function() {
+        return step(t.rest(), n + 1);
+      });
+    } else {
+      return n;
+    }
+  };
+  return resolve(step(s, 0));
+});
+memo('last', function(s) {
+  var step;
+  step = function(t) {
+    if (t.rest()) {
+      return recur(function() {
+        return step(t.rest());
+      });
+    } else {
+      return t.first();
+    }
+  };
+  if (s) {
+    return resolve(step(s));
+  }
+});
+method('take', function(s, n) {
+  if (s && n > 0) {
+    return this.conj(s.first(), __bind(function() {
+      return this.take__(s.rest(), n - 1);
+    }, this));
+  } else {
+    return null;
+  }
+});
+method('takeWhile', function(s, pred) {
+  if (s && pred(s.first())) {
+    return this.conj(s.first(), __bind(function() {
+      return this.takeWhile__(s.rest(), pred);
+    }, this));
+  } else {
+    return null;
+  }
+});
+method('drop', function(s, n) {
+  var step;
+  step = function(t, n) {
+    if (t && n > 0) {
+      return recur(function() {
+        return step(t.rest(), n - 1);
+      });
+    } else {
+      return t;
+    }
+  };
+  if (s) {
+    return resolve(step(s, n));
+  } else {
+    return null;
+  }
+});
+method('dropWhile', function(s, pred) {
+  var step;
+  step = function(t) {
+    if (t && pred(t.first())) {
+      return recur(function() {
+        return step(t.rest());
+      });
+    } else {
+      return t;
+    }
+  };
+  if (s) {
+    return resolve(step(s));
+  } else {
+    return null;
+  }
+});
+method('get', function(s, n) {
+  var _ref4;
+  if (n >= 0) {
+    return (_ref4 = this.drop__(s, n)) != null ? _ref4.first() : void 0;
+  }
+});
+method('select', function(s, pred) {
+  if (s && pred(s.first())) {
+    return this.conj(s.first(), __bind(function() {
+      return this.select__(s.rest(), pred);
+    }, this));
+  } else if (s != null ? s.rest() : void 0) {
+    return this.select__(this.dropWhile__(s.rest(), function(x) {
+      return !pred(x);
+    }), pred);
+  } else {
+    return null;
+  }
+});
+method('find', function(s, pred) {
+  var _ref4;
+  return (_ref4 = this.select__(s, pred)) != null ? _ref4.first() : void 0;
+});
+method('forall', function(s, pred) {
+  return !this.select__(s, function(x) {
+    return !pred(x);
+  });
+});
+method('map', function(s, func) {
+  if (s) {
+    return this.conj(func(s.first()), __bind(function() {
+      return this.map__(s.rest(), func);
+    }, this));
+  } else {
+    return null;
+  }
+});
+method('accumulate', function(s, start, op) {
+  var first;
+  if (s) {
+    first = op(start, s.first());
+    return this.conj(first, __bind(function() {
+      return this.accumulate__(s.rest(), first, op);
+    }, this));
+  } else {
+    return null;
+  }
+});
+method('sums', function(s) {
+  return this.accumulate__(s, 0, function(a, b) {
+    return a + b;
+  });
+});
+method('products', function(s) {
+  return this.accumulate__(s, 1, function(a, b) {
+    return a * b;
+  });
+});
+method('reduce', function(s, start, op) {
+  var step;
+  step = function(t, val) {
+    if (t) {
+      return recur(function() {
+        return step(t.rest(), op(val, t.first()));
+      });
+    } else {
+      return val;
+    }
+  };
+  if (s) {
+    return resolve(step(s, start));
+  } else {
+    return start;
+  }
+});
+method('sum', function(s) {
+  return this.reduce__(s, 0, function(a, b) {
+    return a + b;
+  });
+});
+method('product', function(s) {
+  return this.reduce__(s, 1, function(a, b) {
+    return a * b;
+  });
+});
+method('fold', function(s, op) {
+  return this.reduce__(s != null ? s.rest() : void 0, s != null ? s.first() : void 0, op);
+});
+method('max', function(s) {
+  return this.fold__(s, function(a, b) {
+    if (b > a) {
+      return b;
+    } else {
+      return a;
+    }
+  });
+});
+method('min', function(s) {
+  return this.fold__(s, function(a, b) {
+    if (b < a) {
+      return b;
+    } else {
+      return a;
+    }
+  });
+});
+operator('combine', function(s, t, op) {
+  if (!s) {
+    return this.map__(t, function(a) {
+      return op(null, a);
+    });
+  } else if (!t) {
+    return this.map__(s, function(a) {
+      return op(a, null);
+    });
+  } else {
+    return this.conj(op(s.first(), t.first()), __bind(function() {
+      return this.combine__(s.rest(), t.rest(), op);
+    }, this));
+  }
+});
+operator('add', function(s, t) {
+  return this.combine__(s, t, function(a, b) {
+    return a + b;
+  });
+});
+operator('sub', function(s, t) {
+  return this.combine__(s, t, function(a, b) {
+    return a - b;
+  });
+});
+operator('mul', function(s, t) {
+  return this.combine__(s, t, function(a, b) {
+    return a * b;
+  });
+});
+operator('div', function(s, t) {
+  return this.combine__(s, t, function(a, b) {
+    return a / b;
+  });
+});
+operator('equals', function(s, t) {
+  return !(this.find__(this.combine__(s, t, function(a, b) {
+    return a === b;
+  }), function(a) {
+    return !a;
+  }) != null);
+});
+operator('interleave', function(s, t) {
+  if (s) {
+    return this.conj(s.first(), __bind(function() {
+      return this.interleave__(t, s.rest());
+    }, this));
+  } else {
+    return t;
+  }
+});
+operator('lazyConcat', function(s, next) {
+  if (s) {
+    return this.conj(s.first(), __bind(function() {
+      return this.lazyConcat__(s.rest(), next);
+    }, this));
+  } else {
+    return next();
+  }
+});
+operator('concat', function(s, t) {
+  if (s) {
+    return this.lazyConcat__(s, function() {
+      return t;
+    });
+  } else {
+    return t;
+  }
+});
+method('flatten', function(s) {
+  if (s && seq(s.first())) {
+    return this.lazyConcat__(seq(s.first()), __bind(function() {
+      return this.flatten__(s.rest());
+    }, this));
+  } else if (s != null ? s.rest() : void 0) {
+    return this.flatten__(this.dropWhile__(s.rest(), function(x) {
+      return !seq(x);
+    }));
+  } else {
+    return null;
+  }
+});
+method('flatMap', function(s, func) {
+  return this.flatten__(this.map__(s, func));
+});
+operator('cartesian', function(s, t) {
+  return this.flatMap__(s, __bind(function(a) {
+    return this.map__(t, function(b) {
+      return [a, b];
+    });
+  }, this));
+});
+method('each', function(s, func) {
+  var step;
+  step = function(t) {
+    if (t) {
+      func(t.first());
+      return recur(function() {
+        return step(t.rest());
+      });
+    }
+  };
+  if (s) {
+    return resolve(step(s));
+  }
+});
+method('reverse', function(s) {
+  var step;
+  step = __bind(function(r, t) {
+    if (t) {
+      return recur(__bind(function() {
+        return step(this.conj(t.first(), function() {
+          return r;
+        }), t.rest());
+      }, this));
+    } else {
+      return r;
+    }
+  }, this);
+  if (s) {
+    return resolve(step(null, s));
+  } else {
+    return null;
+  }
+});
+method('forced', function(s) {
+  if (s) {
+    return this.conj(s.first(), (__bind(function() {
+      return this.forced__(s.rest());
+    }, this)), 'forced');
+  } else {
+    return null;
+  }
+});
+method('into', function(s, target) {
+  var a, x;
+  if (!(target != null)) {
+    return this.reduce__(s, null, function(s, item) {
+      return this.conj(item, function() {
+        return s;
+      });
+    });
+  } else if (typeof target.plus === 'function') {
+    return this.reduce__(s, target, function(t, item) {
+      return t.plus(item);
+    });
+  } else if (typeof target.length === 'number') {
+    a = (function() {
+      var _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = target.length; _i < _len; _i++) {
+        x = target[_i];
+        _results.push(x);
+      }
+      return _results;
+    })();
+    this.each__(s, function(x) {
+      return a.push(x);
+    });
+    return a;
+  } else {
+    throw new Error('cannot inject into #{target}');
+  }
+});
+method('join', function(s, glue) {
+  return this.into__(s, []).join(glue);
+});
+method('toString', function(s, limit) {
+  var more, t, _ref4;
+  if (limit == null) {
+    limit = 10;
+  }
+  _ref4 = limit > 0 ? [this.take__(s, limit), this.get__(s, limit) != null] : [s, false], t = _ref4[0], more = _ref4[1];
+  return '(' + this.join__(t, ', ') + (more ? ', ...)' : ')');
+});
 if (typeof exports !== "undefined" && exports !== null) {
   exports;
 } else {
   exports = (_ref4 = this.pazy) != null ? _ref4 : this.pazy = {};
 };
-exports.Sequence = Sequence;
+exports.Sequence = seq;
+exports.seq = seq;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
 } else {
-  Sequence = this.pazy.Sequence;
+  seq = this.pazy.seq;
 }
 util = {
   arrayWith: function(a, i, x) {
@@ -666,7 +625,7 @@ BitmapIndexedNode = (function() {
   function BitmapIndexedNode(bitmap, progeny, size) {
     var _ref5;
     _ref5 = arguments.length === 0 ? [0, [], 0] : [bitmap, progeny, size], this.bitmap = _ref5[0], this.progeny = _ref5[1], this.size = _ref5[2];
-    this.elements = Sequence.flatMap(this.progeny, function(n) {
+    this.elements = seq.flatMap(this.progeny, function(n) {
       return n != null ? n.elements : void 0;
     });
   }
@@ -802,7 +761,7 @@ ArrayNode = (function() {
   function ArrayNode(progeny, i, node, size) {
     this.size = size;
     this.progeny = util.arrayWith(progeny, i, node);
-    this.elements = Sequence.select(this.progeny, function(x) {
+    this.elements = seq.select(this.progeny, function(x) {
       return x;
     }).flatMap(function(n) {
       return n.elements;
@@ -836,7 +795,7 @@ ArrayNode = (function() {
       remaining = (function() {
         var _ref5, _results;
         _results = [];
-        for (j = 1, _ref5 = this.progeny.length; 1 <= _ref5 ? j < _ref5 : j > _ref5; 1 <= _ref5 ? j++ : j--) {
+        for (j = 0, _ref5 = this.progeny.length; 0 <= _ref5 ? j < _ref5 : j > _ref5; 0 <= _ref5 ? j++ : j--) {
           if (j !== i && this.progeny[j]) {
             _results.push(j);
           }
@@ -844,7 +803,7 @@ ArrayNode = (function() {
         return _results;
       }).call(this);
       if (remaining.length <= 4) {
-        bitmap = Sequence.reduce(remaining, 0, function(b, j) {
+        bitmap = seq.reduce(remaining, 0, function(b, j) {
           return b | (1 << j);
         });
         array = (function() {
@@ -921,23 +880,23 @@ Collection = (function() {
   Collection.prototype.plus = function() {
     return this.plusAll(arguments);
   };
-  Collection.prototype.plusAll = function(seq) {
-    return this.update_(Sequence.reduce(seq, this.root, this.constructor.plusOne));
+  Collection.prototype.plusAll = function(s) {
+    return this.update_(seq.reduce(s, this.root, this.constructor.plusOne));
   };
   Collection.prototype.minus = function() {
     return this.minusAll(arguments);
   };
-  Collection.prototype.minusAll = function(seq) {
-    return this.update_(Sequence.reduce(seq, this.root, this.constructor.minusOne));
+  Collection.prototype.minusAll = function(s) {
+    return this.update_(seq.reduce(s, this.root, this.constructor.minusOne));
   };
   Collection.prototype.map = function(fun) {
-    return new this.constructor().plusAll(Sequence.map(this.entries, fun));
+    return new this.constructor().plusAll(seq.map(this.entries, fun));
   };
   Collection.prototype.toSeq = function() {
     return this.entries;
   };
   Collection.prototype.toArray = function() {
-    return Sequence.into(this.entries, []);
+    return seq.into(this.entries, []);
   };
   Collection.prototype.toString = function() {
     return "" + this.constructor.name + "(" + this.root + ")";
@@ -947,7 +906,7 @@ Collection = (function() {
 IntLeaf = (function() {
   function IntLeaf(key) {
     this.key = key;
-    this.elements = Sequence.conj(this.key);
+    this.elements = seq.conj(this.key);
   }
   IntLeaf.prototype.size = 1;
   IntLeaf.prototype.get = function(shift, key, data) {
@@ -993,7 +952,7 @@ IntLeafWithValue = (function() {
   function IntLeafWithValue(key, value) {
     this.key = key;
     this.value = value;
-    this.elements = Sequence.conj([this.key, this.value]);
+    this.elements = seq.conj([this.key, this.value]);
   }
   IntLeafWithValue.prototype.size = 1;
   IntLeafWithValue.prototype.get = function(shift, key, data) {
@@ -1043,6 +1002,14 @@ IntMap = (function() {
   };
   return IntMap;
 })();
+isSeq = function(s) {
+  try {
+    seq(s);
+    return true;
+  } catch (ex) {
+    return false;
+  }
+};
 hashCode = function(obj) {
   if (!(obj != null)) {
     return 0;
@@ -1056,8 +1023,8 @@ hashCode = function(obj) {
     } else {
       return obj.charCodeAt(0);
     }
-  } else if (Sequence.accepts(obj)) {
-    return Sequence.reduce(obj, 0, function(code, x) {
+  } else if (isSeq(obj)) {
+    return seq.reduce(obj, 0, function(code, x) {
       return (code * 37 + hashCode(x)) & 0xffffffff;
     });
   } else if (typeof obj.toString === "function") {
@@ -1073,8 +1040,8 @@ hashCode = function(obj) {
 equalKeys = function(obj1, obj2) {
   if (typeof obj1 === 'string' || typeof obj2 === 'string') {
     return obj1 === obj2;
-  } else if (Sequence.accepts(obj1) && Sequence.accepts(obj2)) {
-    return !(Sequence.find(Sequence.combine(obj1, obj2, equalKeys), function(a) {
+  } else if (isSeq(obj1) && isSeq(obj2)) {
+    return !(seq.find(seq.combine(obj1, obj2, equalKeys), function(a) {
       return !a;
     }) != null);
   } else if ((obj1 != null) && typeof obj1.equals === "function") {
@@ -1093,13 +1060,13 @@ CollisionNode = (function() {
       this.bucket = [];
     }
     this.size = this.bucket.length;
-    this.elements = Sequence.flatMap(this.bucket, function(n) {
+    this.elements = seq.flatMap(this.bucket, function(n) {
       return n != null ? n.elements : void 0;
     });
   }
   CollisionNode.prototype.get = function(shift, hash, key) {
     var leaf;
-    leaf = Sequence.find(this.bucket, function(v) {
+    leaf = seq.find(this.bucket, function(v) {
       return equalKeys(v.key, key);
     });
     if (leaf != null) {
@@ -1122,7 +1089,7 @@ CollisionNode = (function() {
       case 1:
         return null;
       case 2:
-        return Sequence.find(this.bucket, function(v) {
+        return seq.find(this.bucket, function(v) {
           return !equalKeys(v.key, key);
         });
       default:
@@ -1150,7 +1117,7 @@ HashLeaf = (function() {
   function HashLeaf(hash, key) {
     this.hash = hash;
     this.key = key;
-    this.elements = Sequence.conj(this.key);
+    this.elements = seq.conj(this.key);
   }
   HashLeaf.prototype.size = 1;
   HashLeaf.prototype.get = function(shift, hash, key) {
@@ -1209,7 +1176,7 @@ HashLeafWithValue = (function() {
     this.hash = hash;
     this.key = key;
     this.value = value;
-    this.elements = Sequence.conj([this.key, this.value]);
+    this.elements = seq.conj([this.key, this.value]);
   }
   HashLeafWithValue.prototype.size = 1;
   HashLeafWithValue.prototype.get = function(shift, hash, key) {
@@ -1279,35 +1246,35 @@ exports.HashMap = HashMap;
 exports.HashSet = HashSet;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
   HashSet = require('indexed').HashSet;
 } else {
-  _ref6 = this.pazy, Sequence = _ref6.Sequence, HashSet = _ref6.HashSet;
+  _ref6 = this.pazy, seq = _ref6.seq, HashSet = _ref6.HashSet;
 }
-Sequence.method('uniq', function(seq, seen) {
+seq.method('uniq', function(s, seen) {
   var x;
   if (seen == null) {
     seen = new HashSet();
   }
-  if (this.empty__(seq)) {
-    return null;
-  } else {
-    x = seq.first();
+  if (s) {
+    x = s.first();
     if (seen.contains(x)) {
-      return this.uniq__(seq.rest(), seen);
+      return this.uniq__(s.rest(), seen);
     } else {
-      return Sequence.conj(x, __bind(function() {
-        return this.uniq__(seq.rest(), seen.plus(x));
+      return seq.conj(x, __bind(function() {
+        return this.uniq__(s.rest(), seen.plus(x));
       }, this));
     }
+  } else {
+    return null;
   }
 });
 if (typeof require !== 'undefined') {
   require.paths.unshift('#{__dirname}/../lib');
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
   _ref7 = require('functional'), recur = _ref7.recur, resolve = _ref7.resolve, suspend = _ref7.suspend;
 } else {
-  Sequence = pazy.Sequence, recur = pazy.recur, resolve = pazy.resolve, suspend = pazy.suspend;
+  seq = pazy.seq, recur = pazy.recur, resolve = pazy.resolve, suspend = pazy.suspend;
 }
 Void = (function() {
   function Void() {}
@@ -1349,7 +1316,7 @@ FingerTreeType = (function() {
       extensions = DefaultExtensions;
     }
     this.build = function() {
-      return Sequence.reduce(arguments, empty, function(s, a) {
+      return seq.reduce(arguments, empty, function(s, a) {
         return s.plus(a);
       });
     };
@@ -1362,7 +1329,7 @@ FingerTreeType = (function() {
       }
     };
     norm = function() {
-      return Sequence.reduce(arguments, measure.empty, function(n, x) {
+      return seq.reduce(arguments, measure.empty, function(n, x) {
         if (x != null) {
           return measure.sum(n, single(x));
         } else {
@@ -1774,7 +1741,7 @@ FingerTreeType = (function() {
       };
       asSeq = function(s) {
         return s.reduceRight((function(a, b) {
-          return Sequence.conj(a, function() {
+          return seq.conj(a, function() {
             return b;
           });
         }), null);
@@ -1878,7 +1845,7 @@ FingerTreeType = (function() {
         } else if (n === 1 || n < 0) {
           throw new Error("this should not happen");
         } else if (n === 2 || n % 3 === 1) {
-          return Sequence.conj((function(func, args, ctor) {
+          return seq.conj((function(func, args, ctor) {
             ctor.prototype = func.prototype;
             var child = new ctor, result = func.apply(child, args);
             return typeof result === "object" ? result : child;
@@ -1886,7 +1853,7 @@ FingerTreeType = (function() {
             return nodes(n - 2, s.drop(2));
           });
         } else {
-          return Sequence.conj((function(func, args, ctor) {
+          return seq.conj((function(func, args, ctor) {
             ctor.prototype = func.prototype;
             var child = new ctor, result = func.apply(child, args);
             return typeof result === "object" ? result : child;
@@ -1898,11 +1865,11 @@ FingerTreeType = (function() {
       app3 = function(tLeft, list, tRight) {
         var s, tmp;
         if (tLeft === Empty) {
-          return Sequence.reduce(Sequence.reverse(list), tRight, function(t, x) {
+          return seq.reduce(seq.reverse(list), tRight, function(t, x) {
             return t.after(x);
           });
         } else if (tRight === Empty) {
-          return Sequence.reduce(list, tLeft, function(t, x) {
+          return seq.reduce(list, tLeft, function(t, x) {
             return t.before(x);
           });
         } else if (tLeft.constructor === Single) {
@@ -1910,7 +1877,7 @@ FingerTreeType = (function() {
         } else if (tRight.constructor === Single) {
           return app3(tLeft, list, Empty).before(tRight.a);
         } else {
-          tmp = Sequence.flatten([asSeq(tLeft.r), list, asSeq(tRight.l)]);
+          tmp = seq.flatten([asSeq(tLeft.r), list, asSeq(tRight.l)]);
           s = nodes(tmp.size(), tmp);
           return new Deep(tLeft.l, suspend(function() {
             return app3(tLeft.m(), s, tRight.m());
@@ -2202,27 +2169,26 @@ if (typeof exports !== "undefined" && exports !== null) {
 exports.Partition = Partition;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
 } else {
-  Sequence = this.pazy.Sequence;
+  seq = this.pazy.seq;
 }
 Stack = (function() {
   function Stack(s) {
-    this.seq = s;
+    this.s = s;
   }
   Stack.prototype.push = function(x) {
-    return new Stack(Sequence.conj(x, __bind(function() {
-      return this.seq;
+    return new Stack(seq.conj(x, __bind(function() {
+      return this.s;
     }, this)));
   };
   Stack.prototype.first = function() {
     var _ref12;
-    return (_ref12 = this.seq) != null ? _ref12.first() : void 0;
+    return (_ref12 = this.s) != null ? _ref12.first() : void 0;
   };
   Stack.prototype.rest = function() {
-    if (this.seq) {
-      return new Stack(this.seq.rest());
-    }
+    var _ref12;
+    return new Stack((_ref12 = this.s) != null ? _ref12.rest() : void 0);
   };
   return Stack;
 })();
@@ -2234,9 +2200,9 @@ if (typeof exports !== "undefined" && exports !== null) {
 exports.Stack = Stack;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
 } else {
-  Sequence = this.pazy.Sequence;
+  seq = this.pazy.seq;
 }
 Queue = (function() {
   var rotate;
@@ -2253,11 +2219,11 @@ Queue = (function() {
   }
   rotate = function(f, r, a) {
     var a1;
-    a1 = Sequence.conj(r.first(), (function() {
+    a1 = seq.conj(r.first(), (function() {
       return a;
     }));
     if (f) {
-      return Sequence.conj(f.first(), (function() {
+      return seq.conj(f.first(), (function() {
         return rotate(f.rest(), r.rest(), a1);
       }));
     } else {
@@ -2265,7 +2231,7 @@ Queue = (function() {
     }
   };
   Queue.prototype.push = function(x) {
-    return new Queue(this.front, Sequence.conj(x, (__bind(function() {
+    return new Queue(this.front, seq.conj(x, (__bind(function() {
       return this.rear;
     }, this))), this.schedule);
   };
@@ -2289,9 +2255,9 @@ exports.Queue = Queue;
 if (typeof require !== 'undefined') {
   require.paths.unshift(__dirname);
   _ref14 = require('functional'), recur = _ref14.recur, resolve = _ref14.resolve;
-  Sequence = require('sequence').Sequence;
+  seq = require('sequence').seq;
 } else {
-  _ref15 = this.pazy, recur = _ref15.recur, resolve = _ref15.resolve, Sequence = _ref15.Sequence;
+  _ref15 = this.pazy, recur = _ref15.recur, resolve = _ref15.resolve, seq = _ref15.seq;
 }
 quicktest = (typeof process !== "undefined" && process !== null ? process.argv[2] : void 0) === '--test';
 rdump = function(s) {
@@ -2307,7 +2273,7 @@ if (quicktest) {
   };
 } else {
   log = function(str) {};
-  _ref17 = Sequence.from(1).map(function(n) {
+  _ref17 = seq.from(1).map(function(n) {
     return [Math.pow(10, 2 * n), Math.pow(10, n)];
   }).takeWhile(function(_arg) {
     var b, h;
@@ -2315,9 +2281,9 @@ if (quicktest) {
     return 2 * b - 2 !== 2 * b - 1;
   }).last(), BASE = _ref17[0], HALFBASE = _ref17[1];
 }
-ZERO = Sequence.conj(0);
-ONE = Sequence.conj(1);
-TWO = Sequence.conj(2);
+ZERO = seq.conj(0);
+ONE = seq.conj(1);
+TWO = seq.conj(2);
 cleanup = function(s) {
   var _ref18, _ref19;
   return (s != null ? (_ref18 = s.reverse()) != null ? (_ref19 = _ref18.dropWhile(function(x) {
@@ -2326,7 +2292,7 @@ cleanup = function(s) {
 };
 cmp = function(r, s) {
   var d, _ref18, _ref19;
-  d = Sequence.combine(r, s, function(a, b) {
+  d = seq.combine(r, s, function(a, b) {
     return a - b;
   });
   return (d != null ? (_ref18 = d.reverse()) != null ? (_ref19 = _ref18.dropWhile(function(x) {
@@ -2342,7 +2308,7 @@ add = function(r, s, c) {
     _ref18 = [r || ZERO, s || ZERO], r_ = _ref18[0], s_ = _ref18[1];
     x = r_.first() + s_.first() + c;
     _ref19 = x >= BASE ? [x - BASE, 1] : [x, 0], digit = _ref19[0], carry = _ref19[1];
-    return Sequence.conj(digit, function() {
+    return seq.conj(digit, function() {
       return add(r_.rest(), s_.rest(), carry);
     });
   } else {
@@ -2360,7 +2326,7 @@ sub = function(r, s) {
       _ref18 = [r || ZERO, s || ZERO], r_ = _ref18[0], s_ = _ref18[1];
       x = r_.first() - s_.first() - b;
       _ref19 = x < 0 ? [x + BASE, 1] : [x, 0], digit = _ref19[0], borrow = _ref19[1];
-      return Sequence.conj(digit, function() {
+      return seq.conj(digit, function() {
         return step(r_.rest(), s_.rest(), borrow);
       });
     } else {
@@ -2393,7 +2359,7 @@ seqTimesDigit = function(s, d, c) {
   if (c || s) {
     s_ = s || ZERO;
     _ref18 = digitTimesDigit(d, s_.first()), lo = _ref18[0], hi = _ref18[1];
-    return Sequence.conj(lo + c, function() {
+    return seq.conj(lo + c, function() {
       return seqTimesDigit(s_.rest(), d, hi);
     });
   }
@@ -2404,7 +2370,7 @@ mul = function(a, b) {
     var t;
     if (a) {
       t = add(r, seqTimesDigit(b, a.first())) || ZERO;
-      return Sequence.conj(t.first(), function() {
+      return seq.conj(t.first(), function() {
         return step(t.rest(), a.rest(), b);
       });
     } else {
@@ -2422,7 +2388,7 @@ divmod = function(r, s) {
     _results = [];
     for (_i = 0, _len = _ref18.length; _i < _len; _i++) {
       x = _ref18[_i];
-      _results.push(new Sequence(seqTimesDigit(x, scale)));
+      _results.push(seq(seqTimesDigit(x, scale)));
     }
     return _results;
   })(), r_ = _ref18[0], s_ = _ref18[1];
@@ -2432,18 +2398,18 @@ divmod = function(r, s) {
     f = (h != null ? h.size() : void 0) < m ? 0 : (n = ((h != null ? h.last() : void 0) * ((h != null ? h.size() : void 0) > m ? BASE : 1)) || 0, (Math.floor(n / d)) || (cmp(h, s_) >= 0 ? 1 : 0));
     if (f) {
       return recur(function() {
-        return step(add(q, Sequence.conj(f)), sub(h, seqTimesDigit(s_, f)), t);
+        return step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t);
       });
     } else if (t) {
       return recur(function() {
-        return step(Sequence.conj(0, function() {
+        return step(seq.conj(0, function() {
           return q;
-        }), Sequence.conj(t.first(), function() {
+        }), seq.conj(t.first(), function() {
           return h;
         }), t.rest());
       });
     } else {
-      return [cleanup(q), h && div(h, Sequence.conj(scale))];
+      return [cleanup(q), h && div(h, seq.conj(scale))];
     }
   };
   return resolve(step(null, null, r_.reverse()));
@@ -2464,7 +2430,7 @@ pow = function(r, s) {
         });
       } else {
         return recur(function() {
-          return step(p, new Sequence(mul(r, r)), div(s, TWO));
+          return step(p, seq(mul(r, r)), div(s, TWO));
         });
       }
     } else {
@@ -2477,11 +2443,11 @@ sqrt = function(s) {
   var n, step;
   n = s.size();
   if (n === 1) {
-    return Sequence.conj(Math.floor(Math.sqrt(s.first())));
+    return seq.conj(Math.floor(Math.sqrt(s.first())));
   } else {
     step = function(r) {
       var rn;
-      rn = new Sequence(div(add(r, div(s, r)), TWO));
+      rn = seq(div(add(r, div(s, r)), TWO));
       if (cmp(r, rn)) {
         return recur(function() {
           return step(rn);
@@ -2505,18 +2471,18 @@ LongInt = (function() {
     }
     make_digits = function(m) {
       if (m) {
-        return Sequence.conj(m % BASE, function() {
+        return seq.conj(m % BASE, function() {
           return make_digits(Math.floor(m / BASE));
         });
       }
     };
     _ref18 = n < 0 ? [-n, -1] : [n, 1], m = _ref18[0], this.sign__ = _ref18[1];
-    this.digits__ = cleanup(new Sequence(make_digits(m)));
+    this.digits__ = cleanup(seq(make_digits(m)));
   }
   create = function(digits, sign) {
     var n;
     n = new LongInt();
-    n.digits__ = cleanup(new Sequence(digits));
+    n.digits__ = cleanup(seq(digits));
     n.sign__ = n.digits__ != null ? sign : 1;
     return n;
   };
