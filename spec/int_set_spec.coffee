@@ -1,8 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  IntSet = require('indexed').IntSet
+  { seq }    = require 'sequence'
+  { IntSet } = require 'indexed'
 else
-  IntSet = pazy.IntSet
+  { seq, IntSet } = pazy
 
 
 describe "An IntSet", ->
@@ -187,13 +188,13 @@ describe "An IntSet", ->
       expect(hash.toArray()).toEqual(keys)
 
     it "should have the first key as its first element", ->
-      expect(hash.toSeq().first()).toEqual(keys[0])
+      expect(seq.get hash, 0).toEqual(keys[0])
 
     it "should have the second key as its second element", ->
-      expect(hash.toSeq().rest().first()).toEqual(keys[1])
+      expect(seq.get hash, 1).toEqual(keys[1])
 
     it "should have the last key as its last element", ->
-      expect(hash.toSeq().last()).toEqual(keys[300])
+      expect(seq.last hash).toEqual(keys[300])
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]

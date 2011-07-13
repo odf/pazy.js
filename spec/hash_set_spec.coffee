@@ -273,11 +273,11 @@ describe "A HashSet", ->
     it "should contain all the keys when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(keys)
 
-    it "should return an element sequence of the correct size", ->
-      expect(hash.toSeq().size()).toEqual(hash.size())
+    it "should produce an element sequence of the correct size", ->
+      expect(seq.size hash).toEqual(hash.size())
 
-    it "should return a sequence with all the keys on calling toSeq()", ->
-      expect(hash.toSeq().into([]).sort(FunnyKey.sorter)).toEqual(keys)
+    it "should produce a sequence with all the keys", ->
+      expect(seq.into(hash, []).sort(FunnyKey.sorter)).toEqual(keys)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]

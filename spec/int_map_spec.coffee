@@ -1,8 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  IntMap = require('indexed').IntMap
+  { seq }    = require 'sequence'
+  { IntMap } = require 'indexed'
 else
-  IntMap = pazy.IntMap
+  { seq, IntMap } = pazy
 
 describe "An IntMap", ->
 
@@ -200,13 +201,13 @@ describe "An IntMap", ->
       expect(hash.toArray()).toEqual(items)
 
     it "should have the first (key,value)-pair as its first element", ->
-      expect(hash.toSeq().first()).toEqual(items[0])
+      expect(seq.get hash, 0).toEqual(items[0])
 
     it "should have the second (key,value)-pair as its second element", ->
-      expect(hash.toSeq().rest().first()).toEqual(items[1])
+      expect(seq.get hash, 1).toEqual(items[1])
 
     it "should have the last (key,value)-pair as its last element", ->
-      expect(hash.toSeq().last()).toEqual(items[306])
+      expect(seq.last hash).toEqual(items[306])
 
 
     describe "some of which are then removed", ->

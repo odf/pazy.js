@@ -1,8 +1,9 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  HashMap = require('indexed').HashMap
+  { seq }     = require 'sequence'
+  { HashMap } = require 'indexed'
 else
-  HashMap = pazy.HashMap
+  { seq, HashMap } = pazy
 
 
 class FunnyKey
@@ -179,11 +180,11 @@ describe "A HashMap", ->
     it "should contain all the items when converted to an array", ->
       expect(hash.toArray().sort(FunnyKey.sorter)).toEqual(items)
 
-    it "should return an item sequence of the correct size", ->
-      expect(hash.toSeq().size()).toEqual(hash.size())
+    it "should produce an item sequence of the correct size", ->
+      expect(seq.size hash).toEqual(hash.size())
 
-    it "should return a sequence with all the keys on calling items()", ->
-      expect(hash.toSeq().into([]).sort(FunnyKey.sorter)).toEqual(items)
+    it "should produce a sequence with all the keys on calling items()", ->
+      expect(seq.into(hash, []).sort(FunnyKey.sorter)).toEqual(items)
 
     describe "some of which are then removed", ->
       ex_keys = keys[0..100]
