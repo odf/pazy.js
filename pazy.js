@@ -1,4 +1,4 @@
-var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, d, digitTimesDigit, div, divmod, dump, equalKeys, fromArray, hashCode, isSeq, log, memo, method, mod, mul, operator, pow, quicktest, rdump, recur, resolve, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cleanup, cmp, combinator, d, digitTimesDigit, div, divmod, dump, equalKeys, fromArray, hashCode, isSeq, log, memo, method, mod, mul, pow, quicktest, rdump, recur, resolve, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
   for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
   function ctor() { this.constructor = child; }
@@ -78,6 +78,8 @@ fromArray = function(a, i) {
 seq = function(src) {
   if (!(src != null)) {
     return null;
+  } else if (src.constructor === Sequence) {
+    return src;
   } else if (typeof src.toSeq === 'function') {
     return src.toSeq();
   } else if (typeof src.first === 'function' && typeof src.rest === 'function') {
@@ -90,15 +92,13 @@ seq = function(src) {
 };
 seq.conj = function(first, rest, mode) {
   var r;
-  if (rest == null) {
-    rest = (function() {
+  if (!(rest != null)) {
+    return new Sequence((function() {
+      return first;
+    }), function() {
       return null;
     });
-  }
-  if (mode == null) {
-    mode = null;
-  }
-  if (mode === 'forced') {
+  } else if (mode === 'forced') {
     r = rest();
     return new Sequence((function() {
       return first;
@@ -162,7 +162,7 @@ seq.method = method = function(name, f) {
     return f.call.apply(f, [seq, this].concat(__slice.call(args)));
   };
 };
-seq.operator = operator = function(name, f) {
+seq.combinator = combinator = function(name, f) {
   seq[name] = function() {
     var args, s, t;
     s = arguments[0], t = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
@@ -368,7 +368,7 @@ method('min', function(s) {
     }
   });
 });
-operator('combine', function(s, t, op) {
+combinator('combine', function(s, t, op) {
   if (!s) {
     return this.map__(t, function(a) {
       return op(null, a);
@@ -383,34 +383,34 @@ operator('combine', function(s, t, op) {
     }, this));
   }
 });
-operator('add', function(s, t) {
+combinator('add', function(s, t) {
   return this.combine__(s, t, function(a, b) {
     return a + b;
   });
 });
-operator('sub', function(s, t) {
+combinator('sub', function(s, t) {
   return this.combine__(s, t, function(a, b) {
     return a - b;
   });
 });
-operator('mul', function(s, t) {
+combinator('mul', function(s, t) {
   return this.combine__(s, t, function(a, b) {
     return a * b;
   });
 });
-operator('div', function(s, t) {
+combinator('div', function(s, t) {
   return this.combine__(s, t, function(a, b) {
     return a / b;
   });
 });
-operator('equals', function(s, t) {
+combinator('equals', function(s, t) {
   return !(this.find__(this.combine__(s, t, function(a, b) {
     return a === b;
   }), function(a) {
     return !a;
   }) != null);
 });
-operator('interleave', function(s, t) {
+combinator('interleave', function(s, t) {
   if (s) {
     return this.conj(s.first(), __bind(function() {
       return this.interleave__(t, s.rest());
@@ -419,7 +419,7 @@ operator('interleave', function(s, t) {
     return t;
   }
 });
-operator('lazyConcat', function(s, next) {
+combinator('lazyConcat', function(s, next) {
   if (s) {
     return this.conj(s.first(), __bind(function() {
       return this.lazyConcat__(s.rest(), next);
@@ -428,7 +428,7 @@ operator('lazyConcat', function(s, next) {
     return next();
   }
 });
-operator('concat', function(s, t) {
+combinator('concat', function(s, t) {
   if (s) {
     return this.lazyConcat__(s, function() {
       return t;
@@ -453,7 +453,7 @@ method('flatten', function(s) {
 method('flatMap', function(s, func) {
   return this.flatten__(this.map__(s, func));
 });
-operator('cartesian', function(s, t) {
+combinator('cartesian', function(s, t) {
   return this.flatMap__(s, __bind(function(a) {
     return this.map__(t, function(b) {
       return [a, b];
@@ -470,9 +470,7 @@ method('each', function(s, func) {
       });
     }
   };
-  if (s) {
-    return resolve(step(s));
-  }
+  return resolve(step(s));
 });
 method('reverse', function(s) {
   var step;
@@ -487,11 +485,7 @@ method('reverse', function(s) {
       return r;
     }
   }, this);
-  if (s) {
-    return resolve(step(null, s));
-  } else {
-    return null;
-  }
+  return resolve(step(null, s));
 });
 method('forced', function(s) {
   if (s) {
@@ -505,11 +499,7 @@ method('forced', function(s) {
 method('into', function(s, target) {
   var a, x;
   if (!(target != null)) {
-    return this.reduce__(s, null, function(s, item) {
-      return this.conj(item, function() {
-        return s;
-      });
-    });
+    return s;
   } else if (typeof target.plus === 'function') {
     return this.reduce__(s, target, function(t, item) {
       return t.plus(item);
