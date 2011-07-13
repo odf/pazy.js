@@ -376,7 +376,9 @@ delaunayTriangulation = do ->
 # Exporting.
 
 exports ?= this.pazy ?= {}
+exports.Point2d = Point2d
 exports.delaunayTriangulation = delaunayTriangulation
+exports.circumCircleCenter = circumCircleCenter
 
 # ----
 
