@@ -19,6 +19,7 @@ prodTargetJsMinFile  = "#{prodTargetJsDir}/#{prodTargetFileName}.min.js"
 prodCoffeeOpts = "--output #{prodTargetJsDir} --compile #{prodTargetCoffeeFile}"
 
 prodCoffeeFiles = [
+  'core_extensions'
   'functional'
   'sequence'
   'indexed'

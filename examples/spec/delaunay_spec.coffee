@@ -119,10 +119,10 @@ describe "A Delaunay triangulation", ->
 
   describe "with many random sites", ->
     rnd = -> Math.floor(Math.random() * 100)
-    sites = seq.range(1, 100).map -> [rnd(), rnd()]
+    sites = seq.range(1, 500).map -> [rnd(), rnd()]
     t = sites.reduce delaunayTriangulation(),  (s, p) -> s.plus p...
 
-    # it "should have triangles", ->
-    #   expect(seq.size t).toBeGreaterThan 0
+    it "should have triangles", ->
+      expect(seq.size t).toBeGreaterThan 0
 
-    # checkEdges t
+    checkEdges t

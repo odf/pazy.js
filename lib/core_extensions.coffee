@@ -6,18 +6,6 @@ Array::equals ||= (other) ->
       return false unless equal this[i], other[i]
     true
 
-Array::hashCode ||= ->
-  val = 0
-  val = val * 37 + hashCode(this[i]) for i in [0...@length]
-  val
-
-String::hashCode ||= ->
-  unless @hashCode__?
-    val = 0
-    val = val * 37 + @charCodeAt(i) for i in [0...@length]
-    @hashCode__ = val
-  @hashCode__
-
 equal = (obj1, obj2) ->
   if typeof(obj1?.equals) == 'function'
     obj1.equals obj2
@@ -35,7 +23,10 @@ hashCode = (obj) ->
   else if selfHashing obj
     obj
   else
-    hashCode "" + obj
+    s = "" + obj
+    val = 0
+    val = (val * 37 + s.charCodeAt(i)) & 0xffffffff for i in [0...s.length]
+    val
 
 # --------------------------------------------------------------------
 # Exporting.
