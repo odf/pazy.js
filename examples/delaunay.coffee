@@ -397,7 +397,8 @@ test = (n = 100, m = 10) ->
         console.log seq.map(s.position__, ([k, p]) -> p).join ', '
         console.log seq.join s, ', '
         console.log p
-        throw ex
+        console.log ex.stacktrace
+        throw "Oops!"
 
 if module? and not module.parent
   args = seq.map(process.argv[2..], parseInt)?.into []
