@@ -142,7 +142,7 @@ method 'products', (s) -> @accumulate__ s, 1, (a,b) -> a * b
 method 'reduce', (s, start, op) ->
   step = (t, val) ->
     if t then recur -> step t.rest(), op val, t.first() else val
-  if s then resolve step s, start else start
+  resolve step s, start
 
 method 'sum',     (s) -> @reduce__ s, 0, (a,b) -> a + b
 method 'product', (s) -> @reduce__ s, 1, (a,b) -> a * b

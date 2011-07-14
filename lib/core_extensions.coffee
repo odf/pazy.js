@@ -34,13 +34,8 @@ hashCode = (obj) ->
     obj.hashCode()
   else if selfHashing obj
     obj
-  else if typeof(obj.toString) == "function"
-    hashCode obj.toString()
   else
-    try
-      hashCode String obj
-    catch ex
-      hashCode Object::toString.call obj
+    hashCode "" + obj
 
 # --------------------------------------------------------------------
 # Exporting.
