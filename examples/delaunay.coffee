@@ -9,12 +9,14 @@
 # package system).
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
+  { equal, hashCode }          = require 'core_extensions'
   { recur, resolve }           = require 'functional'
   { seq }                      = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
   { Queue }                    = require 'queue'
 else
-  { recur, resolve, seq, IntMap, HashSet, HashMap, Queue } = this.pazy
+  { equal, hashCode, recur, resolve,
+    seq, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
 
@@ -22,17 +24,30 @@ else
 
 trace = (s) -> #console.log s
 
+
 # ----
 
 # The class `Point2d` represents points in the x,y-plane and provides just the
 # bare minimum of operations we need here.
 class Point2d
   constructor: (@x, @y) ->
-  plus:  (p) -> new Point2d @x + p.x, @y + p.y
-  minus: (p) -> new Point2d @x - p.x, @y - p.y
-  times: (f) -> new Point2d @x * f, @y * f
-  toString:  -> "(#{@x}, #{@y})"
-  equals: (p) -> @x == p.x and @y == p.y
+  isInfinite: -> false
+  plus:  (p)  -> new Point2d @x + p.x, @y + p.y
+  minus: (p)  -> new Point2d @x - p.x, @y - p.y
+  times: (f)  -> new Point2d @x * f, @y * f
+  toString:   -> "(#{@x}, #{@y})"
+  equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
+
+
+# ----
+
+# The class `Point2d` represents points in the x,y-plane and provides just the
+# bare minimum of operations we need here.
+class PointAtInfinity
+  constructor: (@x, @y) ->
+  isInfinite: -> true
+  toString:   -> "inf(#{@x}, #{@y})"
+  equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
 
 
 # ----
@@ -52,26 +67,24 @@ class Point3d
 # The class `Triangle` represents an oriented, abstract triangle with no
 # specified origin. In other words, the sequences `a, b, c`, `b, c, a` and `c,
 # a,b` describe the same oriented triangle for given `a`, `b` and `c`, but `a,
-# c, a` does not. The three 'vertices' given in the constructor must be
-# integers which will be interpreted as indices into a more concrete vertex
-# list.
+# c, a` does not.
 class Triangle
   constructor: (a, b, c) ->
+    [as, bs, cs] = seq.map([a, b, c], (x) -> x.toString()).into []
     [@a, @b, @c] =
-      if a < b and a < c
+      if as < bs and as < cs
         [a, b, c]
-      else if b < c
+      else if bs < cs
         [b, c, a]
       else
         [c, a, b]
-    h = (@a * 37 + @b) * 37 + @c
-    @hashcode = -> h
 
   vertices: -> [@a, @b, @c]
 
   toSeq: -> seq [@a, @b, @c]
 
-  equals: (other) -> @a == other.a and @b == other.b and @c == other.c
+  equals: (other) ->
+    equal(@a, other.a) and equal(@b, other.b) and equal(@c, other.c)
 
   toString: -> "T(#{@a}, #{@b}, #{@c})"
 
@@ -197,31 +210,29 @@ delaunayTriangulation = do ->
   class Triangulation
     # The triangle `outer` is a virtual, 'infinitely large' triangle which is
     # added internally to avoid special boundary considerations within the
-    # algorithm. To distinguish its vertices from vertices corresponding to
-    # regular sites, we use negative indices.
-    outer = tri -1, -2, -3
+    # algorithm.
+    outer = tri new PointAtInfinity( 1,  0),
+                new PointAtInfinity(-1,  1),
+                new PointAtInfinity(-1, -1)
 
     # The constructor is called with implementation specific data for the new
     # instance, specifically:
     #
     # 1. The underlying abstract triangulation.
-    # 2. A mapping from vertex numbers to sites (`Point2d` instances).
-    # 3. The set of all sites present.
-    # 4. The child relation of the history DAG which is used to locate which
+    # 2. The set of all sites present.
+    # 3. The child relation of the history DAG which is used to locate which
     # triangle a new site is in.
     constructor: (args...) ->
       @triangulation__ = args[0] || triangulation(outer.vertices())
-      @position__      = args[1] || new IntMap()
-      @nextIndex__     = args[2] || 0
-      @sites__         = args[3] || new HashSet()
-      @children__      = args[4] || new HashMap()
+      @sites__         = args[1] || new HashSet()
+      @children__      = args[2] || new HashMap()
 
     # The method `toSeq` returns the proper (non-virtual) triangles contained
     # in this triangulation as a lazy sequence. It does so by removing any
     # triangles from the underlying triangulation object which contain a
     # virtual vertex.
     toSeq: ->
-      seq.select @triangulation__, (t) -> seq.forall t, (n) -> n >= 0
+      seq.select @triangulation__, (t) -> seq.forall t, (p) -> not p.isInfinite()
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
@@ -232,31 +243,19 @@ delaunayTriangulation = do ->
     # given vertices in the correct order.
     find: (a, b, c) -> @triangulation__.find a, b, c
 
-    # The method `position` returns the coordinates corresponding to a given
-    # vertex number as a `Point2d` instance.
-    position: (n) -> @position__.get n
-
     # The method `sideOf` determines which side of the oriented line given by
     # the sites with indices `a` and `b` the point `p` (a `Point2d` instance)
     # lies on. A positive value means it is to the right, a negative value to
     # the left, and a zero value on the line.
-    #
-    # Some special considerations are necessary in the case that `a` or `b` is
-    # one of our three virtual vertices.
     sideOf: (a, b, p) ->
-      if a < 0 and b < 0
+      if a.isInfinite() and b.isInfinite()
         -1
-      else if a < 0
+      else if a.isInfinite()
         - @sideOf b, a, p
       else
-        r = @position a
-        rs = switch b
-             when -1 then new Point2d  1,  0
-             when -2 then new Point2d -1,  1
-             when -3 then new Point2d -1, -1
-             else         @position(b).minus r
-        rp = p.minus r
-        rp.x * rs.y - rp.y * rs.x
+        ab = if b.isInfinite() then new Point2d b.x, b.y else b.minus a
+        ap = p.minus a
+        ap.x * ab.y - ap.y * ab.x
 
     # The method `isInTriangle` returns true if the given `Point2d` instance
     # `p` is contained in the triangle `t` given as a sequence of site
@@ -286,17 +285,16 @@ delaunayTriangulation = do ->
       c = @third a, b
       d = @third b, a
 
-      if (a < 0 and b < 0) or not c? or not d?
+      if (a.isInfinite() and b.isInfinite()) or not c? or not d?
         false
-      else if a < 0
-        @sideOf(d, c, @position b) > 0
-      else if b < 0
-        @sideOf(c, d, @position a) > 0
-      else if c < 0 or d < 0
+      else if a.isInfinite()
+        @sideOf(d, c, b) > 0
+      else if b.isInfinite()
+        @sideOf(c, d, a) > 0
+      else if c.isInfinite() or d.isInfinite()
         false
       else
-        [pa, pb, pc, pd] = seq([a, b, c, d]).map((x) => @position x).into []
-        inclusionInCircumCircle(pa, pb, pc, pd) > 0
+        inclusionInCircumCircle(a, b, c, d) > 0
 
     # The private function `subdivide` takes a triangulation `T`, a triangle
     # `t` and a site `p` inside that triangle and creates a new triangulation
@@ -305,14 +303,11 @@ delaunayTriangulation = do ->
     subdivide = (T, t, p) ->
       trace "subdivide [#{T.triangulation__.toSeq().join ', '}], #{t}, #{p}"
       [a, b, c] = t.vertices()
-      n = T.nextIndex__
       new T.constructor(
-        T.triangulation__.minus(a,b,c).plus(a,b,n).plus(b,c,n).plus(c,a,n),
-        T.position__.plus([n, p]),
-        n + 1,
+        T.triangulation__.minus(a,b,c).plus(a,b,p).plus(b,c,p).plus(c,a,p),
         T.sites__.plus(p),
         T.children__.plus([T.find(a,b,c),
-                           seq [tri(a,b,n), tri(b,c,n), tri(c,a,n)]])
+                           seq [tri(a,b,p), tri(b,c,p), tri(c,a,p)]])
       )
 
     # The private function `flip` creates a new triangulation from `T` with the
@@ -326,8 +321,6 @@ delaunayTriangulation = do ->
       children = seq [tri(b, c, d), tri(a, d, c)]
       new T.constructor(
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
-        T.position__,
-        T.nextIndex__,
         T.sites__,
         T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children])
       )
@@ -394,7 +387,6 @@ test = (n = 100, m = 10) ->
       try
         s.plus p...
       catch ex
-        console.log seq.map(s.position__, ([k, p]) -> p).join ', '
         console.log seq.join s, ', '
         console.log p
         console.log ex.stacktrace
