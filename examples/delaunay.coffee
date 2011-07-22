@@ -22,7 +22,7 @@ else
 
 # Here's a quick hack for switching traces on and off.
 
-trace = (s) -> #console.log s
+trace = (s) -> #console.log s()
 
 
 # ----
@@ -177,7 +177,7 @@ triangulation = do ->
       else if x = seq([[a, b], [b, c], [c, a]]).find((e) => @third__.get(e)?]
         [f, g] = x
         h = @third__.get x
-        trace "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
+        trace -> "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
         throw new Error "Orientation mismatch."
       else
         triangles = @triangles__.plus tri a, b, c
@@ -301,7 +301,7 @@ delaunayTriangulation = do ->
     # in which `t` is divided into three new triangles with `p` as a common
     # vertex.
     subdivide = (T, t, p) ->
-      trace "subdivide [#{T.triangulation__.toSeq().join ', '}], #{t}, #{p}"
+      trace -> "subdivide [#{T.triangulation__.toSeq().join ', '}], #{t}, #{p}"
       [a, b, c] = t.vertices()
       new T.constructor(
         T.triangulation__.minus(a,b,c).plus(a,b,p).plus(b,c,p).plus(c,a,p),
@@ -315,7 +315,7 @@ delaunayTriangulation = do ->
     # edge `ab` lies in triangles `abc` and `bad`, then after the flip those
     # are replaced by new triangle `bcd` and `adc`.
     flip = (T, a, b) ->
-      trace "flip [#{T.triangulation__.toSeq().join ', '}], #{a}, #{b}"
+      trace -> "flip [#{T.triangulation__.toSeq().join ', '}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
       children = seq [tri(b, c, d), tri(a, d, c)]
