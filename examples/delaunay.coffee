@@ -227,12 +227,14 @@ delaunayTriangulation = do ->
       @sites__         = args[1] || new HashSet()
       @children__      = args[2] || new HashMap()
 
+      @triangles__  = seq.select @triangulation__, (t) ->
+        seq.forall t, (p) -> not p.isInfinite()
+
     # The method `toSeq` returns the proper (non-virtual) triangles contained
     # in this triangulation as a lazy sequence. It does so by removing any
     # triangles from the underlying triangulation object which contain a
     # virtual vertex.
-    toSeq: ->
-      seq.select @triangulation__, (t) -> seq.forall t, (p) -> not p.isInfinite()
+    toSeq: -> @triangles__
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
