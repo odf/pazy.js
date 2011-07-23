@@ -27,6 +27,14 @@ trace = (s) -> #console.log s()
 
 # ----
 
+# A method to be used in class bodies in order to create a method with a
+# memoized result.
+
+memo = (klass, name, f) ->
+  klass::[name] = -> x = f.call(this); (@[name] = -> x)()
+
+# ----
+
 # The class `Point2d` represents points in the x,y-plane and provides just the
 # bare minimum of operations we need here.
 class Point2d
@@ -35,8 +43,10 @@ class Point2d
   plus:  (p)  -> new Point2d @x + p.x, @y + p.y
   minus: (p)  -> new Point2d @x - p.x, @y - p.y
   times: (f)  -> new Point2d @x * f, @y * f
-  toString:   -> "(#{@x}, #{@y})"
   equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
+
+  memo @, 'toString', -> "(#{@x}, #{@y})"
+  memo @, 'hashCode', -> hashCode @toString()
 
 
 # ----
@@ -46,8 +56,10 @@ class Point2d
 class PointAtInfinity
   constructor: (@x, @y) ->
   isInfinite: -> true
-  toString:   -> "inf(#{@x}, #{@y})"
   equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
+
+  memo @, 'toString', -> "inf(#{@x}, #{@y})"
+  memo @, 'hashCode', -> hashCode @toString()
 
 
 # ----
@@ -79,14 +91,14 @@ class Triangle
       else
         [c, a, b]
 
-  vertices: -> [@a, @b, @c]
-
-  toSeq: -> seq [@a, @b, @c]
+  memo @, 'vertices', -> [@a, @b, @c]
+  memo @, 'toSeq',    -> seq @vertices()
+  memo @, 'toString', -> "T(#{@a}, #{@b}, #{@c})"
+  memo @, 'hashCode', -> hashCode @toString()
 
   equals: (other) ->
     equal(@a, other.a) and equal(@b, other.b) and equal(@c, other.c)
 
-  toString: -> "T(#{@a}, #{@b}, #{@c})"
 
 # Here's a quick shortcut for the constructor.
 tri = (a, b, c) -> new Triangle a, b, c
@@ -154,7 +166,7 @@ triangulation = do ->
 
     # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
-    toSeq: -> @triangles__.toSeq()
+    memo @, 'toSeq', -> @triangles__.toSeq()
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
@@ -227,14 +239,12 @@ delaunayTriangulation = do ->
       @sites__         = args[1] || new HashSet()
       @children__      = args[2] || new HashMap()
 
-      @triangles__  = seq.select @triangulation__, (t) ->
-        seq.forall t, (p) -> not p.isInfinite()
-
     # The method `toSeq` returns the proper (non-virtual) triangles contained
     # in this triangulation as a lazy sequence. It does so by removing any
     # triangles from the underlying triangulation object which contain a
     # virtual vertex.
-    toSeq: -> @triangles__
+    memo @, 'toSeq', -> seq.select @triangulation__, (t) ->
+      seq.forall t, (p) -> not p.isInfinite()
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
