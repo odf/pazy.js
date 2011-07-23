@@ -102,11 +102,18 @@ class Triangle
     n = @b.lift().minus(@a.lift()).cross @c.lift().minus(@a.lift())
     if n.z <= 0 then n else n.times -1
 
-  # The function `circumCircleCenter` computes the center of the circum-circle
+  # The method `circumCircleCenter` computes the center of the circum-circle
   # of this triangle.
   memo @, 'circumCircleCenter', ->
     n = @liftedNormal()
     new Point2d(n.x, n.y).times -0.5 / n.z if 1e-6 < Math.abs n.z
+
+  # The method `circumCircleCenter` computes the center of the circum-circle
+  # of this triangle.
+  memo @, 'circumCircleRadius', ->
+    c = @circumCircleCenter()
+    square = (x) -> x * x
+    Math.sqrt square(c.x - @a.x) + square(c.y - @a.y)
 
   # The function `inclusionInCircumCircle` checks whether a point d is inside,
   # outside or on the circle through this triangle's vertices. A positive
