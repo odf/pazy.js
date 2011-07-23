@@ -157,16 +157,16 @@ triangulation = do ->
   # The hidden class `Triangulation` implements our data structure.
   class Triangulation
 
-    # The constructor takes a set of triangles and a map specifying the
-    # associated third triangle vertex for any oriented edge that is part of
-    # an oriented triangle.
-    constructor: (args...) ->
-      @triangles__ = args[0] or new HashSet()
-      @third__     = args[1] or new HashMap()
+    # The constructor takes a map specifying the associated third triangle
+    # vertex for any oriented edge that is part of an oriented triangle.
+    constructor: (@third__ = new HashMap()) ->
 
     # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
-    memo @, 'toSeq', -> @triangles__.toSeq()
+    memo @, 'toSeq', ->
+      good = seq.select @third__, ([[a,b],c]) ->
+        a.toString() < b.toString() and a.toString() < c.toString()
+      seq.map good, ([[a,b],c]) -> tri a, b, c
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
@@ -185,9 +185,7 @@ triangulation = do ->
         trace -> "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
         throw new Error "Orientation mismatch."
       else
-        triangles = @triangles__.plus tri a, b, c
-        third = @third__.plusAll seq [[[a, b], c], [[b, c], a], [[c, a], b]]
-        new Triangulation triangles, third
+        new Triangulation @third__.plusAll [[[a,b],c], [[b,c],a], [[c,a],b]]
 
     # The method `minus` returns a triangulation with the given triangle
     # removed, if present.
@@ -195,9 +193,7 @@ triangulation = do ->
       if not equal @third(a, b), c
         this
       else
-        triangles = @triangles__.minus tri a, b, c
-        third = @third__.minusAll seq [[a, b], [b, c], [c, a]]
-        new Triangulation triangles, third
+        new Triangulation @third__.minusAll [[a, b], [b, c], [c, a]]
 
   # Here we define our access point. The function `triangulation` takes a list
   # of triangles, each given as an array of three abstract vertices.
