@@ -43,6 +43,11 @@ class Point2d
   plus:  (p)  -> new Point2d @x + p.x, @y + p.y
   minus: (p)  -> new Point2d @x - p.x, @y - p.y
   times: (f)  -> new Point2d @x * f, @y * f
+
+  # The method `lift` computes the projection or _lift_ of this point onto the
+  # standard parabola z = x * x + y * y.
+  memo @, 'lift', -> new Point3d @x, @y, @x * @x + @y * @y
+
   equals: (p) -> @constructor == p?.constructor and @x == p.x and @y == p.y
 
   memo @, 'toString', -> "(#{@x}, #{@y})"
@@ -91,53 +96,32 @@ class Triangle
     else
       [@c, @a, @b]
 
+  # The method `liftedNormal` computes the downward-facing normal to the plane
+  # formed by the lifts of this triangle's vertices.
+  memo @, 'liftedNormal', ->
+    n = @b.lift().minus(@a.lift()).cross @c.lift().minus(@a.lift())
+    if n.z <= 0 then n else n.times -1
+
+  # The function `circumCircleCenter` computes the center of the circum-circle
+  # of this triangle.
+  memo @, 'circumCircleCenter', ->
+    n = @liftedNormal()
+    new Point2d(n.x, n.y).times -0.5 / n.z if 1e-6 < Math.abs n.z
+
+  # The function `inclusionInCircumCircle` checks whether a point d is inside,
+  # outside or on the circle through this triangle's vertices. A positive
+  # return value means inside, zero means on and a negative value means
+  # outside.
+  inclusionInCircumCircle: (d) -> @liftedNormal().dot d.lift().minus @a.lift()
+
   memo @, 'toSeq',    -> seq @vertices()
   memo @, 'toString', -> "T(#{seq.join @, ', '})"
   memo @, 'hashCode', -> hashCode @toString()
 
   equals: (other) -> seq.equals @, other
 
-
-# Here's a quick shortcut for the constructor.
+# Here's a quick shortcut for the Triangle constructor.
 tri = (a, b, c) -> new Triangle a, b, c
-
-# ----
-
-# The function `lift` computes the projection or _lift_ of a given point in
-# the plane onto the standard parabola z = x * x + y * y.
-lift = (p) -> new Point3d p.x, p.y, p.x * p.x + p.y * p.y
-
-# ----
-
-# The function `unlift` projects a point in 3d space back onto the x,y-plane.
-unlift = (p) -> new Point2d p.x, p.y
-
-# ----
-
-# The function `liftedNormal` computes the downward-facing normal to the plane
-# formed by the lifts of its input points a, b and c.
-
-liftedNormal = (a, b, c) ->
-  n = lift(b).minus(lift(a)).cross lift(c).minus(lift(a))
-  if n.z > 0 then n.times(-1) else n
-
-
-# ----
-
-# The function `circumCircleCenter` computes the center of the circum-circle
-# of a given triangle, specified by three input points.
-circumCircleCenter = (a, b, c) ->
-  n = liftedNormal a, b, c
-  unlift n.times -0.5 / n.z if Math.abs(n.z) > 1e-6
-
-
-# ----
-
-# The function `inclusionInCircumCircle` checks whether a point d is inside,
-# outside or on the circle through points a, b and c. A positive return value
-# means inside, zero means on and a negative value means outside.
-inclusionInCircumCircle = (a, b, c, d) ->
-  liftedNormal(a, b, c).dot lift(d).minus lift(a)
 
 
 # ----
@@ -284,7 +268,7 @@ delaunayTriangulation = do ->
       else if c.isInfinite() or d.isInfinite()
         false
       else
-        inclusionInCircumCircle(a, b, c, d) > 0
+        tri(a, b, c).inclusionInCircumCircle(d) > 0
 
     # The private function `subdivide` takes a triangulation `T`, a triangle
     # `t` and a site `p` inside that triangle and creates a new triangulation
@@ -360,7 +344,6 @@ delaunayTriangulation = do ->
 exports ?= this.pazy ?= {}
 exports.Point2d = Point2d
 exports.delaunayTriangulation = delaunayTriangulation
-exports.circumCircleCenter = circumCircleCenter
 
 # ----
 
