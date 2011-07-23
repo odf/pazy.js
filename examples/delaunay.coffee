@@ -43,7 +43,7 @@ class Point2d
   plus:  (p)  -> new Point2d @x + p.x, @y + p.y
   minus: (p)  -> new Point2d @x - p.x, @y - p.y
   times: (f)  -> new Point2d @x * f, @y * f
-  equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
+  equals: (p) -> @constructor == p?.constructor and @x == p.x and @y == p.y
 
   memo @, 'toString', -> "(#{@x}, #{@y})"
   memo @, 'hashCode', -> hashCode @toString()
@@ -56,7 +56,7 @@ class Point2d
 class PointAtInfinity
   constructor: (@x, @y) ->
   isInfinite: -> true
-  equals: (p) -> @constructor == p.constructor and @x == p.x and @y == p.y
+  equals: (p) -> @constructor == p?.constructor and @x == p.x and @y == p.y
 
   memo @, 'toString', -> "inf(#{@x}, #{@y})"
   memo @, 'hashCode', -> hashCode @toString()
@@ -172,19 +172,12 @@ triangulation = do ->
     # the two given ones in the given orientation, if any.
     third: (a, b) -> @third__.get [a, b]
 
-    # The method `find` returns a canonical representation for the unique
-    # triangle in this triangulation, if any, which contains the two or three
-    # given vertices in the correct order.
-    find: (a, b, c) ->
-      t = tri a, b, if c? then c else @third a, b
-      t if @triangles__.contains t
-
     # The method `plus` returns a triangulation with the given triangle added
     # unless it is already present or creates an orientation mismatch. In the
     # first case, the original triangulation is returned without changes; in
     # the second, an exception is raised.
     plus: (a, b, c) ->
-      if @find a, b, c
+      if equal @third(a, b), c
         this
       else if x = seq([[a, b], [b, c], [c, a]]).find((e) => @third__.get(e)?]
         [f, g] = x
@@ -199,13 +192,12 @@ triangulation = do ->
     # The method `minus` returns a triangulation with the given triangle
     # removed, if present.
     minus: (a, b, c) ->
-      t = @find a, b, c
-      if t?
-        triangles = @triangles__.minus t
+      if not equal @third(a, b), c
+        this
+      else
+        triangles = @triangles__.minus tri a, b, c
         third = @third__.minusAll seq [[a, b], [b, c], [c, a]]
         new Triangulation triangles, third
-      else
-        this
 
   # Here we define our access point. The function `triangulation` takes a list
   # of triangles, each given as an array of three abstract vertices.
@@ -249,11 +241,6 @@ delaunayTriangulation = do ->
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
     third: (a, b) -> @triangulation__.third a, b
-
-    # The method `find` returns a canonical representation for the unique
-    # triangle in this triangulation, if any, which contains the two or three
-    # given vertices in the correct order.
-    find: (a, b, c) -> @triangulation__.find a, b, c
 
     # The method `sideOf` determines which side of the oriented line given by
     # the sites with indices `a` and `b` the point `p` (a `Point2d` instance)
@@ -318,8 +305,7 @@ delaunayTriangulation = do ->
       new T.constructor(
         T.triangulation__.minus(a,b,c).plus(a,b,p).plus(b,c,p).plus(c,a,p),
         T.sites__.plus(p),
-        T.children__.plus([T.find(a,b,c),
-                           seq [tri(a,b,p), tri(b,c,p), tri(c,a,p)]])
+        T.children__.plus([tri(a,b,c), seq [tri(a,b,p), tri(b,c,p), tri(c,a,p)]])
       )
 
     # The private function `flip` creates a new triangulation from `T` with the
@@ -334,7 +320,7 @@ delaunayTriangulation = do ->
       new T.constructor(
         T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
         T.sites__,
-        T.children__.plus([T.find(a,b,c), children], [T.find(b,a,d), children])
+        T.children__.plus([tri(a,b,c), children], [tri(b,a,d), children])
       )
 
     # The private function `doFlips` takes a triangulation and a stack of
