@@ -127,9 +127,6 @@ class Triangle
 
   equals: (other) -> seq.equals @, other
 
-# Here's a quick shortcut for the Triangle constructor.
-tri = (a, b, c) -> new Triangle a, b, c
-
 
 # ----
 
@@ -174,7 +171,7 @@ triangulation = do ->
       else if seq.find([[a, b], [b, c], [c, a]], ([p, q]) => @third p, q)
         throw new Error "Orientation mismatch."
       else
-        t = tri a, b, c
+        t = new Triangle a, b, c
         added = [[[a, b], [t, c]], [[b, c], [t, a]], [[c, a], [t, b]]]
         new Triangulation @third__.plusAll added
 
@@ -202,9 +199,9 @@ delaunayTriangulation = do ->
     # The triangle `outer` is a virtual, 'infinitely large' triangle which is
     # added internally to avoid special boundary considerations within the
     # algorithm.
-    outer = tri new PointAtInfinity( 1,  0),
-                new PointAtInfinity(-1,  1),
-                new PointAtInfinity(-1, -1)
+    outer = new Triangle new PointAtInfinity( 1,  0),
+                         new PointAtInfinity(-1,  1),
+                         new PointAtInfinity(-1, -1)
 
     # The constructor is called with implementation specific data for the new
     # instance, specifically:
@@ -293,10 +290,11 @@ delaunayTriangulation = do ->
     subdivide = (T, t, p) ->
       trace -> "subdivide [#{T.triangulation__.toSeq().join ', '}], #{t}, #{p}"
       [a, b, c] = t.vertices()
+      S = T.triangulation__.minus(a,b,c).plus(a,b,p).plus(b,c,p).plus(c,a,p)
       new T.constructor(
-        T.triangulation__.minus(a,b,c).plus(a,b,p).plus(b,c,p).plus(c,a,p),
-        T.sites__.plus(p),
-        T.children__.plus([tri(a,b,c), seq [tri(a,b,p), tri(b,c,p), tri(c,a,p)]])
+        S, T.sites__.plus(p),
+        T.children__.plus([T.triangle(a,b),
+          seq [S.triangle(a,b), S.triangle(b,c), S.triangle(c,a)]])
       )
 
     # The private function `flip` creates a new triangulation from `T` with the
@@ -307,11 +305,12 @@ delaunayTriangulation = do ->
       trace -> "flip [#{T.triangulation__.toSeq().join ', '}], #{a}, #{b}"
       c = T.third a, b
       d = T.third b, a
-      children = seq [tri(b, c, d), tri(a, d, c)]
+      S = T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c)
+      children = seq [S.triangle(c, d), S.triangle(d, c)]
       new T.constructor(
-        T.triangulation__.minus(a,b,c).minus(b,a,d).plus(b,c,d).plus(a,d,c),
-        T.sites__,
-        T.children__.plus([tri(a,b,c), children], [tri(b,a,d), children])
+        S, T.sites__,
+        T.children__.plus([T.triangle(a,b), children],
+                          [T.triangle(b,a), children])
       )
 
     # The private function `doFlips` takes a triangulation and a stack of
