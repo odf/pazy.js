@@ -81,23 +81,21 @@ class Point3d
 # a,b` describe the same oriented triangle for given `a`, `b` and `c`, but `a,
 # c, a` does not.
 class Triangle
-  constructor: (a, b, c) ->
-    [as, bs, cs] = seq.map([a, b, c], (x) -> x.toString()).into []
-    [@a, @b, @c] =
-      if as < bs and as < cs
-        [a, b, c]
-      else if bs < cs
-        [b, c, a]
-      else
-        [c, a, b]
+  constructor: (@a, @b, @c) ->
 
-  memo @, 'vertices', -> [@a, @b, @c]
+  memo @, 'vertices', ->
+    if @a.toString() < @b.toString() and @a.toString() < @c.toString()
+      [@a, @b, @c]
+    else if @b.toString() < @c.toString()
+      [@b, @c, @a]
+    else
+      [@c, @a, @b]
+
   memo @, 'toSeq',    -> seq @vertices()
-  memo @, 'toString', -> "T(#{@a}, #{@b}, #{@c})"
+  memo @, 'toString', -> "T(#{seq.join @, ', '})"
   memo @, 'hashCode', -> hashCode @toString()
 
-  equals: (other) ->
-    equal(@a, other.a) and equal(@b, other.b) and equal(@c, other.c)
+  equals: (other) -> seq.equals @, other
 
 
 # Here's a quick shortcut for the constructor.
@@ -179,10 +177,7 @@ triangulation = do ->
     plus: (a, b, c) ->
       if equal @third(a, b), c
         this
-      else if x = seq([[a, b], [b, c], [c, a]]).find((e) => @third__.get(e)?]
-        [f, g] = x
-        h = @third__.get x
-        trace -> "  Error in plus [#{@toSeq()?.join ', '}], (#{a}, #{b}, #{c})"
+      else if seq.find([[a, b], [b, c], [c, a]], ([p, q]) => @third p, q)
         throw new Error "Orientation mismatch."
       else
         new Triangulation @third__.plusAll [[[a,b],c], [[b,c],a], [[c,a],b]]
