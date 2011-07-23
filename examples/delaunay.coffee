@@ -153,13 +153,16 @@ triangulation = do ->
     # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
     memo @, 'toSeq', ->
-      good = seq.select @third__, ([[a,b],c]) ->
-        a.toString() < b.toString() and a.toString() < c.toString()
-      seq.map good, ([[a,b],c]) -> tri a, b, c
+      good = seq.select @third__, ([e, [t, c]]) -> equal c, t.a
+      seq.map good, ([e, [t, c]]) -> t
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
-    third: (a, b) -> @third__.get [a, b]
+    third: (a, b) -> @third__.get([a, b])?[1]
+
+    # The method `triangle` finds the unique oriented triangle with the two
+    # given pair of vertices in the order, if any.
+    triangle: (a, b) -> @third__.get([a, b])?[0]
 
     # The method `plus` returns a triangulation with the given triangle added
     # unless it is already present or creates an orientation mismatch. In the
@@ -171,7 +174,9 @@ triangulation = do ->
       else if seq.find([[a, b], [b, c], [c, a]], ([p, q]) => @third p, q)
         throw new Error "Orientation mismatch."
       else
-        new Triangulation @third__.plusAll [[[a,b],c], [[b,c],a], [[c,a],b]]
+        t = tri a, b, c
+        added = [[[a, b], [t, c]], [[b, c], [t, a]], [[c, a], [t, b]]]
+        new Triangulation @third__.plusAll added
 
     # The method `minus` returns a triangulation with the given triangle
     # removed, if present.
@@ -224,6 +229,10 @@ delaunayTriangulation = do ->
     # the two given ones in the given orientation, if any.
     third: (a, b) -> @triangulation__.third a, b
 
+    # The method `triangle` finds the unique oriented triangle with the two
+    # given pair of vertices in the order, if any.
+    triangle: (a, b) -> @triangulation__.triangle a, b
+
     # The method `sideOf` determines which side of the oriented line given by
     # the sites with indices `a` and `b` the point `p` (a `Point2d` instance)
     # lies on. A positive value means it is to the right, a negative value to
@@ -275,7 +284,7 @@ delaunayTriangulation = do ->
       else if c.isInfinite() or d.isInfinite()
         false
       else
-        tri(a, b, c).inclusionInCircumCircle(d) > 0
+        @triangle(a, b).inclusionInCircumCircle(d) > 0
 
     # The private function `subdivide` takes a triangulation `T`, a triangle
     # `t` and a site `p` inside that triangle and creates a new triangulation
