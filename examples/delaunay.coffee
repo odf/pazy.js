@@ -81,10 +81,10 @@ class Point3d
 
 # ----
 
-# The class `Triangle` represents an oriented, abstract triangle with no
-# specified origin. In other words, the sequences `a, b, c`, `b, c, a` and `c,
-# a,b` describe the same oriented triangle for given `a`, `b` and `c`, but `a,
-# c, a` does not.
+# The class `Triangle` represents an oriented triangle in the euclidean plane
+# with no specified origin. In other words, the sequences `a, b, c`, `b, c, a`
+# and `c, a,b` describe the same oriented triangle for given `a`, `b` and `c`,
+# but `a, c, a` does not.
 class Triangle
   constructor: (@a, @b, @c) ->
 
@@ -130,14 +130,12 @@ class Triangle
 
 # ----
 
-# The function `triangulation` creates an _oriented_ abstract triangulation,
-# i.e. one in which the vertices of each triangle are assigned one out of two
-# possible circular orders. Whenever two triangles share an edge, we moreover
-# require the orientations of these to 'match' in such a way that the induced
-# orders on the pair of vertices defining the edge are exactly opposite.
-#
-# The triangulation is abstract in the sense that we do not impose any
-# restrictions on the objects representing vertices.
+# The function `triangulation` creates an oriented triangulation in the
+# euclidean plane. By _oriented_, we mean that the vertices of each triangle
+# are assigned one out of two possible circular orders. Whenever two triangles
+# share an edge, we moreover require the orientations of these to 'match' in
+# such a way that the induced orders on the pair of vertices defining the edge
+# are exactly opposite.
 triangulation = do ->
 
   # The hidden class `Triangulation` implements our data structure.
