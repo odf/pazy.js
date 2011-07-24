@@ -148,8 +148,7 @@ triangulation = do ->
     # The method `toSeq` returns the triangles contained in the triangulation
     # as a lazy sequence.
     memo @, 'toSeq', ->
-      good = seq.select @third__, ([e, [t, c]]) -> equal c, t.a
-      seq.map good, ([e, [t, c]]) -> t
+      seq.map(@third__, ([e, [t, c]]) -> t if equal c, t.a)?.select (x) -> x?
 
     # The method `third` finds the unique third vertex forming a triangle with
     # the two given ones in the given orientation, if any.
