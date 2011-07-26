@@ -37,12 +37,12 @@ seq = (src) ->
     null
   else if src.constructor == Sequence
     src
-  else if typeof src.length == 'number'
-    fromArray src, 0
   else if typeof src.toSeq == 'function'
     src.toSeq()
+  else if typeof src.length == 'number'
+    fromArray src, 0
   else if typeof src.first == 'function' and typeof src.rest == 'function'
-    seq.conj src.first(), src.rest
+    src
   else
     throw new Error("cannot make a sequence from #{src}")
 
