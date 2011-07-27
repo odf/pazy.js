@@ -35,7 +35,9 @@ class Queue
 
   first: -> @front?.first()
 
-  rest: -> if @front then new Queue(@front.rest(), @rear, @schedule)
+  rest: -> new Queue(@front?.rest(), @rear, @schedule)
+
+  toSeq: -> seq.concat @front, seq.reverse @rear
 
 
 # --------------------------------------------------------------------

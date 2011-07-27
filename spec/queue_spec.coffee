@@ -17,3 +17,6 @@ describe "A queue with the elements 0 to 9", ->
     t = queue
     t = t.rest() while t.rest()?.first()?
     expect(t.first()).toBe 9
+
+  it "should produce the right sequence", ->
+    expect(seq.into queue, []).toEqual [0..9]
