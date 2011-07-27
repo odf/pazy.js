@@ -42,7 +42,7 @@ describe "A sequence", ->
       expect(s.equals [1,2]).toBe true
 
     it "should combine correctly with another sequence", ->
-      expect(s.combine([1,2,1], (a,b) -> a == b).into []).
+      expect(s.combine(((a,b) -> a == b), [1,2,1]).into []).
         toEqual [true, true, false]
 
     it "should not compare equal to the same sequence with a one appended", ->
@@ -112,7 +112,7 @@ describe "A sequence", ->
       expect(seq.min s).toBe undefined
 
     it "should leave a sequence it is combined with as is", ->
-      expect(seq.combine(s, [1..5], (a, b) -> a + b).into []).toEqual [1..5]
+      expect(seq.combine(((a, b) -> a + b), s, [1..5]).into []).toEqual [1..5]
 
     it "should leave a sequence it is added to as is", ->
       expect(seq.add(s, [1..5]).into []).toEqual [1..5]
@@ -358,7 +358,7 @@ describe "A sequence", ->
       expect(s.takeWhile((n) -> n < 1000000000).size()).toBe 45
 
     describe "when combined into pairs of consecutive entries", ->
-      pairs = s.combine(s.rest(), (a, b) -> [a, b])
+      pairs = s.combine ((a, b) -> [a, b]), s.rest()
 
       it "should start with the pairs (0,1), (1,1), (1,2) and (2,3)", ->
         expect(pairs.take(4).into []).toEqual [[0,1], [1,1], [1,2], [2,3]]
@@ -369,6 +369,8 @@ describe "A sequence", ->
 
     primes = seq.from(2).select(isPrime)
 
+    fib = seq.conj 0, -> seq.conj 1, -> fib.rest().add fib
+
     it "should start with the number 2, 3, 5, 7, 11, 13, 17, 19, 23 and 29", ->
       expect(primes.take(10).into []).toEqual [2,3,5,7,11,13,17,19,23,29]
 
@@ -376,11 +378,28 @@ describe "A sequence", ->
       expect(primes.takeWhile((n) -> n < 1000).last()).toBe 997
 
     describe "when interleaved with the fibonacci numbers startin at 2", ->
-      fib = seq.conj 0, -> seq.conj 1, -> fib.rest().add fib
       s = primes.interleave fib.drop 3
 
       it "should start with the elements 2,2,3,3,5,5,7,8,11,13,13 and 21", ->
         expect(s.take(12).into []).toEqual [2,2,3,3,5,5,7,8,11,13,13,21]
+
+    describe "when zipped with the fibonacci sequence and the numbers from 1", ->
+      s = primes.zip fib, seq.from(1)
+
+      it "should start with the elements (2, 0, 1) and (3, 1, 2)", ->
+        expect(s.take(2).map((s) -> s.toString()).into []).toEqual [
+          "(2, 0, 1)", "(3, 1, 2)" ]
+
+    describe "when added to the fibonacci sequence and the integers from 1", ->
+      s = primes.add fib, seq.from(1)
+
+      # 2 3 5  7 11 13 17 19 23 29
+      # 0 1 1  2  3  5  8 13 21 34
+      # 1 2 3  4  5  6  7  8  9 10
+      # 3 6 9 13 19 24 32 40 53 73
+      it "should start with the elements 3,6,9,13,19,24,32,40,53 and 73", ->
+        expect(s.take(10).into []).toEqual [3,6,9,13,19,24,32,40,53,73]
+
 
   describe "which is forced", ->
     log = []

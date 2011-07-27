@@ -78,6 +78,22 @@ seq.combinator = combinator = (name, f) ->
   seq["#{name}__"] = (s, t, args...) -> f.call(seq, s,      t,      args...)
   Sequence::[name] = (t, args...)    -> f.call(seq, this,   seq(t), args...)
 
+seq.zip__ = (seqs) ->
+  firsts = seqs?.map (s) -> if s? then s.first() else null
+  if seq.find(firsts, (x) -> x?)?
+    seq.conj firsts, -> seq.zip__ seq.map seqs, (s) -> s?.rest()
+  else
+    null
+
+seq.zip = (args...) -> seq.zip__ seq.map args, seq
+
+Sequence::zip = (args...) -> seq.zip this, args...
+
+seq.combine = combine = (op, args...) ->
+  seq.zip(args...)?.map (s) -> seq.fold s, op
+
+Sequence::combine = (op, args...) -> combine op, this, args...
+
 
 method 'empty', (s) -> not s?
 
@@ -152,21 +168,15 @@ method 'fold', (s, op) -> @reduce__ s?.rest(), s?.first(), op
 method 'max', (s) -> @fold__ s, (a,b) -> if b > a then b else a
 method 'min', (s) -> @fold__ s, (a,b) -> if b < a then b else a
 
-combinator 'combine', (s, t, op) ->
-  if not s
-    @map__ t, (a) -> op null, a
-  else if not t
-    @map__ s, (a) -> op a, null
-  else
-    @conj op(s.first(), t.first()), =>
-      @combine__ s.rest(), t.rest(), op
+method 'add', (s, args...) -> combine ((a, b) -> a + b), s, args...
+method 'sub', (s, args...) -> combine ((a, b) -> a - b), s, args...
+method 'mul', (s, args...) -> combine ((a, b) -> a * b), s, args...
+method 'div', (s, args...) -> combine ((a, b) -> a / b), s, args...
 
-combinator 'add', (s, t) -> @combine__ s, t, (a,b) -> a + b
-combinator 'sub', (s, t) -> @combine__ s, t, (a,b) -> a - b
-combinator 'mul', (s, t) -> @combine__ s, t, (a,b) -> a * b
-combinator 'div', (s, t) -> @combine__ s, t, (a,b) -> a / b
-
-combinator 'equals', (s, t) -> @forall__ @combine__(s, t, equal), (a) -> a
+method 'equals', (s, args...) ->
+  @forall__ seq.zip(s, args...), (t) ->
+    x = t?.first()
+    seq.forall__ t?.rest(), (y) -> equal x, y
 
 combinator 'interleave', (s, t) ->
   if s
@@ -241,3 +251,12 @@ method 'toString', (s, limit = 10) ->
 
 exports ?= this.pazy ?= {}
 exports.seq = seq
+
+
+# --------------------------------------------------------------------
+# Quick testing.
+# --------------------------------------------------------------------
+
+if module? and not module.parent
+  # Test code goes here
+  null
