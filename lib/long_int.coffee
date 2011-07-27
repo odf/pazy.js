@@ -45,9 +45,7 @@ TWO  = seq.conj 2
 
 cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
-cmp = (r, s) ->
-  d = seq.combine(r, s, (a, b) -> a - b)
-  d?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
+cmp = (r, s) -> seq.sub(r, s)?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
 
 add = (r, s, c = 0) ->
   if c or (r and s)
