@@ -74,9 +74,11 @@ seq.method = method = (name, f) ->
   Sequence::[name] = (args...)    -> f.call(seq, this,   args...)
 
 seq.combinator = combinator = (name, f) ->
-  seq[name]        = (s, t, args...) -> f.call(seq, seq(s), seq(t), args...)
-  seq["#{name}__"] = (s, t, args...) -> f.call(seq, s,      t,      args...)
-  Sequence::[name] = (t, args...)    -> f.call(seq, this,   seq(t), args...)
+  seq[name] = (args...) ->
+    seq.fold seq.map(args, seq), (s, t) -> f.call(seq, s, t)
+
+  seq["#{name}__"] = (s, t)    -> f.call(seq, s, t)
+  Sequence::[name] = (args...) -> seq[name] this, args...
 
 seq.zip__ = (seqs) ->
   firsts = seqs?.map (s) -> if s? then s.first() else null
@@ -85,14 +87,10 @@ seq.zip__ = (seqs) ->
   else
     null
 
-seq.zip = (args...) -> seq.zip__ seq.map args, seq
-
-Sequence::zip = (args...) -> seq.zip this, args...
-
-seq.combine = combine = (op, args...) ->
-  seq.zip(args...)?.map (s) -> seq.fold s, op
-
-Sequence::combine = (op, args...) -> combine op, this, args...
+seq.zip           = (args...)     -> seq.zip__ seq.map args, seq
+seq.combine       = (op, args...) -> seq.zip(args...)?.map (s) -> seq.fold s, op
+Sequence::zip     = (args...)     -> seq.zip this, args...
+Sequence::combine = (op, args...) -> seq.combine op, this, args...
 
 
 method 'empty', (s) -> not s?
@@ -168,10 +166,10 @@ method 'fold', (s, op) -> @reduce__ s?.rest(), s?.first(), op
 method 'max', (s) -> @fold__ s, (a,b) -> if b > a then b else a
 method 'min', (s) -> @fold__ s, (a,b) -> if b < a then b else a
 
-method 'add', (s, args...) -> combine ((a, b) -> a + b), s, args...
-method 'sub', (s, args...) -> combine ((a, b) -> a - b), s, args...
-method 'mul', (s, args...) -> combine ((a, b) -> a * b), s, args...
-method 'div', (s, args...) -> combine ((a, b) -> a / b), s, args...
+method 'add', (s, args...) -> seq.combine ((a, b) -> a + b), s, args...
+method 'sub', (s, args...) -> seq.combine ((a, b) -> a - b), s, args...
+method 'mul', (s, args...) -> seq.combine ((a, b) -> a * b), s, args...
+method 'div', (s, args...) -> seq.combine ((a, b) -> a / b), s, args...
 
 method 'equals', (s, args...) ->
   @forall__ seq.zip(s, args...), (t) ->
@@ -258,5 +256,4 @@ exports.seq = seq
 # --------------------------------------------------------------------
 
 if module? and not module.parent
-  # Test code goes here
-  null
+  console.log seq.interleave([1..3], [9..7], ['a', 'b', 'c']).into []
