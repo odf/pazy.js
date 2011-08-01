@@ -73,25 +73,18 @@ seq.method = method = (name, f) ->
   seq["#{name}__"] = (s, args...) -> f.call(seq, s,      args...)
   Sequence::[name] = (args...)    -> f.call(seq, this,   args...)
 
-seq.combinator = combinator = (name, f) ->
+seq.oldCombinator = oldCombinator = (name, f) ->
   seq[name] = (args...) ->
     seq.fold seq.map(args, seq), (s, t) -> f.call(seq, s, t)
 
   seq["#{name}__"] = (s, t)    -> f.call(seq, s, t)
   Sequence::[name] = (args...) -> seq[name] this, args...
 
-seq.zip__ = (seqs) ->
-  firsts = seqs?.map (s) -> if s? then s.first() else null
-  if seq.find(firsts, (x) -> x?)?
-    seq.conj firsts, -> seq.zip__ seq.map seqs, (s) -> s?.rest()
-  else
-    null
-
-seq.zip           = (args...)     -> seq.zip__ seq.map args, seq
-seq.combine       = (op, args...) -> seq.zip(args...)?.map (s) -> seq.fold s, op
-Sequence::zip     = (args...)     -> seq.zip this, args...
-Sequence::combine = (op, args...) -> seq.combine op, this, args...
-
+seq.combinator = combinator = (name, f) ->
+  namex = "#{name}__"
+  seq[namex]       = (seqs)    -> f.call seq, seqs
+  seq[name]        = (args...) -> seq[namex] seq.map args, seq
+  Sequence::[name] = (args...) -> seq[name] this, args...
 
 method 'empty', (s) -> not s?
 
@@ -166,6 +159,16 @@ method 'fold', (s, op) -> @reduce__ s?.rest(), s?.first(), op
 method 'max', (s) -> @fold__ s, (a,b) -> if b > a then b else a
 method 'min', (s) -> @fold__ s, (a,b) -> if b < a then b else a
 
+combinator 'zip', (seqs) ->
+  firsts = seqs?.map (s) -> if s? then s.first() else null
+  if seq.find(firsts, (x) -> x?)?
+    seq.conj firsts, -> seq.zip__ seq.map seqs, (s) -> s?.rest()
+  else
+    null
+
+seq.combine       = (op, args...) -> seq.zip(args...)?.map (s) -> seq.fold s, op
+Sequence::combine = (op, args...) -> seq.combine op, this, args...
+
 method 'add', (s, args...) -> seq.combine ((a, b) -> a + b), s, args...
 method 'sub', (s, args...) -> seq.combine ((a, b) -> a - b), s, args...
 method 'mul', (s, args...) -> seq.combine ((a, b) -> a * b), s, args...
@@ -176,23 +179,25 @@ method 'equals', (s, args...) ->
     x = t?.first()
     seq.forall__ t?.rest(), (y) -> equal x, y
 
-combinator 'interleave', (s, t) ->
-  if s
-    @conj s.first(), => @interleave__ t, s.rest()
-  else
-    t
-
-combinator 'lazyConcat', (s, next) ->
+oldCombinator 'lazyConcat', (s, next) ->
   if s
     @conj s.first(), => @lazyConcat__ s.rest(), next
   else
     next()
 
-combinator 'concat', (s, t) ->
+oldCombinator 'concat', (s, t) ->
   if s
     @lazyConcat__ s, -> t
   else
     t
+
+combinator 'interleave', (seqs) ->
+  live = seqs?.select (s) -> s?
+  if live?
+    firsts = live.map((s) -> s.first())
+    @lazyConcat__ firsts, => @interleave__ live.map (s) -> s.rest()
+  else
+    null
 
 method 'flatten', (s) ->
   if s and seq s.first()
@@ -204,7 +209,15 @@ method 'flatten', (s) ->
 
 method 'flatMap', (s, func) -> @flatten__ @map__ s, func
 
-combinator 'cartesian', (s, t) -> @flatMap__ s, (a) => @map__ t, (b) -> [a,b]
+combinator 'cartesian', (seqs) ->
+  if seqs
+    if seqs.rest()
+      @flatMap__ seqs.first(), (a) =>
+        @cartesian__(seqs.rest())?.map (s) => @conj a, -> s
+    else
+      seqs.first().map seq.conj
+  else
+    null
 
 method 'each', (s, func) ->
   step = (t) -> if t then func(t.first()); recur -> step t.rest()
@@ -256,4 +269,5 @@ exports.seq = seq
 # --------------------------------------------------------------------
 
 if module? and not module.parent
-  console.log seq.interleave([1..3], [9..7], ['a', 'b', 'c']).into []
+  console.log seq.cartesian(seq.range(1,2), seq.range(1,3)).join('| ')
+

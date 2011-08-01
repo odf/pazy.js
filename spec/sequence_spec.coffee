@@ -314,16 +314,32 @@ describe "A sequence", ->
       expect(s.size()).toBe 6
 
     it "should start with [1,1]", ->
-      expect(s.first()).toEqual [1,1]
+      expect(s.first().into []).toEqual [1,1]
 
     it "should end with [2,3]", ->
-      expect(s.last()).toEqual [2,3]
+      expect(s.last().into []).toEqual [2,3]
 
     it "should contain the expected elements", ->
-      expect(s.into []).toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
+      expect(s.map((x) -> x.into []).into [])
+        .toEqual [[1,1], [1,2], [1,3], [2,1], [2,2], [2,3]]
 
     it "should contain the elements 1, 2, 3 after flatten() and uniq()", ->
       expect(s.flatten().uniq().into []).toEqual [1,2,3]
+
+  describe "that's the cartesion product of three sequences", ->
+    s = seq.range(1, 2).cartesian seq.range(1, 3), seq.range(1, 4)
+
+    it "should have the correct number of elements", ->
+      expect(s.size()).toBe 24
+
+    it "should start with the correct element", ->
+      expect(s.first().into []).toEqual [1,1,1]
+
+    it "should end with the correct element", ->
+      expect(s.last().into []).toEqual [2,3,4]
+
+    it "should contain the correct elements after flatten() and uniq()", ->
+      expect(s.flatten().uniq().into []).toEqual [1,2,3,4]
 
   describe "implementing the Fibonacci numbers", ->
     s = (seq.conj 0, -> seq.conj 1, -> s.rest().add s)
@@ -389,6 +405,12 @@ describe "A sequence", ->
       it "should start with the elements (2, 0, 1) and (3, 1, 2)", ->
         expect(s.take(2).map((s) -> s.toString()).into []).toEqual [
           "(2, 0, 1)", "(3, 1, 2)" ]
+
+    describe "when interleaved with two sequences", ->
+      s = primes.interleave fib, seq.from(1)
+
+      it "should produce the correct elements", ->
+        expect(s.take(6).into []).toEqual [2, 0, 1, 3, 1, 2]
 
     describe "when added to the fibonacci sequence and the integers from 1", ->
       s = primes.add fib, seq.from(1)
