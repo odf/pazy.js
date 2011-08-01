@@ -73,13 +73,6 @@ seq.method = method = (name, f) ->
   seq["#{name}__"] = (s, args...) -> f.call(seq, s,      args...)
   Sequence::[name] = (args...)    -> f.call(seq, this,   args...)
 
-seq.oldCombinator = oldCombinator = (name, f) ->
-  seq[name] = (args...) ->
-    seq.fold seq.map(args, seq), (s, t) -> f.call(seq, s, t)
-
-  seq["#{name}__"] = (s, t)    -> f.call(seq, s, t)
-  Sequence::[name] = (args...) -> seq[name] this, args...
-
 seq.combinator = combinator = (name, f) ->
   namex = "#{name}__"
   seq[namex]       = (seqs)    -> f.call seq, seqs
@@ -179,29 +172,31 @@ method 'equals', (s, args...) ->
     x = t?.first()
     seq.forall__ t?.rest(), (y) -> equal x, y
 
-oldCombinator 'lazyConcat', (s, next) ->
+seq.lazyConcat = (s, t) ->
   if s
-    @conj s.first(), => @lazyConcat__ s.rest(), next
+    @conj s.first(), => @lazyConcat s.rest(), t
   else
-    next()
+    seq t()
 
-oldCombinator 'concat', (s, t) ->
-  if s
-    @lazyConcat__ s, -> t
+Sequence.lazyConcat = (t) -> seq.lazyConcat this, t
+
+combinator 'concat', (seqs) ->
+  if seqs
+    @lazyConcat seqs.first(), => @concat__ seqs.rest()
   else
-    t
+    null
 
 combinator 'interleave', (seqs) ->
   live = seqs?.select (s) -> s?
   if live?
     firsts = live.map((s) -> s.first())
-    @lazyConcat__ firsts, => @interleave__ live.map (s) -> s.rest()
+    @lazyConcat firsts, => @interleave__ live.map (s) -> s.rest()
   else
     null
 
 method 'flatten', (s) ->
   if s and seq s.first()
-    @lazyConcat__ seq(s.first()), => @flatten__ s.rest()
+    @lazyConcat seq(s.first()), => @flatten__ s.rest()
   else if s?.rest()
     @flatten__ @dropWhile__ s.rest(), (x) -> not seq x
   else
