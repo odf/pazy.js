@@ -415,13 +415,23 @@ describe "A sequence", ->
     describe "when added to the fibonacci sequence and the integers from 1", ->
       s = primes.add fib, seq.from(1)
 
-      # 2 3 5  7 11 13 17 19 23 29
-      # 0 1 1  2  3  5  8 13 21 34
-      # 1 2 3  4  5  6  7  8  9 10
-      # 3 6 9 13 19 24 32 40 53 73
       it "should start with the elements 3,6,9,13,19,24,32,40,53 and 73", ->
         expect(s.take(10).into []).toEqual [3,6,9,13,19,24,32,40,53,73]
 
+    describe "of which the cartesion product is taken with itself", ->
+      s = primes.cartesian primes
+
+      it "should start with the pairs 2,2; 2,3 and 2,5", ->
+        expect(s.take(3).map((x) -> x.into []).into [])
+          .toEqual [[2,2],[2,3],[2,5]]
+
+    describe "of which the three-fold Cantor product is computed", ->
+      s = primes.cantor primes, primes
+
+      it "should start with the right triplets", ->
+        expect(s.take(10).map((x) -> x.into []).into [])
+          .toEqual [[2,2,2],[2,2,3],[2,3,2],[3,2,2],[2,2,5],
+                    [2,3,3],[2,5,2],[3,2,3],[3,3,2],[5,2,2]]
 
   describe "which is forced", ->
     log = []

@@ -212,6 +212,27 @@ combinator 'cartesian', (seqs) ->
   else
     null
 
+cantor_fold = (s, back, remaining) ->
+  if remaining
+    t = seq.conj remaining.first(), -> back
+    z = s.zip(t).takeWhile((x) -> x?.get(1)).flatMap (x) ->
+      a = x.first()
+      x.get(1).map (y) -> seq.conj a, -> y
+    seq.conj z, -> cantor_fold s, t, remaining.rest()
+  else
+    null
+
+cantor_runs = (seqs) ->
+  if seqs
+    if seqs.rest()
+      cantor_fold seqs.first(), null, cantor_runs seqs.rest()
+    else
+      seqs.first().map (x) -> seq.conj seq.conj x
+  else
+    null
+
+combinator 'cantor', (seqs) -> cantor_runs(seqs)?.flatten()
+
 method 'each', (s, func) ->
   step = (t) -> if t then func(t.first()); recur -> step t.rest()
   resolve step s
@@ -262,5 +283,5 @@ exports.seq = seq
 # --------------------------------------------------------------------
 
 if module? and not module.parent
-  console.log seq.cartesian(seq.range(1,2), seq.range(1,3)).join('| ')
-
+  s = seq.from(1)
+  console.log "#{s.cantor(s, s).take 10}"
