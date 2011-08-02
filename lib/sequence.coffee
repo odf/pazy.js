@@ -172,13 +172,11 @@ method 'equals', (s, args...) ->
     x = t?.first()
     seq.forall__ t?.rest(), (y) -> equal x, y
 
-seq.lazyConcat = (s, t) ->
+method 'lazyConcat', (s, t) ->
   if s
     @conj s.first(), => @lazyConcat s.rest(), t
   else
     seq t()
-
-Sequence.lazyConcat = (t) -> seq.lazyConcat this, t
 
 combinator 'concat', (seqs) ->
   if seqs
