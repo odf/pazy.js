@@ -10,10 +10,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require('functional')
-  { seq }       = require('sequence')
+  { trampoline } = require('functional')
+  { seq }        = require('sequence')
 else
-  { recur, resolve, seq } = this.pazy
+  { trampoline, seq } = this.pazy
 
 
 class Sortable
@@ -26,13 +26,13 @@ class Sortable
 
     addSeg = (seg, segs, bits) ->
       if bits % 2 > 0
-        recur -> addSeg(merge(less, seg, segs.first()), segs.rest(), bits >> 1)
+        -> addSeg(merge(less, seg, segs.first()), segs.rest(), bits >> 1)
       else
         seq.conj seg, (-> segs), 'forced'
 
     if arguments.length > 0
       seq.reduce arguments, this, (s, x) ->
-        newSegs = resolve addSeg(seq.conj(x), s.segs, s.size())
+        newSegs = trampoline addSeg(seq.conj(x), s.segs, s.size())
         new Sortable(less, s.size() + 1, newSegs)
     else
       this

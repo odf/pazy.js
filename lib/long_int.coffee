@@ -3,17 +3,17 @@
 #
 # !!! Very incomplete and very experimental !!!
 #
-# Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 # -- Importing
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require 'functional'
+  { trampoline } = require 'functional'
   { seq }  = require 'sequence'
 else
-  { recur, resolve, seq } = this.pazy
+  { trampoline, seq } = this.pazy
 
 # -- Call with '--test' for some quick-and-dirty testing
 
@@ -109,14 +109,13 @@ divmod = (r, s) ->
       (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
 
     if f
-      recur -> step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
+      -> step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
     else if t
-      recur -> step(seq.conj(0, -> q),
-                    seq.conj(t.first(), -> h), t.rest())
+      -> step(seq.conj(0, -> q), seq.conj(t.first(), -> h), t.rest())
     else
       [cleanup(q), h && div(h, seq.conj(scale))]
 
-  resolve step(null, null, r_.reverse())
+  trampoline step(null, null, r_.reverse())
 
 div = (r, s) -> divmod(r, s)[0]
 
@@ -126,12 +125,12 @@ pow = (r, s) ->
   step = (p, r, s) ->
     if s
       if s.first() % 2 == 1
-        recur -> step(mul(p, r), r, sub(s, ONE))
+        -> step(mul(p, r), r, sub(s, ONE))
       else
-        recur -> step(p, seq(mul(r, r)), div(s, TWO))
+        -> step(p, seq(mul(r, r)), div(s, TWO))
     else
       p
-  resolve step(ONE, r, s)
+  trampoline step(ONE, r, s)
 
 sqrt = (s) ->
   n = s.size()
@@ -140,8 +139,8 @@ sqrt = (s) ->
   else
     step = (r) ->
       rn = seq div(add(r, div(s, r)), TWO)
-      if cmp(r, rn) then recur -> step(rn) else rn
-    resolve step s.take n >> 1
+      if cmp(r, rn) then -> step(rn) else rn
+    trampoline step s.take n >> 1
 
 
 # -- The glorious LongInt class
@@ -186,9 +185,9 @@ class LongInt
 
   toNumber: ->
     step = (n, s) ->
-      if s then recur -> step(n * BASE + s.first(), s.rest()) else n
+      if s then -> step(n * BASE + s.first(), s.rest()) else n
     rev = @digits__?.reverse()?.dropWhile (d) -> d == 0
-    @sign() * resolve step(0, rev)
+    @sign() * trampoline step(0, rev)
 
   @operator: (names, arity, code) ->
     f = (args...) -> code.apply(this, LongInt.make x for x in args[...arity-1])
@@ -255,9 +254,9 @@ class LongInt
       throw new Error('number must not be negative')
 
   @operator ['gcd'], 2, (other) ->
-    step = (a, b) -> if b.cmp(0) > 0 then recur -> step b, a.mod b else a
+    step = (a, b) -> if b.cmp(0) > 0 then -> step b, a.mod b else a
     [a, b] = [this.abs(), other.abs()]
-    if a.cmp(b) > 0 then resolve step a, b else resolve step b, a
+    if a.cmp(b) > 0 then trampoline step a, b else trampoline step b, a
 
 # --------------------------------------------------------------------
 # Exporting.

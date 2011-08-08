@@ -8,10 +8,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { equal }          = require 'core_extensions'
-  { recur, resolve } = require('functional')
+  { equal }      = require 'core_extensions'
+  { trampoline } = require('functional')
 else
-  { equal, recur, resolve } = this.pazy
+  { equal, trampoline } = this.pazy
 
 
 class Sequence
@@ -22,13 +22,13 @@ skip = (a, i) ->
   if i >= a.length or a[i] != undefined
     fromArray a, i
   else
-    recur -> skip a, i+1
+    -> skip a, i+1
 
 fromArray = (a, i) ->
   if i >= a.length
     null
   else if a[i] == undefined
-    resolve skip a, i
+    trampoline skip a, i
   else
     seq.conj a[i], -> fromArray a, i+1
 
@@ -82,12 +82,12 @@ seq.combinator = combinator = (name, f) ->
 method 'empty', (s) -> not s?
 
 memo 'size', (s) ->
-  step = (t, n) -> if t then recur -> step t.rest(), n + 1 else n
-  resolve step s, 0
+  step = (t, n) -> if t then -> step t.rest(), n + 1 else n
+  trampoline step s, 0
 
 memo 'last', (s) ->
-  step = (t) -> if t.rest() then recur -> step t.rest() else t.first()
-  if s then resolve step s
+  step = (t) -> if t.rest() then -> step t.rest() else t.first()
+  if s then trampoline step s
 
 method 'take', (s, n) ->
   if s and n > 0
@@ -102,12 +102,12 @@ method 'takeWhile', (s, pred) ->
     null
 
 method 'drop', (s, n) ->
-  step = (t, n) -> if t and n > 0 then recur -> step t.rest(), n - 1 else t
-  if s then resolve step s, n else null
+  step = (t, n) -> if t and n > 0 then -> step t.rest(), n - 1 else t
+  if s then trampoline step s, n else null
 
 method 'dropWhile', (s, pred) ->
-  step = (t) -> if t and pred t.first() then recur -> step t.rest() else t
-  if s then resolve step s else null
+  step = (t) -> if t and pred t.first() then -> step t.rest() else t
+  if s then trampoline step s else null
 
 method 'get', (s, n) -> if n >= 0 then @drop__(s, n)?.first()
 
@@ -140,9 +140,8 @@ method 'sums',     (s) -> @accumulate__ s, 0, (a,b) -> a + b
 method 'products', (s) -> @accumulate__ s, 1, (a,b) -> a * b
 
 method 'reduce', (s, start, op) ->
-  step = (t, val) ->
-    if t then recur -> step t.rest(), op val, t.first() else val
-  resolve step s, start
+  step = (t, val) -> if t then -> step t.rest(), op val, t.first() else val
+  trampoline step s, start
 
 method 'sum',     (s) -> @reduce__ s, 0, (a,b) -> a + b
 method 'product', (s) -> @reduce__ s, 1, (a,b) -> a * b
@@ -234,13 +233,12 @@ cantor_runs = (seqs) ->
 combinator 'cantor', (seqs) -> cantor_runs(seqs)?.flatten()
 
 method 'each', (s, func) ->
-  step = (t) -> if t then func(t.first()); recur -> step t.rest()
-  resolve step s
+  step = (t) -> if t then func(t.first()); -> step t.rest()
+  trampoline step s
 
 method 'reverse', (s) ->
-  step = (r, t) =>
-    if t then recur => step @conj(t.first(), -> r), t.rest() else r
-  resolve step null, s
+  step = (r, t) => if t then => step @conj(t.first(), -> r), t.rest() else r
+  trampoline step null, s
 
 method 'forced', (s) ->
   if s

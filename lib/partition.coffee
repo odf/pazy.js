@@ -6,10 +6,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require('functional')
-  { HashMap }        = require('indexed')
+  { trampoline } = require('functional')
+  { HashMap }    = require('indexed')
 else
-  { recur, resolve, HashMap } = this.pazy
+  { trampoline, HashMap } = this.pazy
 
 
 class Partition
@@ -31,14 +31,14 @@ class Partition
     else
       seek = (y) =>
         z = @parent.get y
-        if z == y then z else recur -> seek z
-      root = resolve seek x
+        if z == y then z else -> seek z
+      root = trampoline seek x
 
       flatten = (y) =>
         z = @parent.get y
         @parent = @parent.plus [y, root]
-        if z != y then recur -> flatten z
-      resolve flatten x
+        if z != y then -> flatten z
+      trampoline flatten x
 
       root
 

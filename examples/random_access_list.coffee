@@ -3,16 +3,16 @@
 # structure with worst case persistent execution time of O(1) for
 # operations on the head and O(log n) for random access operations.
 #
-# Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { recur, resolve } = require('functional')
-  { seq }            = require('sequence')
+  { trampoline } = require('functional')
+  { seq }        = require('sequence')
 else
-  { recur, resolve, seq } = this.pazy
+  { trampoline, seq } = this.pazy
 
 list = (car, cdr) ->
   first: -> car
@@ -57,54 +57,54 @@ class RandomAccessList
         x
       else if w > 1
         if i-1 < half(w)
-          recur -> lookupTree(half(w), t1, i-1)
+          -> lookupTree(half(w), t1, i-1)
         else
-          recur -> lookupTree(half(w), t2, i-1-half(w))
+          -> lookupTree(half(w), t2, i-1-half(w))
 
     step = (trees, i) ->
       if trees
         [w, t] = trees.first()
         if i < w
-          resolve lookupTree(w, t, i)
+          trampoline lookupTree(w, t, i)
         else
-          recur -> step(trees.rest(), i-w)
+          -> step(trees.rest(), i-w)
 
-    resolve step(@trees, i) if i >= 0
+    trampoline step(@trees, i) if i >= 0
 
   update: (i, y) ->
     zipUp = (r, s) ->
       if r
         [x, t1, t2] = r.first()
         if t1
-          recur -> zipUp(r.rest(), [x, t1, s])
+          -> zipUp(r.rest(), [x, t1, s])
         else
-          recur -> zipUp(r.rest(), [x, s, t2])
+          -> zipUp(r.rest(), [x, s, t2])
       else
         s
 
     updateTree = (r, w, [x, t1, t2], i) ->
       if i == 0
-        resolve zipUp(r, if w == 1 then [y] else [y, t1, t2])
+        trampoline zipUp(r, if w == 1 then [y] else [y, t1, t2])
       else
         wh = half(w)
         if i-1 < wh
-          recur -> updateTree(list([x, null, t2], r), wh, t1, i-1)
+          -> updateTree(list([x, null, t2], r), wh, t1, i-1)
         else
-          recur -> updateTree(list([x, t1, null], r), wh, t2, i-1-wh)
+          -> updateTree(list([x, t1, null], r), wh, t2, i-1-wh)
 
     step = (r, s, i) =>
       if s
         [w, t] = s.first()
         if i < w
-          newTree = resolve updateTree(null, w, t, i)
+          newTree = trampoline updateTree(null, w, t, i)
           seq.reverse(list([w, newTree], r)).concat(s.rest()).forced()
         else
-          recur -> step(list(s.first(), r), s.rest(), i - w)
+          -> step(list(s.first(), r), s.rest(), i - w)
       else
         throw new Error("index too large")
 
     if i >= 0
-      new RandomAccessList(resolve step(null, @trees, i))
+      new RandomAccessList(trampoline step(null, @trees, i))
     else
       throw new Error("negative index")
 

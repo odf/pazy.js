@@ -2,7 +2,7 @@
 # Various useful short functions that support a functional programming
 # style.
 #
-# Copyright (c) 2010 Olaf Delgado-Friedrichs (odf@github.com)
+# Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
 exports ?= this.pazy ?= {}
@@ -25,11 +25,10 @@ exports.suspend = (code) ->
 
 
 # --------------------------------------------------------------------
-# A pair of functions that simulate tail call optimization.
+# A function to simulate tail call optimization.
 # --------------------------------------------------------------------
 
-exports.recur   = (code) -> { recur__: code }
-exports.resolve = (val) -> val = val.recur__() while val?.recur__; val
+exports.trampoline = (val) -> val = val() while typeof val == 'function'; val
 
 
 # --------------------------------------------------------------------

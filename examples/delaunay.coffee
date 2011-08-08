@@ -10,12 +10,12 @@
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
   { equal, hashCode }          = require 'core_extensions'
-  { recur, resolve }           = require 'functional'
+  { trampoline }               = require 'functional'
   { seq }                      = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
   { Queue }                    = require 'queue'
 else
-  { equal, hashCode, recur, resolve,
+  { equal, hashCode, trampoline,
     seq, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
@@ -256,8 +256,8 @@ delaunayTriangulation = do ->
         if seq.empty candidates
           t
         else
-          recur => step candidates.find (s) => @isInTriangle s, p
-      resolve step outer
+          => step candidates.find (s) => @isInTriangle s, p
+      trampoline step outer
 
     # The method `mustFlip` determines whether the triangles adjacent to the
     # given edge from `a` to `b` violates the Delaunay condition, in which case
@@ -322,9 +322,9 @@ delaunayTriangulation = do ->
         [a, b] = stack.first()
         if T.mustFlip a, b
           c = T.third a, b
-          recur -> doFlips flip(T, a, b), seq([[a,c], [c,b]]).concat stack.rest()
+          -> doFlips flip(T, a, b), seq([[a,c], [c,b]]).concat stack.rest()
         else
-          recur -> doFlips T, stack.rest()
+          -> doFlips T, stack.rest()
 
     # The method `plus` creates a new Delaunay triangulation with the given
     # (x, y) location added as a site.
@@ -339,11 +339,11 @@ delaunayTriangulation = do ->
           if T.sideOf(u, v, p) == 0
             w = T.third u, v
             if w?
-              resolve doFlips flip(T, u, v), seq [[u, w], [w, v]]
+              trampoline doFlips flip(T, u, v), seq [[u, w], [w, v]]
             else
               T
           else
-            resolve doFlips T, seq [[u, v]]
+            trampoline doFlips T, seq [[u, v]]
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.
