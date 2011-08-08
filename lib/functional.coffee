@@ -11,17 +11,13 @@ exports ?= this.pazy ?= {}
 # An implementation of the suspend/force paradigm of lazy evaluation
 # via simple function memoization.
 #
-# Only the first call to f will evaluate the given code; the remaining
-# ones will return a cached result.
+# Only the first call to the returned function will evaluate the given
+# code; the remaining ones will return a cached result.
 # --------------------------------------------------------------------
 
 exports.suspend = (code) ->
-  val = null
-  ->
-    if code
-      val = code()
-      code = null
-    val
+  f = -> val = code(); (f = -> val)()
+  -> f()
 
 
 # --------------------------------------------------------------------
