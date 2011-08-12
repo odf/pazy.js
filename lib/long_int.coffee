@@ -17,7 +17,7 @@ else
 
 # -- Call with '--test' for some quick-and-dirty testing
 
-quicktest = process?.argv[2] == '--test'
+quicktest = module? and not module.parent
 
 # -- Setting the number base (maximal digit value - 1) and its square root
 
