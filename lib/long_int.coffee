@@ -164,6 +164,8 @@ class LongInt
   @make: (x) ->
     if x instanceof LongInt
       x
+    else if x instanceof CheckedInt
+      new LongInt x.val
     else if typeof x == 'number'
       new LongInt x
     else
@@ -258,6 +260,82 @@ class LongInt
     [a, b] = [this.abs(), other.abs()]
     if a.cmp(b) > 0 then trampoline step a, b else trampoline step b, a
 
+
+# -- The CheckedInt class provides integer operations that propagate
+#    to LongInt on overflow.
+
+class CheckedInt
+  constructor: (val = 0) ->
+    if typeof val != "number"
+      throw new Error "#{val} is not a number"
+    else if val % 1
+      throw new Error "#{val} is not an integer"
+    else if Math.abs(val) >= BASE
+      throw new Error "#{val} is not between #{-BASE+1} and #{BASE-1}"
+    else
+      @val = val
+
+  @make: (x) ->
+    if x instanceof CheckedInt
+      x
+    else
+      new CheckedInt x
+
+  make = (val) ->
+    if Math.abs(val) < BASE then new CheckedInt val else new LongInt val
+
+  @operator: (names, arity, code) ->
+    f = (args...) -> code.apply(this,
+                                CheckedInt.make x for x in args[...arity-1])
+    @::[name] = f for name in names
+    null
+
+  @operator ['neg', '-'], 1, -> new CheckedInt -@val
+
+  @operator ['abs'], 1, -> new CheckedInt Math.abs @val
+
+  @operator ['cmp', '<=>'], 2, (other) ->
+    if @val < other.val then -1 else if @val > other.val then 1 else 0
+
+  @operator ['sgn'], 1, -> @cmp 0
+
+  @operator ['plus', '+'], 2, (other) -> make @val + other.val
+
+  @operator ['minus', '-'], 2, (other) -> make @val - other.val
+
+  @operator ['times', '*'], 2, (other) ->
+    tmp = @val * other.val
+    if Math.abs(tmp) < BASE
+      new CheckedInt tmp
+    else
+      new LongInt(@val).times other.val
+
+  @operator ['div', '/'], 2, (other) -> make (@val / other.val) >> 0
+
+  @operator ['mod', '%'], 2, (other) -> make @val % other.val
+
+  @operator ['pow', '**'], 2, (other) ->
+    switch other.sgn()
+      when  0 then 1
+      when -1 then throw Error 'exponent must not be negative'
+      else
+        tmp = Math.pow @val, other.val
+        if Math.abs(tmp) < BASE
+          new CheckedInt tmp
+        else
+          new LongInt(@val).pow other.val
+
+  @operator ['sqrt'], 1, -> Math.sqrt(@val) >> 0
+
+  @operator ['gcd'], 2, (other) ->
+    step = (a, b) -> if b > 0 then -> step b, a % b else a
+    [a, b] = [Math.abs(@val), Math.abs(other.val)]
+    val = if a > b then trampoline step a, b else trampoline step b, a
+    new CheckedInt val
+
+  toString: -> "" + @val
+
+
 # --------------------------------------------------------------------
 # Exporting.
 # --------------------------------------------------------------------
@@ -266,8 +344,10 @@ exports ?= this.pazy ?= {}
 exports.LongInt = LongInt
 
 if quicktest
-  a = new LongInt 9950
+  a = new CheckedInt 9950
+  log "a = #{a}"
   a2 = a['*'] a
+  log "a * a = #{a2}"
   a3 = a2['*'] a
   log "(#{a}**3 + 1) / #{a}**2 = #{a3.plus(1).div a2} (#{a3.plus(1).mod a2})"
   log ""
@@ -282,3 +362,10 @@ if quicktest
   d = new LongInt 3 * 5 * 7 * 11 * 13 * 17 * 19 * 23 * 29 * 31
   log "#{c} gcd #{d} = #{c.gcd d} (expected #{29 * 31})"
   log ""
+
+  e = new CheckedInt(5).pow 5
+  log "5**5 = #{e}"
+  log "class of 5**5 is #{e.constructor.name}"
+  f = new CheckedInt(5).pow 6
+  log "5**6 = #{f}"
+  log "class of 5**6 is #{f.constructor.name}"
