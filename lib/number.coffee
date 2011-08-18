@@ -186,24 +186,29 @@ exports.number = number
 # Some quick tests.
 
 if quicktest
-  blanks = "                                    "
-
   show = (code) ->
-    s = code.toString().replace /^function\s*\(\)\s*{\s*return\s+(.*);\s*}/, "$1"
-    input = s + blanks[s.length..]
+    s = code.toString().replace /^function\s*\(\)\s*{\s*return\s*(.*);\s*}/, "$1"
+    input = s + "                                    "[s.length..]
 
     output =
       try
         res = code()
-        type = if res?.constructor? then res.constructor.name else typeof res
-        "#{type} #{res}"
+        type = if res?.constructor?
+          res.constructor.name
+        else if res?
+          typeof res
+        if type? then "-> #{type} #{res}" else "-> #{res}"
       catch ex
-        "-- #{ex} --"
+        "!! #{ex}"
 
-    log "#{input} -> #{output}"
+    log "#{input}#{output}"
 
 
   a = b = c = 0
+
+  log ''
+  show -> null
+  show -> undefined
 
   log ''
   show -> number(98).gcd 21
