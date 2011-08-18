@@ -61,8 +61,67 @@ HALFBASE = Math.sqrt BASE
 asNum = (n) ->
   if Math.abs(n) < BASE then new CheckedInt n else LongInt.fromNative n
 
-digits = (m) ->
-  if m then seq.conj m % BASE, -> digits Math.floor(m / BASE) else null
+# ----
+
+# The `NumberBase` class implements dispatching on binary arithmetic
+# operators.
+
+class NumberBase
+  makeNum = (n) ->
+    if n instanceof NumberBase
+      n
+    else if typeof n == 'number'
+      if Math.floor(n) == n
+        if Math.abs(n) < BASE
+          new CheckedInt n
+        else
+          LongInt.fromNative n
+      else
+        throw new Error "expected an integer, got #{n}"
+    else
+      throw new Error "expected a number, got #{n}"
+
+  upcast = (a, b) ->
+    [op1, op2] = [makeNum(a), makeNum(b)]
+
+    out =
+      switch op1.constructor
+        when LongInt
+          switch op2.constructor
+            when CheckedInt
+              [op1, LongInt.fromNative(op2.val)]
+            when LongInt
+              [op1, op2]
+        when CheckedInt
+          switch op2.constructor
+            when CheckedInt
+              [op1, op2]
+            when LongInt
+              [LongInt.fromNative(op1.val), op2]
+
+    if out
+      out
+    else
+      [tp1, tp2] = [op1.constructor, op2.constructor]
+      throw new Error "operands of types #{tp1} and #{tp2} not supported"
+
+  downcast = (x) ->
+    if x instanceof LongInt and x.cmp(BASE) < 0
+      new CheckedInt x.digits.first() * x.sign
+    else
+      x
+
+  operator = (name, f) ->
+    NumberBase[name]   = (args...) -> f.call NumberBase, args...
+    NumberBase::[name] = (args...) -> NumberBase[name] this, args...
+
+  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod', 'gcd']
+    do (name) ->
+      namex = "#{name}__"
+      operator name, (a, b) ->
+        [x, y] = upcast a, b
+        downcast x[namex] y
+
 
 # ----
 
@@ -70,8 +129,17 @@ digits = (m) ->
 # other words, if the result cannot be represented with full precision as a
 # Javascript number, a `LongInt` is produced instead.
 
-class CheckedInt
-  getval = (x) -> if x instanceof CheckedInt then x.val else x
+class CheckedInt extends NumberBase
+  getval = (x) ->
+    if x instanceof CheckedInt
+      x.val
+    else if typeof x == 'number'
+      if Math.floor(x) == x
+        x
+      else
+        throw new Error "expected an integer, got #{n}"
+    else
+      throw new Error "expected a number, got #{n}"
 
   constructor: (@val = 0) ->
 
@@ -83,16 +151,15 @@ class CheckedInt
 
   sqrt: -> new CheckedInt Math.floor Math.sqrt @val
 
-  cmp: (other) ->
-    x = getval other
-    if @val < x then -1 else if @val > x then 1 else 0
+  cmp__: (other) ->
+    if @val < other.val then -1 else if @val > other.val then 1 else 0
 
-  plus: (other) -> asNum @val + getval other
+  plus__: (other) -> asNum @val + other.val
 
-  minus: (other) -> asNum @val - getval other
+  minus__: (other) -> asNum @val - other.val
 
-  times: (other) ->
-    x = @val * getval other
+  times__: (other) ->
+    x = @val * other.val
     if Math.abs(x) < BASE
       new CheckedInt x
     else
@@ -114,10 +181,96 @@ class CheckedInt
 
 # Here are the beginnings of the `LongInt` class.
 
-class LongInt
+class LongInt extends NumberBase
   constructor: (@sign = 0, @digits = null) ->
 
-  times: (other) -> throw new Error "not yet implemented"
+  neg: -> new LongInt -@sign, @digits
+
+  abs: -> new LongInt 1, @digits
+
+  sgn: -> @sign
+
+  cmp = (r, s) ->
+    seq.sub(r, s)?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
+
+  cmp__: (x) ->
+    if @sign == 0
+      -x.sign
+    else if x.sign == 0
+      @sign
+    else if @sign != x.sign
+      @sign
+    else
+      @sign * cmp @digits, x.digits
+
+  ZERO = seq [0]
+  ONE  = seq [1]
+  TWO  = seq [2]
+
+  add = (r, s, c = 0) ->
+    if c or (r and s)
+      [r_, s_] = [r or ZERO, s or ZERO]
+      x = r_.first() + s_.first() + c
+      [digit, carry] = if x >= BASE then [x - BASE, 1] else [x, 0]
+      seq.conj(digit, -> add(r_.rest(), s_.rest(), carry))
+    else
+      s or r
+
+  plus__: (x) ->
+    if @sign != x.sign
+      @minus x.neg()
+    else
+      new LongInt @sign, add @digits, x.digits
+
+  sub = (r, s) ->
+    step = (r, s, b = 0) ->
+      if b or (r and s)
+        [r_, s_] = [r or ZERO, s or ZERO]
+        x = r_.first() - s_.first() - b
+        [digit, borrow] = if x < 0 then [x + BASE, 1] else [x, 0]
+        seq.conj(digit, -> step(r_.rest(), s_.rest(), borrow))
+      else
+        s or r
+    step r, s
+
+  minus__: (x) ->
+    if @sign != x.sign
+      @plus x.neg()
+    else if cmp(@digits, x.digits) < 0
+      new LongInt -@sign, sub x.digits, @digits
+    else
+      new LongInt @sign, sub @digits, x.digits
+
+  split = (n) -> [n % HALFBASE, Math.floor n / HALFBASE]
+
+  digitTimesDigit = (a, b) ->
+    if b < BASE / a
+      [a * b, 0]
+    else
+      [a0, a1] = split a
+      [b0, b1] = split b
+      [m0, m1] = split a0 * b1 + b0 * a1
+
+      tmp = a0 * b0 + m0 * HALFBASE
+      [lo, carry] = if tmp < BASE then [tmp, 0] else [tmp - BASE, 1]
+      [lo, a1 * b1 + m1 + carry]
+
+  seqTimesDigit = (s, d, c = 0) ->
+    if c or s
+      s_ = s or ZERO
+      [lo, hi] = digitTimesDigit(d, s_.first())
+      seq.conj(lo + c, -> seqTimesDigit(s_.rest(), d, hi))
+
+  mul = (a, b) ->
+    step = (r, a, b) ->
+      if a
+        t = add(r, seqTimesDigit(b, a.first())) or ZERO
+        seq.conj(t.first(), -> step(t.rest(), a.rest(), b))
+      else
+        r
+    step null, a, b
+
+  times__: (x) -> new LongInt @sign * x.sign, mul @digits, x.digits
 
   zeroes = BASE.toString()[1..]
 
@@ -126,15 +279,18 @@ class LongInt
     if parts
       sign = if @sign < 0 then '-' else ''
       rest = parts.rest()?.map (t) -> "#{zeroes[t.length..]}#{t}"
-      sign + parts.first() + rest.join ''
+      sign + parts.first() + if rest? then rest.join '' else ''
     else
       '0'
 
+  makeDigits = (m) ->
+    if m then seq.conj m % BASE, -> makeDigits Math.floor(m / BASE) else null
+
   @fromNative: (n) ->
     if n < 0
-      new LongInt -1, digits -n
+      new LongInt -1, makeDigits -n
     else if n > 0
-      new LongInt 1, digits n
+      new LongInt 1, makeDigits n
     else
       new LongInt 0, null
 
@@ -148,6 +304,11 @@ number = (n = 0) ->
       number.fromNative n
     when 'string'
       number.parse n
+    else
+      if n instanceof NumberBase
+        n
+      else
+        throw new Error "expected a number, got #{n}"
 
 number.fromNative = (n) ->
   throw new Error "expected an integer, got #{n}" unless n == Math.floor n
@@ -215,7 +376,9 @@ if quicktest
 
   log ''
   show -> a = number Math.pow 2, 13
+  show -> LongInt.fromNative a.val
   show -> a.plus 2
+  show -> a.times 1
   show -> a.times 2
   show -> a.plus 2000
 
@@ -223,3 +386,13 @@ if quicktest
   show -> number -123456789000000
   show -> number '-1234'
   show -> number '-123456789000000'
+
+  log ''
+  show -> number(123456789).plus  876543211
+  show -> number(123456789).minus 123450000
+  show -> number(123456789).minus 123456790
+  show -> number(123456789).minus 123456789
+  show -> number(123456789).plus -123450000
+
+  log ''
+  show -> number(12345).times 100001
