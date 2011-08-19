@@ -24,11 +24,6 @@ else
 quicktest = module? and not module.parent
 log = if quicktest then (str) -> console.log str else (str) ->
 
-# Some helper functions for debugging.
-
-rdump = (s) -> "#{if s then s.into([]).join('|') else '[]'}"
-dump = (s) -> rdump s?.reverse()
-
 # ----
 
 # An integer is represented as either a plain signed Javascript number with
@@ -105,7 +100,7 @@ class NumberBase
       [tp1, tp2] = [op1.constructor, op2.constructor]
       throw new Error "operands of types #{tp1} and #{tp2} not supported"
 
-  downcast = (x) ->
+  @downcast: (x) ->
     if x instanceof LongInt and x.cmp(BASE) < 0
       if x.digits?
         new CheckedInt x.digits.first() * x.sign
@@ -123,7 +118,7 @@ class NumberBase
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
-        downcast x[namex] y
+        @downcast x[namex] y
 
 
 # ----
@@ -193,6 +188,21 @@ class LongInt extends NumberBase
 
   sgn: -> @sign
 
+  zeroes = BASE.toString()[1..]
+
+  rdump = (s) ->
+    if s
+      s.map((t) -> "#{zeroes[t.toString().length..]}#{t}").into([]).join('|')
+    else
+      '[]'
+  dump = (s) -> rdump s?.reverse()
+
+  ZERO = seq [0]
+  ONE  = seq [1]
+  TWO  = seq [2]
+
+  cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
+
   sqrt = (s) ->
     n = s.size()
     step = (r) ->
@@ -204,7 +214,7 @@ class LongInt extends NumberBase
     if @sign == 0
       asNum 0
     else if @sign > 0
-      new LongInt 1, sqrt @digits
+      NumberBase.downcast new LongInt 1, sqrt @digits
     else
       throw new Error "expected a non-negative number, got #{this}"
 
@@ -220,12 +230,6 @@ class LongInt extends NumberBase
       @sign
     else
       @sign * cmp @digits, x.digits
-
-  ZERO = seq [0]
-  ONE  = seq [1]
-  TWO  = seq [2]
-
-  cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
   add = (r, s, c = 0) ->
     if c or (r and s)
@@ -334,8 +338,6 @@ class LongInt extends NumberBase
       asNum 0
     else
       new LongInt @sign * x.sign, mod @digits, x.digits
-
-  zeroes = BASE.toString()[1..]
 
   toString: ->
     parts = @digits?.reverse()?.dropWhile((d) -> d == 0)?.map (d) -> d.toString()
@@ -464,8 +466,14 @@ if quicktest
   show -> number(111111).div 37
   show -> number(111111111).div 37
   show -> number(111111111).div 12345679
+  show -> number(99980001).div 49990001
 
   log ''
   show -> number(111).mod 37
   show -> number(111112).mod 37
   show -> number(111111111).mod 12345679
+
+  log ''
+  show -> number(9801).sqrt()
+  show -> number(998001).sqrt()
+  show -> number(99980001).sqrt()
