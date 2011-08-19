@@ -107,7 +107,10 @@ class NumberBase
 
   downcast = (x) ->
     if x instanceof LongInt and x.cmp(BASE) < 0
-      new CheckedInt x.digits.first() * x.sign
+      if x.digits?
+        new CheckedInt x.digits.first() * x.sign
+      else
+        new CheckedInt 0
     else
       x
 
@@ -165,9 +168,9 @@ class CheckedInt extends NumberBase
     else
       LongInt.fromNative(@val).times other
 
-  div: (other) -> new CheckedInt Math.floor @val / getval other
+  div__: (x) -> new CheckedInt Math.floor @val / x.val
 
-  mod: (other) -> new CheckedInt @val % getval other
+  mod__: (x) -> new CheckedInt @val % x.val
 
   gcd: (other) ->
     step = (a, b) -> if b > 0 then -> step b, a % b else a
@@ -182,13 +185,28 @@ class CheckedInt extends NumberBase
 # Here are the beginnings of the `LongInt` class.
 
 class LongInt extends NumberBase
-  constructor: (@sign = 0, @digits = null) ->
+  constructor: (sign, @digits) -> @sign = if @digits? then sign else 0
 
   neg: -> new LongInt -@sign, @digits
 
   abs: -> new LongInt 1, @digits
 
   sgn: -> @sign
+
+  sqrt = (s) ->
+    n = s.size()
+    step = (r) ->
+      rn = seq div(add(r, div(s, r)), TWO)
+      if cmp(r, rn) then -> step(rn) else rn
+    trampoline step s.take n >> 1
+
+  sqrt: ->
+    if @sign == 0
+      asNum 0
+    else if @sign > 0
+      new LongInt 1, sqrt @digits
+    else
+      throw new Error "expected a non-negative number, got #{this}"
 
   cmp = (r, s) ->
     seq.sub(r, s)?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
@@ -206,6 +224,8 @@ class LongInt extends NumberBase
   ZERO = seq [0]
   ONE  = seq [1]
   TWO  = seq [2]
+
+  cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
   add = (r, s, c = 0) ->
     if c or (r and s)
@@ -231,7 +251,7 @@ class LongInt extends NumberBase
         seq.conj(digit, -> step(r_.rest(), s_.rest(), borrow))
       else
         s or r
-    step r, s
+    cleanup step r, s
 
   minus__: (x) ->
     if @sign != x.sign
@@ -271,6 +291,49 @@ class LongInt extends NumberBase
     step null, a, b
 
   times__: (x) -> new LongInt @sign * x.sign, mul @digits, x.digits
+
+  divmod = (r, s) ->
+    scale = Math.floor BASE / (s.last() + 1)
+    [r_, s_] = (seq seqTimesDigit(x, scale) for x in [r, s])
+    [m, d] = [s_.size(), s_.last() + 1]
+
+    step = (q, h, t) ->
+      f = if h?.size() < m
+        0
+      else
+        n = (h?.last() * if h?.size() > m then BASE else 1) or 0
+        (Math.floor n / d) or (if cmp(h, s_) >= 0 then 1 else 0)
+
+      if f
+        -> step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t)
+      else if t
+        -> step(seq.conj(0, -> q), seq.conj(t.first(), -> h), t.rest())
+      else
+        [cleanup(q), h && div(h, seq [scale])]
+
+    trampoline step null, null, r_.reverse()
+
+  div = (r, s) -> divmod(r, s)[0]
+
+  mod = (r, s) -> divmod(r, s)[1]
+
+  div__: (x) ->
+    d = cmp @digits, x.digits
+    if d < 0
+      asNum 0
+    else if d == 0
+      asNum @sign * x.sign
+    else
+      new LongInt @sign * x.sign, div @digits, x.digits
+
+  mod__: (x) ->
+    d = cmp @digits, x.digits
+    if d < 0
+      this
+    else if d == 0
+      asNum 0
+    else
+      new LongInt @sign * x.sign, mod @digits, x.digits
 
   zeroes = BASE.toString()[1..]
 
@@ -396,3 +459,13 @@ if quicktest
 
   log ''
   show -> number(12345).times 100001
+  show -> number(11111).times 9
+  show -> number(111).div 37
+  show -> number(111111).div 37
+  show -> number(111111111).div 37
+  show -> number(111111111).div 12345679
+
+  log ''
+  show -> number(111).mod 37
+  show -> number(111112).mod 37
+  show -> number(111111111).mod 12345679
