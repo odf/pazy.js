@@ -113,13 +113,30 @@ class NumberBase
     NumberBase[name]   = (args...) -> f.call NumberBase, args...
     NumberBase::[name] = (args...) -> NumberBase[name] this, args...
 
-  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod', 'gcd']
+  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod']
     do (name) ->
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
         @downcast x[namex] y
 
+  gcd: (other) ->
+    step = (a, b) -> if b.sgn() > 0 then -> step b, a.mod(b) else a
+
+    [a, b] = [@abs(), makeNum(other).abs()]
+    if a > b then trampoline step a, b else trampoline step b, a
+
+  pow: (other) ->
+    step = (p, r, s) ->
+      if s.sgn() > 0
+        if s.mod(2).sgn() > 0
+          -> step p.times(r), r, s.minus 1
+        else
+          -> step p, r.times(r), s.div 2
+      else
+        p
+
+    trampoline step makeNum(1), this, makeNum other
 
 # ----
 
@@ -166,12 +183,6 @@ class CheckedInt extends NumberBase
   div__: (x) -> new CheckedInt Math.floor @val / x.val
 
   mod__: (x) -> new CheckedInt @val % x.val
-
-  gcd: (other) ->
-    step = (a, b) -> if b > 0 then -> step b, a % b else a
-
-    [a, b] = [Math.abs(@val), Math.abs(getval other)]
-    new CheckedInt if a > b then trampoline step a, b else trampoline step b, a
 
   toString: -> "" + @val
 
@@ -440,6 +451,7 @@ if quicktest
 
   log ''
   show -> number(98).gcd 21
+  show -> number(77777).gcd 21
 
   log ''
   show -> a = number Math.pow 2, 13
@@ -480,3 +492,7 @@ if quicktest
   show -> number(9801).sqrt()
   show -> number(998001).sqrt()
   show -> number(99980001).sqrt()
+
+  log ''
+  show -> number(10).pow 6
+  show -> number(2).pow 16
