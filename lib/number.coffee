@@ -194,17 +194,6 @@ class NumberBase
 # Javascript number, a `LongInt` is produced instead.
 
 class CheckedInt extends NumberBase
-  getval = (x) ->
-    if x instanceof CheckedInt
-      x.val
-    else if typeof x == 'number'
-      if Math.floor(x) == x
-        x
-      else
-        throw new Error "expected an integer, got #{n}"
-    else
-      throw new Error "expected a number, got #{n}"
-
   constructor: (@val = 0) ->
 
   neg__: -> new CheckedInt -@val
@@ -258,15 +247,13 @@ class LongInt extends NumberBase
   dump = (s) -> rdump s?.reverse()
 
   ZERO = seq [0]
-  ONE  = seq [1]
-  TWO  = seq [2]
 
   cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
   sqrt = (s) ->
     n = s.size()
     step = (r) ->
-      rn = seq div(add(r, div(s, r)), TWO)
+      rn = seq div(add(r, div(s, r)), seq([2]))
       if cmp(r, rn) then -> step(rn) else rn
     trampoline step s.take n >> 1
 
