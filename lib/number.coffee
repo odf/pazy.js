@@ -297,6 +297,8 @@ class LongInt extends NumberBase
   times__: (x) -> new LongInt @sign * x.sign, mul @digits, x.digits
 
   divmod = (r, s) ->
+    return [ZERO, ZERO] unless cleanup r
+
     scale = Math.floor BASE / (s.last() + 1)
     [r_, s_] = (seq seqTimesDigit(x, scale) for x in [r, s])
     [m, d] = [s_.size(), s_.last() + 1]
@@ -315,7 +317,7 @@ class LongInt extends NumberBase
       else
         [cleanup(q), h && div(h, seq [scale])]
 
-    trampoline step null, null, r_.reverse()
+    trampoline step null, null, r_?.reverse()
 
   div = (r, s) -> divmod(r, s)[0]
 
@@ -467,6 +469,7 @@ if quicktest
   show -> number(111111111).div 37
   show -> number(111111111).div 12345679
   show -> number(99980001).div 49990001
+  show -> number(20001).div 10001
 
   log ''
   show -> number(111).mod 37
