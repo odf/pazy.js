@@ -58,6 +58,48 @@ asNum = (n) ->
 
 # ----
 
+# The `num` function provides the public interface.
+
+num = (n = 0) ->
+  switch typeof n
+    when 'number'
+      num.fromNative n
+    when 'string'
+      num.parse n
+    else
+      if n instanceof NumberBase
+        n
+      else
+        throw new Error "expected a number, got #{n}"
+
+num.fromNative = (n) ->
+  throw new Error "expected an integer, got #{n}" unless n == Math.floor n
+  asNum n
+
+num.parse = (n) ->
+  unless /^[+-]?\d+$/.test n
+    throw new Error "expected an integer literal, got '#{n}'"
+
+  [s, m] = switch n[0]
+    when '-' then [-1, n[1..]]
+    when '+' then [ 1, n[1..]]
+    else          [ 1, n]
+
+  if m.length <= BASE_LENGTH
+    new CheckedInt parseInt n
+  else
+    parsed = (to) ->
+      if to > 0
+        from = Math.max 0, to - BASE_LENGTH
+        seq.conj parseInt(m[from...to]), -> parsed from
+      else
+        null
+
+    new LongInt s, parsed m.length
+
+
+# ----
+
 # The `NumberBase` class implements dispatching on binary arithmetic
 # operators.
 
@@ -110,23 +152,30 @@ class NumberBase
       x
 
   operator = (name, f) ->
-    NumberBase[name]   = (args...) -> f.call NumberBase, args...
-    NumberBase::[name] = (args...) -> NumberBase[name] this, args...
+    num[name]          = (args...) -> f.call num, args...
+    NumberBase::[name] = (args...) -> num[name] this, args...
 
-  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod']
+  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod', 'gcd']
     do (name) ->
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
-        @downcast x[namex] y
+        NumberBase.downcast x[namex] y
 
-  gcd: (other) ->
+  gcd__: (other) ->
     step = (a, b) -> if b.sgn() > 0 then -> step b, a.mod(b) else a
 
-    [a, b] = [@abs(), makeNum(other).abs()]
-    if a > b then trampoline step a, b else trampoline step b, a
+    [x, y] = [@abs(), other.abs()]
+    if x.cmp(y) > 0 then trampoline step x, y else trampoline step x, y
 
-  pow: (other) ->
+  for name in ['neg', 'abs', 'sgn']
+    do (name) ->
+      namex = "#{name}__"
+      operator name, (a) -> makeNum(a)[namex]()
+
+  operator 'sqrt', (a) -> NumberBase.downcast makeNum(a)['sqrt__']()
+
+  operator 'pow', (a, b) ->
     step = (p, r, s) ->
       if s.sgn() > 0
         if s.mod(2).sgn() > 0
@@ -136,7 +185,7 @@ class NumberBase
       else
         p
 
-    trampoline step makeNum(1), this, makeNum other
+    NumberBase.downcast trampoline step makeNum(1), makeNum(a), makeNum(b)
 
 # ----
 
@@ -158,13 +207,13 @@ class CheckedInt extends NumberBase
 
   constructor: (@val = 0) ->
 
-  neg: -> new CheckedInt -@val
+  neg__: -> new CheckedInt -@val
 
-  abs: -> new CheckedInt Math.abs @val
+  abs__: -> new CheckedInt Math.abs @val
 
-  sgn: -> if @val < 0 then -1 else if @val > 0 then 1 else 0
+  sgn__: -> if @val < 0 then -1 else if @val > 0 then 1 else 0
 
-  sqrt: -> new CheckedInt Math.floor Math.sqrt @val
+  sqrt__: -> new CheckedInt Math.floor Math.sqrt @val
 
   cmp__: (other) ->
     if @val < other.val then -1 else if @val > other.val then 1 else 0
@@ -193,11 +242,11 @@ class CheckedInt extends NumberBase
 class LongInt extends NumberBase
   constructor: (sign, @digits) -> @sign = if @digits? then sign else 0
 
-  neg: -> new LongInt -@sign, @digits
+  neg__: -> new LongInt -@sign, @digits
 
-  abs: -> new LongInt 1, @digits
+  abs__: -> new LongInt 1, @digits
 
-  sgn: -> @sign
+  sgn__: -> @sign
 
   zeroes = BASE.toString()[1..]
 
@@ -221,11 +270,11 @@ class LongInt extends NumberBase
       if cmp(r, rn) then -> step(rn) else rn
     trampoline step s.take n >> 1
 
-  sqrt: ->
+  sqrt__: ->
     if @sign == 0
       asNum 0
     else if @sign > 0
-      NumberBase.downcast new LongInt 1, sqrt @digits
+      new LongInt 1, sqrt @digits
     else
       throw new Error "expected a non-negative number, got #{this}"
 
@@ -373,52 +422,10 @@ class LongInt extends NumberBase
       new LongInt 0, null
 
 # ----
-
-# The `number` function provides the public interface.
-
-number = (n = 0) ->
-  switch typeof n
-    when 'number'
-      number.fromNative n
-    when 'string'
-      number.parse n
-    else
-      if n instanceof NumberBase
-        n
-      else
-        throw new Error "expected a number, got #{n}"
-
-number.fromNative = (n) ->
-  throw new Error "expected an integer, got #{n}" unless n == Math.floor n
-  asNum n
-
-number.parse = (n) ->
-  unless /^[+-]?\d+$/.test n
-    throw new Error "expected an integer literal, got '#{n}'"
-
-  [s, m] = switch n[0]
-    when '-' then [-1, n[1..]]
-    when '+' then [ 1, n[1..]]
-    else          [ 1, n]
-
-  if m.length <= BASE_LENGTH
-    new CheckedInt parseInt n
-  else
-    parsed = (to) ->
-      if to > 0
-        from = Math.max 0, to - BASE_LENGTH
-        seq.conj parseInt(m[from...to]), -> parsed from
-      else
-        null
-
-    new LongInt s, parsed m.length
-
-
-# ----
 # Exporting.
 
 exports ?= this.pazy ?= {}
-exports.number = number
+exports.num = num
 
 # ----
 
@@ -450,11 +457,11 @@ if quicktest
   show -> undefined
 
   log ''
-  show -> number(98).gcd 21
-  show -> number(77777).gcd 21
+  show -> num(98).gcd 21
+  show -> num(77777).gcd 21
 
   log ''
-  show -> a = number Math.pow 2, 13
+  show -> a = num Math.pow 2, 13
   show -> LongInt.fromNative a.val
   show -> a.plus 2
   show -> a.times 1
@@ -462,37 +469,43 @@ if quicktest
   show -> a.plus 2000
 
   log ''
-  show -> number -123456789000000
-  show -> number '-1234'
-  show -> number '-123456789000000'
+  show -> num -123456789000000
+  show -> num '-1234'
+  show -> num '-123456789000000'
 
   log ''
-  show -> number(123456789).plus  876543211
-  show -> number(123456789).minus 123450000
-  show -> number(123456789).minus 123456790
-  show -> number(123456789).minus 123456789
-  show -> number(123456789).plus -123450000
+  show -> num(123456789).plus  876543211
+  show -> num(123456789).minus 123450000
+  show -> num(123456789).minus 123456790
+  show -> num(123456789).minus 123456789
+  show -> num(123456789).plus -123450000
 
   log ''
-  show -> number(12345).times 100001
-  show -> number(11111).times 9
-  show -> number(111).div 37
-  show -> number(111111).div 37
-  show -> number(111111111).div 37
-  show -> number(111111111).div 12345679
-  show -> number(99980001).div 49990001
-  show -> number(20001).div 10001
+  show -> num(12345).times 100001
+  show -> num(11111).times 9
+  show -> num(111).div 37
+  show -> num(111111).div 37
+  show -> num(111111111).div 37
+  show -> num(111111111).div 12345679
+  show -> num(99980001).div 49990001
+  show -> num(20001).div 10001
 
   log ''
-  show -> number(111).mod 37
-  show -> number(111112).mod 37
-  show -> number(111111111).mod 12345679
+  show -> num(111).mod 37
+  show -> num(111112).mod 37
+  show -> num(111111111).mod 12345679
 
   log ''
-  show -> number(9801).sqrt()
-  show -> number(998001).sqrt()
-  show -> number(99980001).sqrt()
+  show -> num(9801).sqrt()
+  show -> num(998001).sqrt()
+  show -> num(99980001).sqrt()
 
   log ''
-  show -> number(10).pow 6
-  show -> number(2).pow 16
+  show -> num(10).pow 6
+  show -> num(2).pow 16
+
+  log ''
+  show -> num.plus 123456789, 876543211
+  show -> num.sqrt 99980001
+  show -> num.pow 2, 16
+  show -> num.abs -12345
