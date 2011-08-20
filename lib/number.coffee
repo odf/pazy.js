@@ -142,7 +142,7 @@ class NumberBase
       [tp1, tp2] = [op1.constructor, op2.constructor]
       throw new Error "operands of types #{tp1} and #{tp2} not supported"
 
-  @downcast: (x) ->
+  downcast = (x) ->
     if x instanceof LongInt and x.cmp(BASE) < 0
       if x.digits?
         new CheckedInt x.digits.first() * x.sign
@@ -160,7 +160,7 @@ class NumberBase
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
-        NumberBase.downcast x[namex] y
+        downcast x[namex] y
 
   gcd__: (other) ->
     step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
@@ -175,7 +175,7 @@ class NumberBase
       namex = "#{name}__"
       operator name, (a) -> makeNum(a)[namex]()
 
-  operator 'sqrt', (a) -> NumberBase.downcast makeNum(a)['sqrt__']()
+  operator 'sqrt', (a) -> downcast makeNum(a)['sqrt__']()
 
   operator 'pow', (a, b) ->
     step = (p, r, s) ->
@@ -187,7 +187,7 @@ class NumberBase
       else
         p
 
-    NumberBase.downcast bounce step makeNum(1), makeNum(a), makeNum(b)
+    downcast bounce step makeNum(1), makeNum(a), makeNum(b)
 
 # ----
 
