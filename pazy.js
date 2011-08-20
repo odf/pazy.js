@@ -1,5 +1,5 @@
 (function() {
-  var ArrayNode, BASE, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, c, cantor_fold, cantor_runs, cleanup, cmp, combinator, d, digitTimesDigit, div, divmod, dump, equal, fromArray, hashCode, log, memo, method, mod, mul, pow, quicktest, rdump, s, selfHashing, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, trampoline, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+  var ArrayNode, BASE, BitmapIndexedNode, CheckedInt, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, ONE, OrderMeasure, Partition, ProxyNode, Queue, Rational, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, TWO, Void, ZERO, a, a2, a3, add, b, bounce, c, cantor_fold, cantor_runs, cleanup, cmp, combinator, d, digitTimesDigit, div, divmod, dump, e, equal, f, fromArray, hashCode, log, memo, method, mod, mul, pow, quicktest, rdump, s, selfHashing, seq, seqTimesDigit, skip, split, sqrt, sub, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref18, _ref19, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -66,17 +66,19 @@
     exports = (_ref2 = this.pazy) != null ? _ref2 : this.pazy = {};
   };
   exports.suspend = function(code) {
-    var val;
-    val = null;
+    var f;
+    f = function() {
+      var val;
+      val = code();
+      return (f = function() {
+        return val;
+      })();
+    };
     return function() {
-      if (code) {
-        val = code();
-        code = null;
-      }
-      return val;
+      return f();
     };
   };
-  exports.trampoline = function(val) {
+  exports.bounce = function(val) {
     while (typeof val === 'function') {
       val = val();
     }
@@ -88,9 +90,9 @@
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
     equal = require('core_extensions').equal;
-    trampoline = require('functional').trampoline;
+    bounce = require('functional').bounce;
   } else {
-    _ref3 = this.pazy, equal = _ref3.equal, trampoline = _ref3.trampoline;
+    _ref3 = this.pazy, equal = _ref3.equal, bounce = _ref3.bounce;
   }
   Sequence = (function() {
     function Sequence(first, rest) {
@@ -112,7 +114,7 @@
     if (i >= a.length) {
       return null;
     } else if (a[i] === void 0) {
-      return trampoline(skip(a, i));
+      return bounce(skip(a, i));
     } else {
       return seq.conj(a[i], function() {
         return fromArray(a, i + 1);
@@ -237,7 +239,7 @@
         return n;
       }
     };
-    return trampoline(step(s, 0));
+    return bounce(step(s, 0));
   });
   memo('last', function(s) {
     var step;
@@ -251,7 +253,7 @@
       }
     };
     if (s) {
-      return trampoline(step(s));
+      return bounce(step(s));
     }
   });
   method('take', function(s, n) {
@@ -284,7 +286,7 @@
       }
     };
     if (s) {
-      return trampoline(step(s, n));
+      return bounce(step(s, n));
     } else {
       return null;
     }
@@ -301,7 +303,7 @@
       }
     };
     if (s) {
-      return trampoline(step(s));
+      return bounce(step(s));
     } else {
       return null;
     }
@@ -375,7 +377,7 @@
         return val;
       }
     };
-    return trampoline(step(s, start));
+    return bounce(step(s, start));
   });
   method('sum', function(s) {
     return this.reduce__(s, 0, function(a, b) {
@@ -601,7 +603,7 @@
         };
       }
     };
-    return trampoline(step(s));
+    return bounce(step(s));
   });
   method('reverse', function(s) {
     var step;
@@ -616,7 +618,7 @@
         return r;
       }
     }, this);
-    return trampoline(step(null, s));
+    return bounce(step(null, s));
   });
   method('forced', function(s) {
     if (s) {
@@ -1345,9 +1347,9 @@
   if (typeof require !== 'undefined') {
     require.paths.unshift('#{__dirname}/../lib');
     seq = require('sequence').seq;
-    _ref9 = require('functional'), trampoline = _ref9.trampoline, suspend = _ref9.suspend;
+    _ref9 = require('functional'), bounce = _ref9.bounce, suspend = _ref9.suspend;
   } else {
-    seq = pazy.seq, trampoline = pazy.trampoline, suspend = pazy.suspend;
+    seq = pazy.seq, bounce = pazy.bounce, suspend = pazy.suspend;
   }
   Void = (function() {
     function Void() {}
@@ -2115,7 +2117,7 @@
         }
       };
       _Class.prototype.merge = function(other) {
-        return trampoline(merge(this.empty(), this, other));
+        return bounce(merge(this.empty(), this, other));
       };
       intersect = function(s, t1, t2) {
         var k, l, r, x, _ref10;
@@ -2138,7 +2140,7 @@
         }
       };
       _Class.prototype.intersect = function(other) {
-        return trampoline(intersect(this.empty(), this, other));
+        return bounce(intersect(this.empty(), this, other));
       };
       _Class.prototype.plus = _Class.prototype.insert;
       return _Class;
@@ -2170,10 +2172,10 @@
   exports.SortedSeq = new SortedSeqType();
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
-    trampoline = require('functional').trampoline;
+    bounce = require('functional').bounce;
     HashMap = require('indexed').HashMap;
   } else {
-    _ref11 = this.pazy, trampoline = _ref11.trampoline, HashMap = _ref11.HashMap;
+    _ref11 = this.pazy, bounce = _ref11.bounce, HashMap = _ref11.HashMap;
   }
   Partition = (function() {
     var make;
@@ -2206,7 +2208,7 @@
             };
           }
         }, this);
-        root = trampoline(seek(x));
+        root = bounce(seek(x));
         flatten = __bind(function(y) {
           var z;
           z = this.parent.get(y);
@@ -2217,7 +2219,7 @@
             };
           }
         }, this);
-        trampoline(flatten(x));
+        bounce(flatten(x));
         return root;
       }
     };
@@ -2339,12 +2341,12 @@
   exports.Queue = Queue;
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
-    trampoline = require('functional').trampoline;
+    bounce = require('functional').bounce;
     seq = require('sequence').seq;
   } else {
-    _ref15 = this.pazy, trampoline = _ref15.trampoline, seq = _ref15.seq;
+    _ref15 = this.pazy, bounce = _ref15.bounce, seq = _ref15.seq;
   }
-  quicktest = (typeof process !== "undefined" && process !== null ? process.argv[2] : void 0) === '--test';
+  quicktest = (typeof module !== "undefined" && module !== null) && !module.parent;
   rdump = function(s) {
     return "" + (s ? s.into([]).join('|') : '[]');
   };
@@ -2494,7 +2496,7 @@
         return [cleanup(q), h && div(h, seq.conj(scale))];
       }
     };
-    return trampoline(step(null, null, r_.reverse()));
+    return bounce(step(null, null, r_.reverse()));
   };
   div = function(r, s) {
     return divmod(r, s)[0];
@@ -2519,7 +2521,7 @@
         return p;
       }
     };
-    return trampoline(step(ONE, r, s));
+    return bounce(step(ONE, r, s));
   };
   sqrt = function(s) {
     var n, step;
@@ -2538,7 +2540,7 @@
           return rn;
         }
       };
-      return trampoline(step(s.take(n >> 1)));
+      return bounce(step(s.take(n >> 1)));
     }
   };
   LongInt = (function() {
@@ -2571,6 +2573,8 @@
     LongInt.make = function(x) {
       if (x instanceof LongInt) {
         return x;
+      } else if (x instanceof CheckedInt) {
+        return new LongInt(x.val);
       } else if (typeof x === 'number') {
         return new LongInt(x);
       } else {
@@ -2616,7 +2620,7 @@
       rev = (_ref18 = this.digits__) != null ? (_ref19 = _ref18.reverse()) != null ? _ref19.dropWhile(function(d) {
         return d === 0;
       }) : void 0 : void 0;
-      return this.sign() * trampoline(step(0, rev));
+      return this.sign() * bounce(step(0, rev));
     };
     LongInt.operator = function(names, arity, code) {
       var f, name, _i, _len;
@@ -2724,12 +2728,143 @@
       };
       _ref18 = [this.abs(), other.abs()], a = _ref18[0], b = _ref18[1];
       if (a.cmp(b) > 0) {
-        return trampoline(step(a, b));
+        return bounce(step(a, b));
       } else {
-        return trampoline(step(b, a));
+        return bounce(step(b, a));
       }
     });
     return LongInt;
+  })();
+  CheckedInt = (function() {
+    var make;
+    function CheckedInt(val) {
+      if (val == null) {
+        val = 0;
+      }
+      if (typeof val !== "number") {
+        throw new Error("" + val + " is not a number");
+      } else if (val % 1) {
+        throw new Error("" + val + " is not an integer");
+      } else if (Math.abs(val) >= BASE) {
+        throw new Error("" + val + " is not between " + (-BASE + 1) + " and " + (BASE - 1));
+      } else {
+        this.val = val;
+      }
+    }
+    CheckedInt.make = function(x) {
+      if (x instanceof CheckedInt) {
+        return x;
+      } else {
+        return new CheckedInt(x);
+      }
+    };
+    make = function(val) {
+      if (Math.abs(val) < BASE) {
+        return new CheckedInt(val);
+      } else {
+        return new LongInt(val);
+      }
+    };
+    CheckedInt.operator = function(names, arity, code) {
+      var f, name, _i, _len;
+      f = function() {
+        var args, x;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        return code.apply(this, (function() {
+          var _i, _len, _ref18, _results;
+          _ref18 = args.slice(0, arity - 1);
+          _results = [];
+          for (_i = 0, _len = _ref18.length; _i < _len; _i++) {
+            x = _ref18[_i];
+            _results.push(CheckedInt.make(x));
+          }
+          return _results;
+        })());
+      };
+      for (_i = 0, _len = names.length; _i < _len; _i++) {
+        name = names[_i];
+        this.prototype[name] = f;
+      }
+      return null;
+    };
+    CheckedInt.operator(['neg', '-'], 1, function() {
+      return new CheckedInt(-this.val);
+    });
+    CheckedInt.operator(['abs'], 1, function() {
+      return new CheckedInt(Math.abs(this.val));
+    });
+    CheckedInt.operator(['cmp', '<=>'], 2, function(other) {
+      if (this.val < other.val) {
+        return -1;
+      } else if (this.val > other.val) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+    CheckedInt.operator(['sgn'], 1, function() {
+      return this.cmp(0);
+    });
+    CheckedInt.operator(['plus', '+'], 2, function(other) {
+      return make(this.val + other.val);
+    });
+    CheckedInt.operator(['minus', '-'], 2, function(other) {
+      return make(this.val - other.val);
+    });
+    CheckedInt.operator(['times', '*'], 2, function(other) {
+      var tmp;
+      tmp = this.val * other.val;
+      if (Math.abs(tmp) < BASE) {
+        return new CheckedInt(tmp);
+      } else {
+        return new LongInt(this.val).times(other.val);
+      }
+    });
+    CheckedInt.operator(['div', '/'], 2, function(other) {
+      return make((this.val / other.val) >> 0);
+    });
+    CheckedInt.operator(['mod', '%'], 2, function(other) {
+      return make(this.val % other.val);
+    });
+    CheckedInt.operator(['pow', '**'], 2, function(other) {
+      var tmp;
+      switch (other.sgn()) {
+        case 0:
+          return 1;
+        case -1:
+          throw Error('exponent must not be negative');
+          break;
+        default:
+          tmp = Math.pow(this.val, other.val);
+          if (Math.abs(tmp) < BASE) {
+            return new CheckedInt(tmp);
+          } else {
+            return new LongInt(this.val).pow(other.val);
+          }
+      }
+    });
+    CheckedInt.operator(['sqrt'], 1, function() {
+      return Math.sqrt(this.val) >> 0;
+    });
+    CheckedInt.operator(['gcd'], 2, function(other) {
+      var a, b, step, val, _ref18;
+      step = function(a, b) {
+        if (b > 0) {
+          return function() {
+            return step(b, a % b);
+          };
+        } else {
+          return a;
+        }
+      };
+      _ref18 = [Math.abs(this.val), Math.abs(other.val)], a = _ref18[0], b = _ref18[1];
+      val = a > b ? bounce(step(a, b)) : bounce(step(b, a));
+      return new CheckedInt(val);
+    });
+    CheckedInt.prototype.toString = function() {
+      return "" + this.val;
+    };
+    return CheckedInt;
   })();
     if (typeof exports !== "undefined" && exports !== null) {
     exports;
@@ -2738,8 +2873,10 @@
   };
   exports.LongInt = LongInt;
   if (quicktest) {
-    a = new LongInt(9950);
+    a = new CheckedInt(9950);
+    log("a = " + a);
     a2 = a['*'](a);
+    log("a * a = " + a2);
     a3 = a2['*'](a);
     log("(" + a + "**3 + 1) / " + a + "**2 = " + (a3.plus(1).div(a2)) + " (" + (a3.plus(1).mod(a2)) + ")");
     log("");
@@ -2752,6 +2889,12 @@
     d = new LongInt(3 * 5 * 7 * 11 * 13 * 17 * 19 * 23 * 29 * 31);
     log("" + c + " gcd " + d + " = " + (c.gcd(d)) + " (expected " + (29 * 31) + ")");
     log("");
+    e = new CheckedInt(5).pow(5);
+    log("5**5 = " + e);
+    log("class of 5**5 is " + e.constructor.name);
+    f = new CheckedInt(5).pow(6);
+    log("5**6 = " + f);
+    log("class of 5**6 is " + f.constructor.name);
   }
   if (typeof require !== 'undefined') {
     require.paths.unshift(__dirname);
@@ -2814,7 +2957,7 @@
       }
     };
     Rational.operator = function(names, arity, code) {
-      var f, name, _i, _len;
+      var name, _i, _len;
       f = function() {
         var args, x;
         args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
