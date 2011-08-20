@@ -123,18 +123,28 @@ class NumberBase
 
     out =
       switch op1.constructor
-        when LongInt
-          switch op2.constructor
-            when CheckedInt
-              [op1, LongInt.fromNative(op2.val)]
-            when LongInt
-              [op1, op2]
         when CheckedInt
           switch op2.constructor
             when CheckedInt
               [op1, op2]
             when LongInt
               [LongInt.fromNative(op1.val), op2]
+            when Fraction
+              [new Fraction(op1,1), op2]
+        when LongInt
+          switch op2.constructor
+            when CheckedInt
+              [op1, LongInt.fromNative(op2.val)]
+            when LongInt
+              [op1, op2]
+            when Fraction
+              [new Fraction(op1,1), op2]
+        when Fraction
+          switch op2.constructor
+            when CheckedInt, LongInt
+              [op1, new Fraction op2, 1]
+            when Fraction
+              [op1, op2]
 
     if out
       out
@@ -148,6 +158,8 @@ class NumberBase
         new CheckedInt x.digits.first() * x.sign
       else
         new CheckedInt 0
+    else if x instanceof Fraction and x.den.eq(1)
+      x.num
     else
       x
 
@@ -155,12 +167,14 @@ class NumberBase
     num[name]          = (args...) -> f.call num, args...
     NumberBase::[name] = (args...) -> num[name] this, args...
 
-  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'mod', 'gcd']
+  for name in ['cmp', 'plus', 'minus', 'times', 'by', 'div', 'mod', 'gcd']
     do (name) ->
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
         downcast x[namex] y
+
+  by__: (other) -> Fraction.normalized @this, other
 
   gcd__: (other) ->
     step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
@@ -203,20 +217,15 @@ class CheckedInt extends NumberBase
   constructor: (@val = 0) ->
 
   neg__: -> new CheckedInt -@val
-
   abs__: -> new CheckedInt Math.abs @val
-
   sgn__: -> if @val < 0 then -1 else if @val > 0 then 1 else 0
 
-  isPos__: -> @val > 0
-
-  isNeg__: -> @val < 0
-
+  isPos__:  -> @val > 0
+  isNeg__:  -> @val < 0
   isZero__: -> @val == 0
 
   isEven__: -> @val % 2 == 0
-
-  isOdd__: -> @val % 2 != 0
+  isOdd__:  -> @val % 2 != 0
 
   sqrt__: -> new CheckedInt Math.floor Math.sqrt @val
 
@@ -250,20 +259,15 @@ class LongInt extends NumberBase
     @first = @digits?.first() or 0
 
   neg__: -> new LongInt -@sign, @digits
-
   abs__: -> new LongInt 1, @digits
-
   sgn__: -> @sign
 
-  isPos__: -> @sign > 0
-
-  isNeg__: -> @sign < 0
-
+  isPos__:  -> @sign > 0
+  isNeg__:  -> @sign < 0
   isZero__: -> @sign == 0
 
   isEven__: -> @first % 2 == 0
-
-  isOdd__: -> @first % 2 != 0
+  isOdd__:  -> @first % 2 != 0
 
   zeroes = BASE.toString()[1..]
 
@@ -437,6 +441,55 @@ class LongInt extends NumberBase
       new LongInt 0, null
 
 # ----
+
+# The 'Fraction' class implements rational numbers.
+
+class Fraction
+  constructor: (@num, @den) ->
+
+  @normalized = (num, den) ->
+    if den.eq 0
+      throw new Error "expected a non-zero denominator, got #{den}"
+    else if den.lt 0
+      Fraction.normalized num.neg(), den.neg()
+    else
+      a = num.gcd den
+      new Fraction num.div(a), den.div(a)
+
+  neg__: -> new Fraction @num.neg(), @den
+  abs__: -> new Fraction @num.abs(), @den
+  sgn__: -> @num.sgn()
+  inv__: -> normalized @den, @num
+
+  isPos__: -> @num.isPos()
+  isNeg__: -> @num.isNeg()
+  isZero__: -> @num.isZero()
+
+  isEven__: -> @den.eq(1) and @num.isEven()
+  isOdd__: -> @den.eq(1) and @num.isOdd()
+
+  cmp__: (x) -> @minus__(x).num.cmp 0
+
+  plus__: (x) ->
+    a = num.gcd @den, x.den
+    s = num.div x.den, a
+    t = num.div @den, a
+    Fraction.normalized s.times(@num).plus(t.times(x.num)), s.times @den
+
+  minus__: (x) -> @plus__ x.neg__()
+
+  times__: (x) ->
+    a = num.gcd @num, x.den
+    b = num.gcd @den, x.num
+    n = @num.div(a).times(x.num.div(b))
+    d = @den.div(b).times(x.den.div(a))
+    Fraction.normalized n, d
+
+  by__: (x) -> @times__ x.inv__()
+
+  toString: -> if @den.eq 1 then "#{@num}" else "#{@num}/#{@den}"
+
+# ----
 # Exporting.
 
 exports ?= this.pazy ?= {}
@@ -522,3 +575,6 @@ if quicktest
   show -> num.gt 65535, num.pow 2, 16
   show -> num.gt 65536, num.pow 2, 16
   show -> num.gt 65537, num.pow 2, 16
+
+  log ''
+  show -> num.by 2, 3
