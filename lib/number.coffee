@@ -163,12 +163,14 @@ class NumberBase
         NumberBase.downcast x[namex] y
 
   gcd__: (other) ->
-    step = (a, b) -> if b.sgn() > 0 then -> step b, a.mod(b) else a
+    step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
 
     [x, y] = [@abs(), other.abs()]
     if x.cmp(y) > 0 then bounce step x, y else bounce step x, y
 
-  for name in ['neg', 'abs', 'sgn']
+  for name in [
+    'neg', 'abs', 'sgn', 'isPos', 'isNeg', 'isZero', 'isEven', 'isOdd'
+  ]
     do (name) ->
       namex = "#{name}__"
       operator name, (a) -> makeNum(a)[namex]()
@@ -177,8 +179,8 @@ class NumberBase
 
   operator 'pow', (a, b) ->
     step = (p, r, s) ->
-      if s.sgn() > 0
-        if s.mod(2).sgn() > 0
+      if s.isPos()
+        if s.isOdd() > 0
           -> step p.times(r), r, s.minus 1
         else
           -> step p, r.times(r), s.div 2
@@ -201,6 +203,16 @@ class CheckedInt extends NumberBase
   abs__: -> new CheckedInt Math.abs @val
 
   sgn__: -> if @val < 0 then -1 else if @val > 0 then 1 else 0
+
+  isPos__: -> @val > 0
+
+  isNeg__: -> @val < 0
+
+  isZero__: -> @val == 0
+
+  isEven__: -> @val % 2 == 0
+
+  isOdd__: -> @val % 2 != 0
 
   sqrt__: -> new CheckedInt Math.floor Math.sqrt @val
 
@@ -229,13 +241,25 @@ class CheckedInt extends NumberBase
 # Here are the beginnings of the `LongInt` class.
 
 class LongInt extends NumberBase
-  constructor: (sign, @digits) -> @sign = if @digits? then sign else 0
+  constructor: (sign, @digits) ->
+    @sign = if @digits? then sign else 0
+    @first = @digits?.first() or 0
 
   neg__: -> new LongInt -@sign, @digits
 
   abs__: -> new LongInt 1, @digits
 
   sgn__: -> @sign
+
+  isPos__: -> @sign > 0
+
+  isNeg__: -> @sign < 0
+
+  isZero__: -> @sign == 0
+
+  isEven__: -> @first % 2 == 0
+
+  isOdd__: -> @first % 2 != 0
 
   zeroes = BASE.toString()[1..]
 
@@ -258,9 +282,9 @@ class LongInt extends NumberBase
     bounce step s.take n >> 1
 
   sqrt__: ->
-    if @sign == 0
+    if @isZero()
       asNum 0
-    else if @sign > 0
+    else if @isPos()
       new LongInt 1, sqrt @digits
     else
       throw new Error "expected a non-negative number, got #{this}"
@@ -269,9 +293,9 @@ class LongInt extends NumberBase
     seq.sub(r, s)?.reverse()?.dropWhile((x) -> x == 0)?.first() or 0
 
   cmp__: (x) ->
-    if @sign == 0
+    if @isZero()
       -x.sign
-    else if x.sign == 0
+    else if x.isZero()
       @sign
     else if @sign != x.sign
       @sign
@@ -391,7 +415,7 @@ class LongInt extends NumberBase
   toString: ->
     parts = @digits?.reverse()?.dropWhile((d) -> d == 0)?.map (d) -> d.toString()
     if parts
-      sign = if @sign < 0 then '-' else ''
+      sign = if @isNeg() then '-' else ''
       rest = parts.rest()?.map (t) -> "#{zeroes[t.length..]}#{t}"
       sign + parts.first() + if rest? then rest.join '' else ''
     else
@@ -480,3 +504,10 @@ if quicktest
   show -> num.sqrt 99980001
   show -> num.pow 2, 16
   show -> num.abs -12345
+  show -> num.isZero 1
+  show -> num.isZero 123456
+  show -> num.isZero 0
+  show -> num.isNeg 0
+  show -> num.isNeg -45
+  show -> num.isNeg -12345
+  show -> num.isOdd -12345
