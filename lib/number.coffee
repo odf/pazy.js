@@ -143,7 +143,7 @@ class NumberBase
       throw new Error "operands of types #{tp1} and #{tp2} not supported"
 
   downcast = (x) ->
-    if x instanceof LongInt and x.cmp(BASE) < 0
+    if x instanceof LongInt and x.lt BASE
       if x.digits?
         new CheckedInt x.digits.first() * x.sign
       else
@@ -166,7 +166,11 @@ class NumberBase
     step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
 
     [x, y] = [@abs(), other.abs()]
-    if x.cmp(y) > 0 then bounce step x, y else bounce step x, y
+    if x.gt(y) then bounce step x, y else bounce step x, y
+
+  operator 'lt', (a, b) -> num.cmp(a, b) < 0
+  operator 'gt', (a, b) -> num.cmp(a, b) > 0
+  operator 'eq', (a, b) -> num.cmp(a, b) == 0
 
   for name in [
     'neg', 'abs', 'sgn', 'isPos', 'isNeg', 'isZero', 'isEven', 'isOdd'
@@ -511,3 +515,10 @@ if quicktest
   show -> num.isNeg -45
   show -> num.isNeg -12345
   show -> num.isOdd -12345
+
+  log ''
+  show -> num.eq 8, num(111119).mod 37
+  show -> num.lt 65535, num.pow 2, 16
+  show -> num.gt 65535, num.pow 2, 16
+  show -> num.gt 65536, num.pow 2, 16
+  show -> num.gt 65537, num.pow 2, 16
