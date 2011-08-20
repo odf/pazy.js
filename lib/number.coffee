@@ -419,23 +419,7 @@ exports.num = num
 # Some quick tests.
 
 if quicktest
-  show = (code) ->
-    s = code.toString().replace /^function\s*\(\)\s*{\s*return\s*(.*);\s*}/, "$1"
-    input = s + "                                    "[s.length..]
-
-    output =
-      try
-        res = code()
-        type = if res?.constructor?
-          res.constructor.name
-        else if res?
-          typeof res
-        if type? then "-> #{type} #{res}" else "-> #{res}"
-      catch ex
-        "!! #{ex}"
-
-    log "#{input}#{output}"
-
+  { show } = require 'testing'
 
   a = b = c = 0
 
