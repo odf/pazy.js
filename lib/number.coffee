@@ -158,7 +158,7 @@ class NumberBase
         new CheckedInt x.digits.first() * x.sign
       else
         new CheckedInt 0
-    else if x instanceof Fraction and x.den.eq(1)
+    else if x instanceof Fraction and x.denom.eq(1)
       x.num
     else
       x
@@ -174,7 +174,7 @@ class NumberBase
         [x, y] = upcast a, b
         downcast x[namex] y
 
-  by__: (other) -> Fraction.normalized @this, other
+  by__: (other) -> Fraction.normalized this, other
 
   gcd__: (other) ->
     step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
@@ -461,12 +461,12 @@ class Fraction extends NumberBase
   sgn__: -> @numer.sgn()
   inv__: -> Fraction.normalized @denom, @numer
 
-  isPos__: -> @numer.isPos()
-  isNeg__: -> @numer.isNeg()
+  isPos__:  -> @numer.isPos()
+  isNeg__:  -> @numer.isNeg()
   isZero__: -> @numer.isZero()
 
   isEven__: -> @denom.eq(1) and @numer.isEven()
-  isOdd__: -> @denom.eq(1) and @numer.isOdd()
+  isOdd__:  -> @denom.eq(1) and @numer.isOdd()
 
   cmp__: (x) -> @minus__(x).numer.cmp 0
 
@@ -578,3 +578,5 @@ if quicktest
 
   log ''
   show -> num.by 2, 3
+  show -> num.by(9,10).times(num.by(5,21))
+  show -> num.by(3,5).minus(num.by(7,11))
