@@ -444,50 +444,50 @@ class LongInt extends NumberBase
 
 # The 'Fraction' class implements rational numbers.
 
-class Fraction
-  constructor: (@num, @den) ->
+class Fraction extends NumberBase
+  constructor: (@numer, @denom) ->
 
-  @normalized = (num, den) ->
-    if den.eq 0
-      throw new Error "expected a non-zero denominator, got #{den}"
-    else if den.lt 0
-      Fraction.normalized num.neg(), den.neg()
+  @normalized = (n, d) ->
+    if d.eq 0
+      throw new Error "expected a non-zero denominator, got #{d}"
+    else if d.lt 0
+      Fraction.normalized n.neg(), d.neg()
     else
-      a = num.gcd den
-      new Fraction num.div(a), den.div(a)
+      a = num.gcd n, d
+      new Fraction n.div(a), d.div(a)
 
-  neg__: -> new Fraction @num.neg(), @den
-  abs__: -> new Fraction @num.abs(), @den
-  sgn__: -> @num.sgn()
-  inv__: -> normalized @den, @num
+  neg__: -> new Fraction @numer.neg(), @denom
+  abs__: -> new Fraction @numer.abs(), @denom
+  sgn__: -> @numer.sgn()
+  inv__: -> Fraction.normalized @denom, @numer
 
-  isPos__: -> @num.isPos()
-  isNeg__: -> @num.isNeg()
-  isZero__: -> @num.isZero()
+  isPos__: -> @numer.isPos()
+  isNeg__: -> @numer.isNeg()
+  isZero__: -> @numer.isZero()
 
-  isEven__: -> @den.eq(1) and @num.isEven()
-  isOdd__: -> @den.eq(1) and @num.isOdd()
+  isEven__: -> @denom.eq(1) and @numer.isEven()
+  isOdd__: -> @denom.eq(1) and @numer.isOdd()
 
-  cmp__: (x) -> @minus__(x).num.cmp 0
+  cmp__: (x) -> @minus__(x).numer.cmp 0
 
   plus__: (x) ->
-    a = num.gcd @den, x.den
-    s = num.div x.den, a
-    t = num.div @den, a
-    Fraction.normalized s.times(@num).plus(t.times(x.num)), s.times @den
+    a = num.gcd @denom, x.denom
+    s = num.div x.denom, a
+    t = num.div @denom, a
+    Fraction.normalized s.times(@numer).plus(t.times(x.numer)), s.times @denom
 
   minus__: (x) -> @plus__ x.neg__()
 
   times__: (x) ->
-    a = num.gcd @num, x.den
-    b = num.gcd @den, x.num
-    n = @num.div(a).times(x.num.div(b))
-    d = @den.div(b).times(x.den.div(a))
+    a = num.gcd @numer, x.denom
+    b = num.gcd @denom, x.numer
+    n = @numer.div(a).times(x.numer.div(b))
+    d = @denom.div(b).times(x.denom.div(a))
     Fraction.normalized n, d
 
   by__: (x) -> @times__ x.inv__()
 
-  toString: -> if @den.eq 1 then "#{@num}" else "#{@num}/#{@den}"
+  toString: -> if @denom.eq 1 then "#{@numer}" else "#{@numer}/#{@denom}"
 
 # ----
 # Exporting.
