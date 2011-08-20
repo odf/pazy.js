@@ -32,9 +32,15 @@
 #
 # Unfortunately, the latter does not work in the Coffeescript console.
 
+blanks = "                                   "
+
 show = (code, catchExceptions = true) ->
-  s = code.toString().replace /^function\s*\(\)\s*{\s*return\s*(.*);?\s*}/, "$1"
-  source = s + "                                    "[s.length..]
+  t = code.toString().replace /^function\s*\(\)\s*{\s*return\s*/, ''
+  s = t.replace /;*\s*}\s*$/, ''
+  source = if s.length > blanks.length
+    "#{s}\n#{blanks}"
+  else
+    s + blanks[s.length..]
 
   result =
     try
@@ -43,10 +49,10 @@ show = (code, catchExceptions = true) ->
         res.constructor.name
       else if res?
         typeof res
-      if type? then "-> #{type} #{res}" else "-> #{res}"
+      if type? then " -> #{type} #{res}" else "-> #{res}"
     catch ex
       if catchExceptions
-        "!! #{ex}"
+        " !! #{ex.toString().replace /\n/, "\n#{blanks} !!   "}"
       else
         throw ex
 
