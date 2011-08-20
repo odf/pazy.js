@@ -10,13 +10,12 @@
 if typeof(require) != 'undefined'
   require.paths.unshift '#{__dirname}/../lib'
   { equal, hashCode }          = require 'core_extensions'
-  { trampoline }               = require 'functional'
+  { bounce }                   = require 'functional'
   { seq }                      = require 'sequence'
   { IntMap, HashSet, HashMap } = require 'indexed'
   { Queue }                    = require 'queue'
 else
-  { equal, hashCode, trampoline,
-    seq, IntMap, HashSet, HashMap, Queue } = this.pazy
+  { equal, hashCode, bounce, seq, IntMap, HashSet, HashMap, Queue } = this.pazy
 
 # ----
 
@@ -257,7 +256,7 @@ delaunayTriangulation = do ->
           t
         else
           => step candidates.find (s) => @isInTriangle s, p
-      trampoline step outer
+      bounce step outer
 
     # The method `mustFlip` determines whether the triangles adjacent to the
     # given edge from `a` to `b` violates the Delaunay condition, in which case
@@ -339,11 +338,11 @@ delaunayTriangulation = do ->
           if T.sideOf(u, v, p) == 0
             w = T.third u, v
             if w?
-              trampoline doFlips flip(T, u, v), seq [[u, w], [w, v]]
+              bounce doFlips flip(T, u, v), seq [[u, w], [w, v]]
             else
               T
           else
-            trampoline doFlips T, seq [[u, v]]
+            bounce doFlips T, seq [[u, v]]
 
   # Here we define our access point. The function `delaunayTriangulation` takes
   # a list of sites, each given as a `Point2d` instance.

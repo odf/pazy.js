@@ -8,10 +8,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { equal }      = require 'core_extensions'
-  { trampoline } = require('functional')
+  { equal }  = require 'core_extensions'
+  { bounce } = require('functional')
 else
-  { equal, trampoline } = this.pazy
+  { equal, bounce } = this.pazy
 
 
 class Sequence
@@ -28,7 +28,7 @@ fromArray = (a, i) ->
   if i >= a.length
     null
   else if a[i] == undefined
-    trampoline skip a, i
+    bounce skip a, i
   else
     seq.conj a[i], -> fromArray a, i+1
 
@@ -83,11 +83,11 @@ method 'empty', (s) -> not s?
 
 memo 'size', (s) ->
   step = (t, n) -> if t then -> step t.rest(), n + 1 else n
-  trampoline step s, 0
+  bounce step s, 0
 
 memo 'last', (s) ->
   step = (t) -> if t.rest() then -> step t.rest() else t.first()
-  if s then trampoline step s
+  if s then bounce step s
 
 method 'take', (s, n) ->
   if s and n > 0
@@ -103,11 +103,11 @@ method 'takeWhile', (s, pred) ->
 
 method 'drop', (s, n) ->
   step = (t, n) -> if t and n > 0 then -> step t.rest(), n - 1 else t
-  if s then trampoline step s, n else null
+  if s then bounce step s, n else null
 
 method 'dropWhile', (s, pred) ->
   step = (t) -> if t and pred t.first() then -> step t.rest() else t
-  if s then trampoline step s else null
+  if s then bounce step s else null
 
 method 'get', (s, n) -> if n >= 0 then @drop__(s, n)?.first()
 
@@ -141,7 +141,7 @@ method 'products', (s) -> @accumulate__ s, 1, (a,b) -> a * b
 
 method 'reduce', (s, start, op) ->
   step = (t, val) -> if t then -> step t.rest(), op val, t.first() else val
-  trampoline step s, start
+  bounce step s, start
 
 method 'sum',     (s) -> @reduce__ s, 0, (a,b) -> a + b
 method 'product', (s) -> @reduce__ s, 1, (a,b) -> a * b
@@ -234,11 +234,11 @@ combinator 'cantor', (seqs) -> cantor_runs(seqs)?.flatten()
 
 method 'each', (s, func) ->
   step = (t) -> if t then func(t.first()); -> step t.rest()
-  trampoline step s
+  bounce step s
 
 method 'reverse', (s) ->
   step = (r, t) => if t then => step @conj(t.first(), -> r), t.rest() else r
-  trampoline step null, s
+  bounce step null, s
 
 method 'forced', (s) ->
   if s

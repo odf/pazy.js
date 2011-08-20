@@ -24,7 +24,7 @@ exports.suspend = (code) ->
 # A function to simulate tail call optimization.
 # --------------------------------------------------------------------
 
-exports.trampoline = (val) -> val = val() while typeof val == 'function'; val
+exports.bounce = (val) -> val = val() while typeof val == 'function'; val
 
 
 # --------------------------------------------------------------------

@@ -10,10 +10,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { trampoline } = require 'functional'
-  { seq }  = require 'sequence'
+  { bounce } = require 'functional'
+  { seq }    = require 'sequence'
 else
-  { trampoline, seq } = this.pazy
+  { bounce, seq } = this.pazy
 
 # -- Call with '--test' for some quick-and-dirty testing
 
@@ -115,7 +115,7 @@ divmod = (r, s) ->
     else
       [cleanup(q), h && div(h, seq.conj(scale))]
 
-  trampoline step(null, null, r_.reverse())
+  bounce step null, null, r_.reverse()
 
 div = (r, s) -> divmod(r, s)[0]
 
@@ -130,7 +130,7 @@ pow = (r, s) ->
         -> step(p, seq(mul(r, r)), div(s, TWO))
     else
       p
-  trampoline step(ONE, r, s)
+  bounce step ONE, r, s
 
 sqrt = (s) ->
   n = s.size()
@@ -140,7 +140,7 @@ sqrt = (s) ->
     step = (r) ->
       rn = seq div(add(r, div(s, r)), TWO)
       if cmp(r, rn) then -> step(rn) else rn
-    trampoline step s.take n >> 1
+    bounce step s.take n >> 1
 
 
 # -- The glorious LongInt class
@@ -189,7 +189,7 @@ class LongInt
     step = (n, s) ->
       if s then -> step(n * BASE + s.first(), s.rest()) else n
     rev = @digits__?.reverse()?.dropWhile (d) -> d == 0
-    @sign() * trampoline step(0, rev)
+    @sign() * bounce step 0, rev
 
   @operator: (names, arity, code) ->
     f = (args...) -> code.apply(this, LongInt.make x for x in args[...arity-1])
@@ -258,7 +258,7 @@ class LongInt
   @operator ['gcd'], 2, (other) ->
     step = (a, b) -> if b.cmp(0) > 0 then -> step b, a.mod b else a
     [a, b] = [this.abs(), other.abs()]
-    if a.cmp(b) > 0 then trampoline step a, b else trampoline step b, a
+    if a.cmp(b) > 0 then bounce step a, b else bounce step b, a
 
 
 # -- The CheckedInt class provides integer operations that propagate
@@ -330,7 +330,7 @@ class CheckedInt
   @operator ['gcd'], 2, (other) ->
     step = (a, b) -> if b > 0 then -> step b, a % b else a
     [a, b] = [Math.abs(@val), Math.abs(other.val)]
-    val = if a > b then trampoline step a, b else trampoline step b, a
+    val = if a > b then bounce step a, b else bounce step b, a
     new CheckedInt val
 
   toString: -> "" + @val

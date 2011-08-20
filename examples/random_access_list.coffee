@@ -9,10 +9,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { trampoline } = require('functional')
+  { bounce } = require('functional')
   { seq }        = require('sequence')
 else
-  { trampoline, seq } = this.pazy
+  { bounce, seq } = this.pazy
 
 list = (car, cdr) ->
   first: -> car
@@ -65,11 +65,11 @@ class RandomAccessList
       if trees
         [w, t] = trees.first()
         if i < w
-          trampoline lookupTree(w, t, i)
+          bounce lookupTree(w, t, i)
         else
           -> step(trees.rest(), i-w)
 
-    trampoline step(@trees, i) if i >= 0
+    bounce step(@trees, i) if i >= 0
 
   update: (i, y) ->
     zipUp = (r, s) ->
@@ -84,7 +84,7 @@ class RandomAccessList
 
     updateTree = (r, w, [x, t1, t2], i) ->
       if i == 0
-        trampoline zipUp(r, if w == 1 then [y] else [y, t1, t2])
+        bounce zipUp(r, if w == 1 then [y] else [y, t1, t2])
       else
         wh = half(w)
         if i-1 < wh
@@ -96,7 +96,7 @@ class RandomAccessList
       if s
         [w, t] = s.first()
         if i < w
-          newTree = trampoline updateTree(null, w, t, i)
+          newTree = bounce updateTree(null, w, t, i)
           seq.reverse(list([w, newTree], r)).concat(s.rest()).forced()
         else
           -> step(list(s.first(), r), s.rest(), i - w)
@@ -104,7 +104,7 @@ class RandomAccessList
         throw new Error("index too large")
 
     if i >= 0
-      new RandomAccessList(trampoline step(null, @trees, i))
+      new RandomAccessList(bounce step(null, @trees, i))
     else
       throw new Error("negative index")
 

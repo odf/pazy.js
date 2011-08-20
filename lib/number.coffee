@@ -12,10 +12,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { trampoline } = require 'functional'
-  { seq }  = require 'sequence'
+  { bounce } = require 'functional'
+  { seq }    = require 'sequence'
 else
-  { trampoline, seq } = this.pazy
+  { bounce, seq } = this.pazy
 
 # ----
 
@@ -166,7 +166,7 @@ class NumberBase
     step = (a, b) -> if b.sgn() > 0 then -> step b, a.mod(b) else a
 
     [x, y] = [@abs(), other.abs()]
-    if x.cmp(y) > 0 then trampoline step x, y else trampoline step x, y
+    if x.cmp(y) > 0 then bounce step x, y else bounce step x, y
 
   for name in ['neg', 'abs', 'sgn']
     do (name) ->
@@ -185,7 +185,7 @@ class NumberBase
       else
         p
 
-    NumberBase.downcast trampoline step makeNum(1), makeNum(a), makeNum(b)
+    NumberBase.downcast bounce step makeNum(1), makeNum(a), makeNum(b)
 
 # ----
 
@@ -255,7 +255,7 @@ class LongInt extends NumberBase
     step = (r) ->
       rn = seq div(add(r, div(s, r)), seq([2]))
       if cmp(r, rn) then -> step(rn) else rn
-    trampoline step s.take n >> 1
+    bounce step s.take n >> 1
 
   sqrt__: ->
     if @sign == 0
@@ -364,7 +364,7 @@ class LongInt extends NumberBase
       else
         [cleanup(q), h && div(h, seq [scale])]
 
-    trampoline step null, null, r_?.reverse()
+    bounce step null, null, r_?.reverse()
 
   div = (r, s) -> divmod(r, s)[0]
 

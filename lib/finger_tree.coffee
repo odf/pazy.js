@@ -7,10 +7,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { seq }                     = require('sequence')
-  { trampoline, suspend } = require('functional')
+  { seq }             = require('sequence')
+  { bounce, suspend } = require('functional')
 else
-  { seq, trampoline, suspend } = pazy
+  { seq, bounce, suspend } = pazy
 
 class Void
 
@@ -429,7 +429,7 @@ SortedExtensions = (less, extensions) -> class extends extensions
         a = concat s, before l, k
         merge a, t2.rest(), after r, x
 
-  merge: (other) -> trampoline merge @empty(), this, other
+  merge: (other) -> bounce merge @empty(), this, other
 
   intersect = (s, t1, t2) ->
     if t2.isEmpty()
@@ -442,7 +442,7 @@ SortedExtensions = (less, extensions) -> class extends extensions
       else
         -> intersect before(s, x), t2.rest(), r
 
-  intersect: (other) -> trampoline intersect @empty(), this, other
+  intersect: (other) -> bounce intersect @empty(), this, other
 
   @::plus = @::insert
 

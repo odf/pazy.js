@@ -10,10 +10,10 @@
 
 if typeof(require) != 'undefined'
   require.paths.unshift __dirname
-  { trampoline } = require('functional')
-  { seq }        = require('sequence')
+  { bounce } = require('functional')
+  { seq }    = require('sequence')
 else
-  { trampoline, seq } = this.pazy
+  { bounce, seq } = this.pazy
 
 
 class Sortable
@@ -32,7 +32,7 @@ class Sortable
 
     if arguments.length > 0
       seq.reduce arguments, this, (s, x) ->
-        newSegs = trampoline addSeg(seq.conj(x), s.segs, s.size())
+        newSegs = bounce addSeg(seq.conj(x), s.segs, s.size())
         new Sortable(less, s.size() + 1, newSegs)
     else
       this

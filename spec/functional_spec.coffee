@@ -1,8 +1,8 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { suspend, trampoline, scope } = require('functional')
+  { suspend, bounce, scope } = require('functional')
 else
-  { suspend, trampoline, scope } = pazy
+  { suspend, bounce, scope } = pazy
 
 describe """The suspension of a function that increments
             a counter and returns its new value""", ->
@@ -28,7 +28,7 @@ describe """The suspension of a function that increments
 describe "A function computing the factorial via simulated tail recursion", ->
   factorial = (n) ->
     fac = (n, p) -> if n then -> fac(n-1, p * n) else p
-    trampoline fac(n, 1)
+    bounce fac(n, 1)
 
   it "should print 5040 when applied to 7", ->
     expect(factorial(7)).toBe 5040
