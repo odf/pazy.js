@@ -167,14 +167,14 @@ class NumberBase
     num[name]          = (args...) -> f.call num, args...
     NumberBase::[name] = (args...) -> num[name] this, args...
 
-  for name in ['cmp', 'plus', 'minus', 'times', 'by', 'div', 'mod', 'gcd']
+  for name in ['cmp', 'plus', 'minus', 'times', 'div', 'idiv', 'mod', 'gcd']
     do (name) ->
       namex = "#{name}__"
       operator name, (a, b) ->
         [x, y] = upcast a, b
         downcast x[namex] y
 
-  by__: (other) -> Fraction.normalized this, other
+  div__: (other) -> Fraction.normalized this, other
 
   gcd__: (other) ->
     step = (a, b) -> if b.isPos() then -> step b, a.mod(b) else a
@@ -193,7 +193,7 @@ class NumberBase
       namex = "#{name}__"
       operator name, (a) -> makeNum(a)[namex]()
 
-  operator 'sqrt', (a) -> downcast makeNum(a)['sqrt__']()
+  operator 'isqrt', (a) -> downcast makeNum(a)['isqrt__']()
 
   operator 'pow', (a, b) ->
     step = (p, r, s) ->
@@ -201,7 +201,7 @@ class NumberBase
         if s.isOdd() > 0
           -> step p.times(r), r, s.minus 1
         else
-          -> step p, r.times(r), s.div 2
+          -> step p, r.times(r), s.idiv 2
       else
         p
 
@@ -227,7 +227,7 @@ class CheckedInt extends NumberBase
   isEven__: -> @val % 2 == 0
   isOdd__:  -> @val % 2 != 0
 
-  sqrt__: -> new CheckedInt Math.floor Math.sqrt @val
+  isqrt__: -> new CheckedInt Math.floor Math.sqrt @val
 
   cmp__: (other) ->
     if @val < other.val then -1 else if @val > other.val then 1 else 0
@@ -243,7 +243,7 @@ class CheckedInt extends NumberBase
     else
       LongInt.fromNative(@val).times other
 
-  div__: (x) -> new CheckedInt Math.floor @val / x.val
+  idiv__: (x) -> new CheckedInt Math.floor @val / x.val
 
   mod__: (x) -> new CheckedInt @val % x.val
 
@@ -282,18 +282,18 @@ class LongInt extends NumberBase
 
   cleanup = (s) -> s?.reverse()?.dropWhile((x) -> x == 0)?.reverse() or null
 
-  sqrt = (s) ->
+  isqrt = (s) ->
     n = s.size()
     step = (r) ->
-      rn = seq div(add(r, div(s, r)), seq([2]))
+      rn = seq idiv(add(r, idiv(s, r)), seq([2]))
       if cmp(r, rn) then -> step(rn) else rn
     bounce step s.take n >> 1
 
-  sqrt__: ->
+  isqrt__: ->
     if @isZero()
       asNum 0
     else if @isPos()
-      new LongInt 1, sqrt @digits
+      new LongInt 1, isqrt @digits
     else
       throw new Error "expected a non-negative number, got #{this}"
 
@@ -375,7 +375,7 @@ class LongInt extends NumberBase
 
   times__: (x) -> new LongInt @sign * x.sign, mul @digits, x.digits
 
-  divmod = (r, s) ->
+  idivmod = (r, s) ->
     return [ZERO, ZERO] unless cleanup r
 
     scale = Math.floor BASE / (s.last() + 1)
@@ -394,22 +394,22 @@ class LongInt extends NumberBase
       else if t
         -> step(seq.conj(0, -> q), seq.conj(t.first(), -> h), t.rest())
       else
-        [cleanup(q), h && div(h, seq [scale])]
+        [cleanup(q), h && idiv(h, seq [scale])]
 
     bounce step null, null, r_?.reverse()
 
-  div = (r, s) -> divmod(r, s)[0]
+  idiv = (r, s) -> idivmod(r, s)[0]
 
-  mod = (r, s) -> divmod(r, s)[1]
+  mod = (r, s) -> idivmod(r, s)[1]
 
-  div__: (x) ->
+  idiv__: (x) ->
     d = cmp @digits, x.digits
     if d < 0
       asNum 0
     else if d == 0
       asNum @sign * x.sign
     else
-      new LongInt @sign * x.sign, div @digits, x.digits
+      new LongInt @sign * x.sign, idiv @digits, x.digits
 
   mod__: (x) ->
     d = cmp @digits, x.digits
@@ -454,7 +454,7 @@ class Fraction extends NumberBase
       Fraction.normalized n.neg(), d.neg()
     else
       a = num.gcd n, d
-      new Fraction n.div(a), d.div(a)
+      new Fraction n.idiv(a), d.idiv(a)
 
   neg__: -> new Fraction @numer.neg(), @denom
   abs__: -> new Fraction @numer.abs(), @denom
@@ -468,12 +468,14 @@ class Fraction extends NumberBase
   isEven__: -> @denom.eq(1) and @numer.isEven()
   isOdd__:  -> @denom.eq(1) and @numer.isOdd()
 
+  isqrt__: -> num.idiv(@numer, @denom).isqrt()
+
   cmp__: (x) -> @minus__(x).numer.cmp 0
 
   plus__: (x) ->
     a = num.gcd @denom, x.denom
-    s = num.div x.denom, a
-    t = num.div @denom, a
+    s = num.idiv x.denom, a
+    t = num.idiv @denom, a
     Fraction.normalized s.times(@numer).plus(t.times(x.numer)), s.times @denom
 
   minus__: (x) -> @plus__ x.neg__()
@@ -481,11 +483,11 @@ class Fraction extends NumberBase
   times__: (x) ->
     a = num.gcd @numer, x.denom
     b = num.gcd @denom, x.numer
-    n = @numer.div(a).times(x.numer.div(b))
-    d = @denom.div(b).times(x.denom.div(a))
+    n = @numer.idiv(a).times(x.numer.idiv(b))
+    d = @denom.idiv(b).times(x.denom.idiv(a))
     Fraction.normalized n, d
 
-  by__: (x) -> @times__ x.inv__()
+  div__: (x) -> @times__ x.inv__()
 
   toString: -> if @denom.eq 1 then "#{@numer}" else "#{@numer}/#{@denom}"
 
@@ -535,12 +537,12 @@ if quicktest
   log ''
   show -> num(12345).times 100001
   show -> num(11111).times 9
-  show -> num(111).div 37
-  show -> num(111111).div 37
-  show -> num(111111111).div 37
-  show -> num(111111111).div 12345679
-  show -> num(99980001).div 49990001
-  show -> num(20001).div 10001
+  show -> num(111).idiv 37
+  show -> num(111111).idiv 37
+  show -> num(111111111).idiv 37
+  show -> num(111111111).idiv 12345679
+  show -> num(99980001).idiv 49990001
+  show -> num(20001).idiv 10001
 
   log ''
   show -> num(111).mod 37
@@ -548,9 +550,9 @@ if quicktest
   show -> num(111111111).mod 12345679
 
   log ''
-  show -> num(9801).sqrt()
-  show -> num(998001).sqrt()
-  show -> num(99980001).sqrt()
+  show -> num(9801).isqrt()
+  show -> num(998001).isqrt()
+  show -> num(99980001).isqrt()
 
   log ''
   show -> num(10).pow 6
@@ -558,7 +560,7 @@ if quicktest
 
   log ''
   show -> num.plus 123456789, 876543211
-  show -> num.sqrt 99980001
+  show -> num.isqrt 99980001
   show -> num.pow 2, 16
   show -> num.abs -12345
   show -> num.isZero 1
@@ -577,6 +579,8 @@ if quicktest
   show -> num.gt 65537, num.pow 2, 16
 
   log ''
-  show -> num.by 2, 3
-  show -> num.by(9,10).times(num.by(5,21))
-  show -> num.by(3,5).minus(num.by(7,11))
+  show -> num.div 2, 3
+  show -> num.div(9,10).times(num.div(5,21))
+  show -> num.div(3,5).minus(num.div(7,11))
+  show -> num.div 111111111, 12345679 * 2
+  show -> num.div(28,3).isqrt()
