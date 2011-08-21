@@ -159,7 +159,7 @@ class NumberBase
       else
         new CheckedInt 0
     else if x instanceof Fraction and x.denom.eq(1)
-      x.num
+      x.numer
     else
       x
 
@@ -593,3 +593,5 @@ if quicktest
   show -> num.div(3,5).minus(num.div(7,11))
   show -> num.div 111111111, 12345679 * 2
   show -> num.div(28,3).isqrt()
+  show -> num.div(1,2).plus num.div(1,2)
+  show -> num.div(2,3).plus num.div(4,3)
