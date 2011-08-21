@@ -130,7 +130,7 @@ class NumberBase
             when LongInt
               [LongInt.fromNative(op1.val), op2]
             when Fraction
-              [new Fraction(op1,1), op2]
+              [new Fraction(op1, num 1), op2]
         when LongInt
           switch op2.constructor
             when CheckedInt
@@ -138,11 +138,11 @@ class NumberBase
             when LongInt
               [op1, op2]
             when Fraction
-              [new Fraction(op1,1), op2]
+              [new Fraction(op1, num 1), op2]
         when Fraction
           switch op2.constructor
             when CheckedInt, LongInt
-              [op1, new Fraction op2, 1]
+              [op1, new Fraction op2, num 1]
             when Fraction
               [op1, op2]
 
@@ -595,3 +595,5 @@ if quicktest
   show -> num.div(28,3).isqrt()
   show -> num.div(1,2).plus num.div(1,2)
   show -> num.div(2,3).plus num.div(4,3)
+  show -> num.div(2,3).plus 1
+  show -> num.div(2,3).div 2

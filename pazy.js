@@ -2453,7 +2453,7 @@
               case LongInt:
                 return [LongInt.fromNative(op1.val), op2];
               case Fraction:
-                return [new Fraction(op1, 1), op2];
+                return [new Fraction(op1, num(1)), op2];
             }
             break;
           case LongInt:
@@ -2463,14 +2463,14 @@
               case LongInt:
                 return [op1, op2];
               case Fraction:
-                return [new Fraction(op1, 1), op2];
+                return [new Fraction(op1, num(1)), op2];
             }
             break;
           case Fraction:
             switch (op2.constructor) {
               case CheckedInt:
               case LongInt:
-                return [op1, new Fraction(op2, 1)];
+                return [op1, new Fraction(op2, num(1))];
               case Fraction:
                 return [op1, op2];
             }
@@ -3251,6 +3251,12 @@
     });
     show(function() {
       return num.div(2, 3).plus(num.div(4, 3));
+    });
+    show(function() {
+      return num.div(2, 3).plus(1);
+    });
+    show(function() {
+      return num.div(2, 3).div(2);
     });
   }
 }).call(this);
