@@ -249,6 +249,8 @@ class CheckedInt extends NumberBase
 
   toString: -> "" + @val
 
+  toNative: -> @val
+
 # ----
 
 # Here are the beginnings of the `LongInt` class.
@@ -429,6 +431,11 @@ class LongInt extends NumberBase
     else
       '0'
 
+  toNative: ->
+    step = (n, s) -> if s then -> step n * BASE + s.first(), s.rest() else n
+    rev = @digits?.reverse()?.dropWhile (d) -> d == 0
+    @sign * bounce step 0, rev
+
   makeDigits = (m) ->
     if m then seq.conj m % BASE, -> makeDigits Math.floor(m / BASE) else null
 
@@ -490,6 +497,8 @@ class Fraction extends NumberBase
   div__: (x) -> @times__ x.inv__()
 
   toString: -> if @denom.eq 1 then "#{@numer}" else "#{@numer}/#{@denom}"
+
+  toNative: -> @numer.toNative() / @denom.toNative()
 
 # ----
 # Exporting.
