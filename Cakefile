@@ -28,8 +28,7 @@ prodCoffeeFiles = [
   'partition'
   'stack'
   'queue'
-  'long_int'
-  'rational'
+  'number'
 ]
 
 task 'watch', 'Watch prod source files and build changes', ->

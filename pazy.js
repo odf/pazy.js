@@ -1,5 +1,5 @@
 (function() {
-  var ArrayNode, BitmapIndexedNode, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, OrderMeasure, Partition, ProxyNode, Queue, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, Void, bounce, cantor_fold, cantor_runs, combinator, equal, fromArray, hashCode, memo, method, s, selfHashing, seq, skip, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+  var ArrayNode, BASE, BASE_LENGTH, BitmapIndexedNode, CheckedInt, Collection, CollisionNode, CountedExtensions, CountedSeq, DefaultExtensions, EmptyNode, FingerTreeType, Fraction, HALFBASE, HashLeaf, HashLeafWithValue, HashMap, HashSet, IntLeaf, IntLeafWithValue, IntMap, IntSet, LongInt, NumberBase, OrderMeasure, Partition, ProxyNode, Queue, Sequence, SizeMeasure, SortedExtensions, SortedSeqType, Stack, Void, a, asNum, b, bounce, c, cantor_fold, cantor_runs, combinator, equal, fromArray, hashCode, log, memo, method, num, quicktest, s, selfHashing, seq, show, skip, suspend, util, _ref, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __slice = Array.prototype.slice, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) {
     for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; }
     function ctor() { this.constructor = child; }
@@ -2339,4 +2339,918 @@
     exports = (_ref14 = this.pazy) != null ? _ref14 : this.pazy = {};
   };
   exports.Queue = Queue;
+  if (typeof require !== 'undefined') {
+    require.paths.unshift(__dirname);
+    bounce = require('functional').bounce;
+    seq = require('sequence').seq;
+  } else {
+    _ref15 = this.pazy, bounce = _ref15.bounce, seq = _ref15.seq;
+  }
+  quicktest = (typeof module !== "undefined" && module !== null) && !module.parent;
+  log = quicktest ? function(str) {
+    return console.log(str);
+  } : function(str) {};
+  BASE_LENGTH = quicktest ? 4 : seq.from(1).map(function(n) {
+    return 2 * n;
+  }).takeWhile(function(n) {
+    var b;
+    b = Math.pow(10, n);
+    return 2 * b - 2 !== 2 * b - 1 && -2 * b + 2 !== -2 * b + 1;
+  }).last();
+  BASE = Math.pow(10, BASE_LENGTH);
+  HALFBASE = Math.sqrt(BASE);
+  asNum = function(n) {
+    if (Math.abs(n) < BASE) {
+      return new CheckedInt(n);
+    } else {
+      return LongInt.fromNative(n);
+    }
+  };
+  num = function(n) {
+    if (n == null) {
+      n = 0;
+    }
+    switch (typeof n) {
+      case 'number':
+        return num.fromNative(n);
+      case 'string':
+        return num.parse(n);
+      default:
+        if (n instanceof NumberBase) {
+          return n;
+        } else {
+          throw new Error("expected a number, got " + n);
+        }
+    }
+  };
+  num.fromNative = function(n) {
+    if (n !== Math.floor(n)) {
+      throw new Error("expected an integer, got " + n);
+    }
+    return asNum(n);
+  };
+  num.parse = function(n) {
+    var m, parsed, _ref16;
+    if (!/^[+-]?\d+$/.test(n)) {
+      throw new Error("expected an integer literal, got '" + n + "'");
+    }
+    _ref16 = (function() {
+      switch (n[0]) {
+        case '-':
+          return [-1, n.slice(1)];
+        case '+':
+          return [1, n.slice(1)];
+        default:
+          return [1, n];
+      }
+    })(), s = _ref16[0], m = _ref16[1];
+    if (m.length <= BASE_LENGTH) {
+      return new CheckedInt(parseInt(n));
+    } else {
+      parsed = function(to) {
+        var from;
+        if (to > 0) {
+          from = Math.max(0, to - BASE_LENGTH);
+          return seq.conj(parseInt(m.slice(from, to)), function() {
+            return parsed(from);
+          });
+        } else {
+          return null;
+        }
+      };
+      return new LongInt(s, parsed(m.length));
+    }
+  };
+  NumberBase = (function() {
+    var downcast, makeNum, name, operator, upcast, _fn, _fn2, _i, _j, _len, _len2, _ref16, _ref17;
+    function NumberBase() {}
+    makeNum = function(n) {
+      if (n instanceof NumberBase) {
+        return n;
+      } else if (typeof n === 'number') {
+        if (Math.floor(n) === n) {
+          if (Math.abs(n) < BASE) {
+            return new CheckedInt(n);
+          } else {
+            return LongInt.fromNative(n);
+          }
+        } else {
+          throw new Error("expected an integer, got " + n);
+        }
+      } else {
+        throw new Error("expected a number, got " + n);
+      }
+    };
+    upcast = function(a, b) {
+      var op1, op2, out, tp1, tp2, _ref16, _ref17;
+      _ref16 = [makeNum(a), makeNum(b)], op1 = _ref16[0], op2 = _ref16[1];
+      out = (function() {
+        switch (op1.constructor) {
+          case CheckedInt:
+            switch (op2.constructor) {
+              case CheckedInt:
+                return [op1, op2];
+              case LongInt:
+                return [LongInt.fromNative(op1.val), op2];
+              case Fraction:
+                return [new Fraction(op1, 1), op2];
+            }
+            break;
+          case LongInt:
+            switch (op2.constructor) {
+              case CheckedInt:
+                return [op1, LongInt.fromNative(op2.val)];
+              case LongInt:
+                return [op1, op2];
+              case Fraction:
+                return [new Fraction(op1, 1), op2];
+            }
+            break;
+          case Fraction:
+            switch (op2.constructor) {
+              case CheckedInt:
+              case LongInt:
+                return [op1, new Fraction(op2, 1)];
+              case Fraction:
+                return [op1, op2];
+            }
+        }
+      })();
+      if (out) {
+        return out;
+      } else {
+        _ref17 = [op1.constructor, op2.constructor], tp1 = _ref17[0], tp2 = _ref17[1];
+        throw new Error("operands of types " + tp1 + " and " + tp2 + " not supported");
+      }
+    };
+    downcast = function(x) {
+      if (x instanceof LongInt && x.lt(BASE)) {
+        if (x.digits != null) {
+          return new CheckedInt(x.digits.first() * x.sign);
+        } else {
+          return new CheckedInt(0);
+        }
+      } else if (x instanceof Fraction && x.denom.eq(1)) {
+        return x.numer;
+      } else {
+        return x;
+      }
+    };
+    operator = function(name, f) {
+      num[name] = function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        return f.call.apply(f, [num].concat(__slice.call(args)));
+      };
+      return NumberBase.prototype[name] = function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        return num[name].apply(num, [this].concat(__slice.call(args)));
+      };
+    };
+    _ref16 = ['cmp', 'plus', 'minus', 'times', 'div', 'idiv', 'mod', 'gcd'];
+    _fn = function(name) {
+      var namex;
+      namex = "" + name + "__";
+      return operator(name, function(a, b) {
+        var x, y, _ref17;
+        _ref17 = upcast(a, b), x = _ref17[0], y = _ref17[1];
+        return downcast(x[namex](y));
+      });
+    };
+    for (_i = 0, _len = _ref16.length; _i < _len; _i++) {
+      name = _ref16[_i];
+      _fn(name);
+    }
+    NumberBase.prototype.div__ = function(other) {
+      return Fraction.normalized(this, other);
+    };
+    NumberBase.prototype.gcd__ = function(other) {
+      var step, x, y, _ref17;
+      step = function(a, b) {
+        if (b.isPos()) {
+          return function() {
+            return step(b, a.mod(b));
+          };
+        } else {
+          return a;
+        }
+      };
+      _ref17 = [this.abs(), other.abs()], x = _ref17[0], y = _ref17[1];
+      if (x.gt(y)) {
+        return bounce(step(x, y));
+      } else {
+        return bounce(step(x, y));
+      }
+    };
+    operator('lt', function(a, b) {
+      return num.cmp(a, b) < 0;
+    });
+    operator('gt', function(a, b) {
+      return num.cmp(a, b) > 0;
+    });
+    operator('eq', function(a, b) {
+      return num.cmp(a, b) === 0;
+    });
+    _ref17 = ['neg', 'abs', 'sgn', 'isPos', 'isNeg', 'isZero', 'isEven', 'isOdd'];
+    _fn2 = function(name) {
+      var namex;
+      namex = "" + name + "__";
+      return operator(name, function(a) {
+        return makeNum(a)[namex]();
+      });
+    };
+    for (_j = 0, _len2 = _ref17.length; _j < _len2; _j++) {
+      name = _ref17[_j];
+      _fn2(name);
+    }
+    operator('isqrt', function(a) {
+      return downcast(makeNum(a)['isqrt__']());
+    });
+    operator('pow', function(a, b) {
+      var step;
+      step = function(p, r, s) {
+        if (s.isPos()) {
+          if (s.isOdd() > 0) {
+            return function() {
+              return step(p.times(r), r, s.minus(1));
+            };
+          } else {
+            return function() {
+              return step(p, r.times(r), s.idiv(2));
+            };
+          }
+        } else {
+          return p;
+        }
+      };
+      return downcast(bounce(step(makeNum(1), makeNum(a), makeNum(b))));
+    });
+    return NumberBase;
+  })();
+  CheckedInt = (function() {
+    __extends(CheckedInt, NumberBase);
+    function CheckedInt(val) {
+      this.val = val != null ? val : 0;
+    }
+    CheckedInt.prototype.neg__ = function() {
+      return new CheckedInt(-this.val);
+    };
+    CheckedInt.prototype.abs__ = function() {
+      return new CheckedInt(Math.abs(this.val));
+    };
+    CheckedInt.prototype.sgn__ = function() {
+      if (this.val < 0) {
+        return -1;
+      } else if (this.val > 0) {
+        return 1;
+      } else {
+        return 0;
+      }
+    };
+    CheckedInt.prototype.isPos__ = function() {
+      return this.val > 0;
+    };
+    CheckedInt.prototype.isNeg__ = function() {
+      return this.val < 0;
+    };
+    CheckedInt.prototype.isZero__ = function() {
+      return this.val === 0;
+    };
+    CheckedInt.prototype.isEven__ = function() {
+      return this.val % 2 === 0;
+    };
+    CheckedInt.prototype.isOdd__ = function() {
+      return this.val % 2 !== 0;
+    };
+    CheckedInt.prototype.isqrt__ = function() {
+      return new CheckedInt(Math.floor(Math.sqrt(this.val)));
+    };
+    CheckedInt.prototype.cmp__ = function(other) {
+      if (this.val < other.val) {
+        return -1;
+      } else if (this.val > other.val) {
+        return 1;
+      } else {
+        return 0;
+      }
+    };
+    CheckedInt.prototype.plus__ = function(other) {
+      return asNum(this.val + other.val);
+    };
+    CheckedInt.prototype.minus__ = function(other) {
+      return asNum(this.val - other.val);
+    };
+    CheckedInt.prototype.times__ = function(other) {
+      var x;
+      x = this.val * other.val;
+      if (Math.abs(x) < BASE) {
+        return new CheckedInt(x);
+      } else {
+        return LongInt.fromNative(this.val).times(other);
+      }
+    };
+    CheckedInt.prototype.idiv__ = function(x) {
+      return new CheckedInt(Math.floor(this.val / x.val));
+    };
+    CheckedInt.prototype.mod__ = function(x) {
+      return new CheckedInt(this.val % x.val);
+    };
+    CheckedInt.prototype.toString = function() {
+      return "" + this.val;
+    };
+    CheckedInt.prototype.toNative = function() {
+      return this.val;
+    };
+    return CheckedInt;
+  })();
+  LongInt = (function() {
+    var ZERO, add, cleanup, cmp, digitTimesDigit, dump, idiv, idivmod, isqrt, makeDigits, mod, mul, rdump, seqTimesDigit, split, sub, zeroes;
+    __extends(LongInt, NumberBase);
+    function LongInt(sign, digits) {
+      var _ref16;
+      this.digits = digits;
+      this.sign = this.digits != null ? sign : 0;
+      this.first = ((_ref16 = this.digits) != null ? _ref16.first() : void 0) || 0;
+    }
+    LongInt.prototype.neg__ = function() {
+      return new LongInt(-this.sign, this.digits);
+    };
+    LongInt.prototype.abs__ = function() {
+      return new LongInt(1, this.digits);
+    };
+    LongInt.prototype.sgn__ = function() {
+      return this.sign;
+    };
+    LongInt.prototype.isPos__ = function() {
+      return this.sign > 0;
+    };
+    LongInt.prototype.isNeg__ = function() {
+      return this.sign < 0;
+    };
+    LongInt.prototype.isZero__ = function() {
+      return this.sign === 0;
+    };
+    LongInt.prototype.isEven__ = function() {
+      return this.first % 2 === 0;
+    };
+    LongInt.prototype.isOdd__ = function() {
+      return this.first % 2 !== 0;
+    };
+    zeroes = BASE.toString().slice(1);
+    rdump = function(s) {
+      if (s) {
+        return s.map(function(t) {
+          return "" + zeroes.slice(t.toString().length) + t;
+        }).into([]).join('|');
+      } else {
+        return '[]';
+      }
+    };
+    dump = function(s) {
+      return rdump(s != null ? s.reverse() : void 0);
+    };
+    ZERO = seq([0]);
+    cleanup = function(s) {
+      var _ref16, _ref17;
+      return (s != null ? (_ref16 = s.reverse()) != null ? (_ref17 = _ref16.dropWhile(function(x) {
+        return x === 0;
+      })) != null ? _ref17.reverse() : void 0 : void 0 : void 0) || null;
+    };
+    isqrt = function(s) {
+      var n, step;
+      n = s.size();
+      step = function(r) {
+        var rn;
+        rn = seq(idiv(add(r, idiv(s, r)), seq([2])));
+        if (cmp(r, rn)) {
+          return function() {
+            return step(rn);
+          };
+        } else {
+          return rn;
+        }
+      };
+      return bounce(step(s.take(n >> 1)));
+    };
+    LongInt.prototype.isqrt__ = function() {
+      if (this.isZero()) {
+        return asNum(0);
+      } else if (this.isPos()) {
+        return new LongInt(1, isqrt(this.digits));
+      } else {
+        throw new Error("expected a non-negative number, got " + this);
+      }
+    };
+    cmp = function(r, s) {
+      var _ref16, _ref17, _ref18;
+      return ((_ref16 = seq.sub(r, s)) != null ? (_ref17 = _ref16.reverse()) != null ? (_ref18 = _ref17.dropWhile(function(x) {
+        return x === 0;
+      })) != null ? _ref18.first() : void 0 : void 0 : void 0) || 0;
+    };
+    LongInt.prototype.cmp__ = function(x) {
+      if (this.isZero()) {
+        return -x.sign;
+      } else if (x.isZero()) {
+        return this.sign;
+      } else if (this.sign !== x.sign) {
+        return this.sign;
+      } else {
+        return this.sign * cmp(this.digits, x.digits);
+      }
+    };
+    add = function(r, s, c) {
+      var carry, digit, r_, s_, x, _ref16, _ref17;
+      if (c == null) {
+        c = 0;
+      }
+      if (c || (r && s)) {
+        _ref16 = [r || ZERO, s || ZERO], r_ = _ref16[0], s_ = _ref16[1];
+        x = r_.first() + s_.first() + c;
+        _ref17 = x >= BASE ? [x - BASE, 1] : [x, 0], digit = _ref17[0], carry = _ref17[1];
+        return seq.conj(digit, function() {
+          return add(r_.rest(), s_.rest(), carry);
+        });
+      } else {
+        return s || r;
+      }
+    };
+    LongInt.prototype.plus__ = function(x) {
+      if (this.sign !== x.sign) {
+        return this.minus(x.neg());
+      } else {
+        return new LongInt(this.sign, add(this.digits, x.digits));
+      }
+    };
+    sub = function(r, s) {
+      var step;
+      step = function(r, s, b) {
+        var borrow, digit, r_, s_, x, _ref16, _ref17;
+        if (b == null) {
+          b = 0;
+        }
+        if (b || (r && s)) {
+          _ref16 = [r || ZERO, s || ZERO], r_ = _ref16[0], s_ = _ref16[1];
+          x = r_.first() - s_.first() - b;
+          _ref17 = x < 0 ? [x + BASE, 1] : [x, 0], digit = _ref17[0], borrow = _ref17[1];
+          return seq.conj(digit, function() {
+            return step(r_.rest(), s_.rest(), borrow);
+          });
+        } else {
+          return s || r;
+        }
+      };
+      return cleanup(step(r, s));
+    };
+    LongInt.prototype.minus__ = function(x) {
+      if (this.sign !== x.sign) {
+        return this.plus(x.neg());
+      } else if (cmp(this.digits, x.digits) < 0) {
+        return new LongInt(-this.sign, sub(x.digits, this.digits));
+      } else {
+        return new LongInt(this.sign, sub(this.digits, x.digits));
+      }
+    };
+    split = function(n) {
+      return [n % HALFBASE, Math.floor(n / HALFBASE)];
+    };
+    digitTimesDigit = function(a, b) {
+      var a0, a1, b0, b1, carry, lo, m0, m1, tmp, _ref16, _ref17, _ref18, _ref19;
+      if (b < BASE / a) {
+        return [a * b, 0];
+      } else {
+        _ref16 = split(a), a0 = _ref16[0], a1 = _ref16[1];
+        _ref17 = split(b), b0 = _ref17[0], b1 = _ref17[1];
+        _ref18 = split(a0 * b1 + b0 * a1), m0 = _ref18[0], m1 = _ref18[1];
+        tmp = a0 * b0 + m0 * HALFBASE;
+        _ref19 = tmp < BASE ? [tmp, 0] : [tmp - BASE, 1], lo = _ref19[0], carry = _ref19[1];
+        return [lo, a1 * b1 + m1 + carry];
+      }
+    };
+    seqTimesDigit = function(s, d, c) {
+      var hi, lo, s_, _ref16;
+      if (c == null) {
+        c = 0;
+      }
+      if (c || s) {
+        s_ = s || ZERO;
+        _ref16 = digitTimesDigit(d, s_.first()), lo = _ref16[0], hi = _ref16[1];
+        return seq.conj(lo + c, function() {
+          return seqTimesDigit(s_.rest(), d, hi);
+        });
+      }
+    };
+    mul = function(a, b) {
+      var step;
+      step = function(r, a, b) {
+        var t;
+        if (a) {
+          t = add(r, seqTimesDigit(b, a.first())) || ZERO;
+          return seq.conj(t.first(), function() {
+            return step(t.rest(), a.rest(), b);
+          });
+        } else {
+          return r;
+        }
+      };
+      return step(null, a, b);
+    };
+    LongInt.prototype.times__ = function(x) {
+      return new LongInt(this.sign * x.sign, mul(this.digits, x.digits));
+    };
+    idivmod = function(r, s) {
+      var d, m, r_, s_, scale, step, x, _ref16, _ref17;
+      if (!cleanup(r)) {
+        return [ZERO, ZERO];
+      }
+      scale = Math.floor(BASE / (s.last() + 1));
+      _ref16 = (function() {
+        var _i, _len, _ref16, _results;
+        _ref16 = [r, s];
+        _results = [];
+        for (_i = 0, _len = _ref16.length; _i < _len; _i++) {
+          x = _ref16[_i];
+          _results.push(seq(seqTimesDigit(x, scale)));
+        }
+        return _results;
+      })(), r_ = _ref16[0], s_ = _ref16[1];
+      _ref17 = [s_.size(), s_.last() + 1], m = _ref17[0], d = _ref17[1];
+      step = function(q, h, t) {
+        var f, n;
+        f = (h != null ? h.size() : void 0) < m ? 0 : (n = ((h != null ? h.last() : void 0) * ((h != null ? h.size() : void 0) > m ? BASE : 1)) || 0, (Math.floor(n / d)) || (cmp(h, s_) >= 0 ? 1 : 0));
+        if (f) {
+          return function() {
+            return step(add(q, seq.conj(f)), sub(h, seqTimesDigit(s_, f)), t);
+          };
+        } else if (t) {
+          return function() {
+            return step(seq.conj(0, function() {
+              return q;
+            }), seq.conj(t.first(), function() {
+              return h;
+            }), t.rest());
+          };
+        } else {
+          return [cleanup(q), h && idiv(h, seq([scale]))];
+        }
+      };
+      return bounce(step(null, null, r_ != null ? r_.reverse() : void 0));
+    };
+    idiv = function(r, s) {
+      return idivmod(r, s)[0];
+    };
+    mod = function(r, s) {
+      return idivmod(r, s)[1];
+    };
+    LongInt.prototype.idiv__ = function(x) {
+      var d;
+      d = cmp(this.digits, x.digits);
+      if (d < 0) {
+        return asNum(0);
+      } else if (d === 0) {
+        return asNum(this.sign * x.sign);
+      } else {
+        return new LongInt(this.sign * x.sign, idiv(this.digits, x.digits));
+      }
+    };
+    LongInt.prototype.mod__ = function(x) {
+      var d;
+      d = cmp(this.digits, x.digits);
+      if (d < 0) {
+        return this;
+      } else if (d === 0) {
+        return asNum(0);
+      } else {
+        return new LongInt(this.sign * x.sign, mod(this.digits, x.digits));
+      }
+    };
+    LongInt.prototype.toString = function() {
+      var parts, rest, sign, _ref16, _ref17, _ref18, _ref19;
+      parts = (_ref16 = this.digits) != null ? (_ref17 = _ref16.reverse()) != null ? (_ref18 = _ref17.dropWhile(function(d) {
+        return d === 0;
+      })) != null ? _ref18.map(function(d) {
+        return d.toString();
+      }) : void 0 : void 0 : void 0;
+      if (parts) {
+        sign = this.isNeg() ? '-' : '';
+        rest = (_ref19 = parts.rest()) != null ? _ref19.map(function(t) {
+          return "" + zeroes.slice(t.length) + t;
+        }) : void 0;
+        return sign + parts.first() + (rest != null ? rest.join('') : '');
+      } else {
+        return '0';
+      }
+    };
+    LongInt.prototype.toNative = function() {
+      var rev, step, _ref16, _ref17;
+      step = function(n, s) {
+        if (s) {
+          return function() {
+            return step(n * BASE + s.first(), s.rest());
+          };
+        } else {
+          return n;
+        }
+      };
+      rev = (_ref16 = this.digits) != null ? (_ref17 = _ref16.reverse()) != null ? _ref17.dropWhile(function(d) {
+        return d === 0;
+      }) : void 0 : void 0;
+      return this.sign * bounce(step(0, rev));
+    };
+    makeDigits = function(m) {
+      if (m) {
+        return seq.conj(m % BASE, function() {
+          return makeDigits(Math.floor(m / BASE));
+        });
+      } else {
+        return null;
+      }
+    };
+    LongInt.fromNative = function(n) {
+      if (n < 0) {
+        return new LongInt(-1, makeDigits(-n));
+      } else if (n > 0) {
+        return new LongInt(1, makeDigits(n));
+      } else {
+        return new LongInt(0, null);
+      }
+    };
+    return LongInt;
+  })();
+  Fraction = (function() {
+    __extends(Fraction, NumberBase);
+    function Fraction(numer, denom) {
+      this.numer = numer;
+      this.denom = denom;
+    }
+    Fraction.normalized = function(n, d) {
+      var a;
+      if (d.eq(0)) {
+        throw new Error("expected a non-zero denominator, got " + d);
+      } else if (d.lt(0)) {
+        return Fraction.normalized(n.neg(), d.neg());
+      } else {
+        a = num.gcd(n, d);
+        return new Fraction(n.idiv(a), d.idiv(a));
+      }
+    };
+    Fraction.prototype.neg__ = function() {
+      return new Fraction(this.numer.neg(), this.denom);
+    };
+    Fraction.prototype.abs__ = function() {
+      return new Fraction(this.numer.abs(), this.denom);
+    };
+    Fraction.prototype.sgn__ = function() {
+      return this.numer.sgn();
+    };
+    Fraction.prototype.inv__ = function() {
+      return Fraction.normalized(this.denom, this.numer);
+    };
+    Fraction.prototype.isPos__ = function() {
+      return this.numer.isPos();
+    };
+    Fraction.prototype.isNeg__ = function() {
+      return this.numer.isNeg();
+    };
+    Fraction.prototype.isZero__ = function() {
+      return this.numer.isZero();
+    };
+    Fraction.prototype.isEven__ = function() {
+      return this.denom.eq(1) && this.numer.isEven();
+    };
+    Fraction.prototype.isOdd__ = function() {
+      return this.denom.eq(1) && this.numer.isOdd();
+    };
+    Fraction.prototype.isqrt__ = function() {
+      return num.idiv(this.numer, this.denom).isqrt();
+    };
+    Fraction.prototype.cmp__ = function(x) {
+      return this.minus__(x).numer.cmp(0);
+    };
+    Fraction.prototype.plus__ = function(x) {
+      var a, t;
+      a = num.gcd(this.denom, x.denom);
+      s = num.idiv(x.denom, a);
+      t = num.idiv(this.denom, a);
+      return Fraction.normalized(s.times(this.numer).plus(t.times(x.numer)), s.times(this.denom));
+    };
+    Fraction.prototype.minus__ = function(x) {
+      return this.plus__(x.neg__());
+    };
+    Fraction.prototype.times__ = function(x) {
+      var a, b, d, n;
+      a = num.gcd(this.numer, x.denom);
+      b = num.gcd(this.denom, x.numer);
+      n = this.numer.idiv(a).times(x.numer.idiv(b));
+      d = this.denom.idiv(b).times(x.denom.idiv(a));
+      return Fraction.normalized(n, d);
+    };
+    Fraction.prototype.div__ = function(x) {
+      return this.times__(x.inv__());
+    };
+    Fraction.prototype.toString = function() {
+      if (this.denom.eq(1)) {
+        return "" + this.numer;
+      } else {
+        return "" + this.numer + "/" + this.denom;
+      }
+    };
+    Fraction.prototype.toNative = function() {
+      return this.numer.toNative() / this.denom.toNative();
+    };
+    return Fraction;
+  })();
+    if (typeof exports !== "undefined" && exports !== null) {
+    exports;
+  } else {
+    exports = (_ref16 = this.pazy) != null ? _ref16 : this.pazy = {};
+  };
+  exports.num = num;
+  if (quicktest) {
+    show = require('testing').show;
+    a = b = c = 0;
+    log('');
+    show(function() {
+      return null;
+    });
+    show(function() {
+      return;
+    });
+    log('');
+    show(function() {
+      return num(98).gcd(21);
+    });
+    show(function() {
+      return num(77777).gcd(21);
+    });
+    log('');
+    show(function() {
+      return a = num(Math.pow(2, 13));
+    });
+    show(function() {
+      return LongInt.fromNative(a.val);
+    });
+    show(function() {
+      return a.plus(2);
+    });
+    show(function() {
+      return a.times(1);
+    });
+    show(function() {
+      return a.times(2);
+    });
+    show(function() {
+      return a.plus(2000);
+    });
+    log('');
+    show(function() {
+      return num(-123456789000000);
+    });
+    show(function() {
+      return num('-1234');
+    });
+    show(function() {
+      return num('-123456789000000');
+    });
+    log('');
+    show(function() {
+      return num(123456789).plus(876543211);
+    });
+    show(function() {
+      return num(123456789).minus(123450000);
+    });
+    show(function() {
+      return num(123456789).minus(123456790);
+    });
+    show(function() {
+      return num(123456789).minus(123456789);
+    });
+    show(function() {
+      return num(123456789).plus(-123450000);
+    });
+    log('');
+    show(function() {
+      return num(12345).times(100001);
+    });
+    show(function() {
+      return num(11111).times(9);
+    });
+    show(function() {
+      return num(111).idiv(37);
+    });
+    show(function() {
+      return num(111111).idiv(37);
+    });
+    show(function() {
+      return num(111111111).idiv(37);
+    });
+    show(function() {
+      return num(111111111).idiv(12345679);
+    });
+    show(function() {
+      return num(99980001).idiv(49990001);
+    });
+    show(function() {
+      return num(20001).idiv(10001);
+    });
+    log('');
+    show(function() {
+      return num(111).mod(37);
+    });
+    show(function() {
+      return num(111112).mod(37);
+    });
+    show(function() {
+      return num(111111111).mod(12345679);
+    });
+    log('');
+    show(function() {
+      return num(9801).isqrt();
+    });
+    show(function() {
+      return num(998001).isqrt();
+    });
+    show(function() {
+      return num(99980001).isqrt();
+    });
+    log('');
+    show(function() {
+      return num(10).pow(6);
+    });
+    show(function() {
+      return num(2).pow(16);
+    });
+    log('');
+    show(function() {
+      return num.plus(123456789, 876543211);
+    });
+    show(function() {
+      return num.isqrt(99980001);
+    });
+    show(function() {
+      return num.pow(2, 16);
+    });
+    show(function() {
+      return num.abs(-12345);
+    });
+    show(function() {
+      return num.isZero(1);
+    });
+    show(function() {
+      return num.isZero(123456);
+    });
+    show(function() {
+      return num.isZero(0);
+    });
+    show(function() {
+      return num.isNeg(0);
+    });
+    show(function() {
+      return num.isNeg(-45);
+    });
+    show(function() {
+      return num.isNeg(-12345);
+    });
+    show(function() {
+      return num.isOdd(-12345);
+    });
+    log('');
+    show(function() {
+      return num.eq(8, num(111119).mod(37));
+    });
+    show(function() {
+      return num.lt(65535, num.pow(2, 16));
+    });
+    show(function() {
+      return num.gt(65535, num.pow(2, 16));
+    });
+    show(function() {
+      return num.gt(65536, num.pow(2, 16));
+    });
+    show(function() {
+      return num.gt(65537, num.pow(2, 16));
+    });
+    log('');
+    show(function() {
+      return num.div(2, 3);
+    });
+    show(function() {
+      return num.div(9, 10).times(num.div(5, 21));
+    });
+    show(function() {
+      return num.div(3, 5).minus(num.div(7, 11));
+    });
+    show(function() {
+      return num.div(111111111, 12345679 * 2);
+    });
+    show(function() {
+      return num.div(28, 3).isqrt();
+    });
+    show(function() {
+      return num.div(1, 2).plus(num.div(1, 2));
+    });
+    show(function() {
+      return num.div(2, 3).plus(num.div(4, 3));
+    });
+  }
 }).call(this);
