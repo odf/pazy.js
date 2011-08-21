@@ -4,6 +4,19 @@
 
 # ----
 
+# Returns the inner code of a 'one-line' function as a string.
+
+codeToString = (code) ->
+  code.toString().replace(/^function\s*\(\)\s*{\s*return\s*/, '')
+    .replace(/;*\s*}\s*$/, '')
+
+# Returns the name of the constructor for an object or the result of `typeof`
+# if there is none (as is the case for `null` or `undefined`).
+
+classof = (x) -> if x?.constructor? then x.constructor.name else typeof x
+
+# ----
+
 # Displays a line of code alongside the type and value of its output.
 #
 # For example, the line
@@ -35,9 +48,8 @@
 blanks = "                                   "
 
 show = (code, catchExceptions = true) ->
-  t = code.toString().replace /^function\s*\(\)\s*{\s*return\s*/, ''
-  s = t.replace /;*\s*}\s*$/, ''
-  source = if s.length > blanks.length
+  s = codeToString code
+  source = if s.length > blanks.length + 1
     "#{s}\n#{blanks}"
   else
     s + blanks[s.length..]
@@ -45,22 +57,20 @@ show = (code, catchExceptions = true) ->
   result =
     try
       res = code()
-      type = if res?.constructor?
-        res.constructor.name
-      else if res?
-        typeof res
-      if type? then " -> #{type} #{res}" else "-> #{res}"
+      "-> #{classof res} #{res}"
     catch ex
       if catchExceptions
-        " !! #{ex.toString().replace /\n/, "\n#{blanks} !!   "}"
+        "!! #{ex.toString().replace /\n/, "\n#{blanks} !!   "}"
       else
         throw ex
 
-  console.log source + result
+  console.log "#{source} #{result}"
 
 # ----
 
 # Exporting.
 
 exports ?= pazy ?= {}
-exports.show = show
+exports.codeToString = codeToString
+exports.classof      = classof
+exports.show         = show

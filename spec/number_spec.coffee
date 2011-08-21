@@ -1,8 +1,28 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
-  { num } = require('number')
+  { num }                   = require 'number'
+  { codeToString, classof } = require 'testing'
 else
-  { num } = pazy
+  { num, codeToString, classof } = pazy
+
+describe "An expression", ->
+  check = (expected, expression) ->
+    describe "given as #{codeToString expression}", ->
+      seen = expression()
+      it "should produce the #{classof expected} #{expected}", ->
+        expect(seen).toEqual expected
+        expect(classof seen).toEqual classof expected
+
+  check num(7), -> num(98).gcd 21
+  check num(7), -> num(77777).gcd 21
+
+  a = null
+  check num(8192),  -> a = num Math.pow 2, 13
+  check num(8194),  -> a.plus 2
+  check num(8192),  -> a.times 1
+  check num(16384), -> a.times 2
+  check num(10192), -> a.plus 2000
+
 
 describe "A number", ->
   describe "with value 0", ->
