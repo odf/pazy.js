@@ -26,8 +26,29 @@ describe "An expression", ->
   check num(10192), -> a.plus 2000
   check 8192,       -> a.toNative()
 
-  check num(-1234),            -> num '-1234'
-  check '-123456789123456789', -> num('-123456789123456789').toString()
+  check num(1234512345), -> num(12345).times 100001
+  check num(99999),      -> num(11111).times 9
+  check num(3),          -> num(111).idiv 37
+  check num(8),          -> num(119).mod 37
+
+  check num(99),    -> num(9801).isqrt()
+  check num(999),   -> num(998001).isqrt()
+  check num(9999),  -> num(99980001).isqrt()
+
+  check '2/3',           -> num.div(2, 3).toString()
+  check num.div(3, 14),  -> num.div(9,10).times(num.div(5,21))
+  check num.div(-2, 55), -> num.div(3,5).minus(num.div(7,11))
+  check num.div(9, 2),   -> num.div 111111111, 12345679 * 2
+  check num(3),          -> num.div(28,3).isqrt()
+  check num(1),          -> num.div(1,2).plus num.div(1,2)
+  check num(2),          -> num.div(2,3).plus num.div(4,3)
+  check num.div(5, 3),   -> num.div(2,3).plus 1
+  check num.div(1, 3),   -> num.div(2,3).div 2
+
+  check 9999999999, -> num('99999999980000000001').isqrt().toNative()
+
+  check num(-1234),                -> num '-1234'
+  check '-123456789123456789',     -> num('-123456789123456789').toString()
   check num('199999999999999998'), -> x = num('99999999999999999'); x.plus x
 
   check num('123456789123456789'), -> a = num('123456789123456789')
