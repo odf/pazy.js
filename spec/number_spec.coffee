@@ -1,16 +1,18 @@
 if typeof(require) != 'undefined'
   require.paths.unshift('#{__dirname}/../lib')
+  { equal }                 = require 'core_extensions'
   { num }                   = require 'number'
   { codeToString, classof } = require 'testing'
 else
-  { num, codeToString, classof } = pazy
+  { equal, num, codeToString, classof } = pazy
 
 describe "An expression", ->
   check = (expected, expression) ->
     describe "given as #{codeToString expression}", ->
       seen = expression()
       it "should produce the #{classof expected} #{expected}", ->
-        expect(seen).toEqual expected
+        unless equal seen, expected
+          throw new Error "Expected #{seen} to be #{expected}."
         expect(classof seen).toEqual classof expected
 
   check num(7), -> num(98).gcd 21
@@ -22,6 +24,19 @@ describe "An expression", ->
   check num(8192),  -> a.times 1
   check num(16384), -> a.times 2
   check num(10192), -> a.plus 2000
+  check 8192,       -> a.toNative()
+
+  check num(-1234),            -> num '-1234'
+  check '-123456789123456789', -> num('-123456789123456789').toString()
+  check num('199999999999999998'), -> x = num('99999999999999999'); x.plus x
+
+  check num('123456789123456789'), -> a = num('123456789123456789')
+  check num('200000000000000000'), -> a.plus num '76543210876543211'
+  check num('123456789000006789'), -> a.minus 123450000
+  check num('123456788999999999'), -> a.minus 123456790
+  check num('123456789000000000'), -> a.minus 123456789
+  check num('123456789000006789'), -> a.plus -123450000
+  check num(0),                    -> a.minus a
 
 
 describe "A number", ->

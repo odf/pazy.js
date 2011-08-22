@@ -185,6 +185,7 @@ class NumberBase
   operator 'lt', (a, b) -> num.cmp(a, b) < 0
   operator 'gt', (a, b) -> num.cmp(a, b) > 0
   operator 'eq', (a, b) -> num.cmp(a, b) == 0
+  operator 'equals', (a, b) -> num.cmp(a, b) == 0
 
   for name in [
     'neg', 'abs', 'sgn', 'isPos', 'isNeg', 'isZero', 'isEven', 'isOdd'
