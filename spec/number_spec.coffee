@@ -106,3 +106,9 @@ describe "An expression", ->
   check num(1),              -> c.pow(3).plus(1).mod(c.times(c))
   check c.minus(1),          -> c.pow(3).minus(1).idiv(c.times(c))
   check c.times(c).minus(1), -> c.pow(3).minus(1).mod(c.times(c))
+
+  faculty = (n) -> if n > 0 then faculty(n-1).times(n) else num 1
+
+  check '30414093201713378043612608166064768844377641568960512000000000000',
+    -> faculty(50).toString()
+
