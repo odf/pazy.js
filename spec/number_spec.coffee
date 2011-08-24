@@ -15,6 +15,14 @@ describe "An expression", ->
           throw new Error "Expected #{seen} to be #{expected}."
         expect(classof seen).toEqual classof expected
 
+  check 0, -> num(0).sgn()
+  check 0, -> num(0).cmp(0)
+
+  check 1,      -> num(1).sgn()
+  check true,   -> num(1).cmp(0) > 0
+  check num(1), -> num(1).gcd(1)
+  check num(0), -> num(1).times(0)
+
   check num(7), -> num(98).gcd 21
   check num(7), -> num(77777).gcd 21
 
@@ -59,109 +67,7 @@ describe "An expression", ->
   check num('123456789000006789'), -> a.plus -123450000
   check num(0),                    -> a.minus a
 
-
 describe "A number", ->
-  describe "with value 0", ->
-    a = num 0
-
-    it "should have sign zero", ->
-      expect(a.sgn()).toEqual 0
-
-    it "can be compared with 0", ->
-      expect(a.cmp(0)).toBe 0
-
-
-  describe "with value 1", ->
-    a = num 1
-
-    it "should have a positive sign", ->
-      expect(a.sgn()).toEqual 1
-
-    it "can be compared with 0", ->
-      expect(a.cmp(0)).toBeGreaterThan 0
-
-    it "can have the gcd taken with itself", ->
-      expect(a.gcd(a).toString()).toEqual '1'
-
-    it "can be multiplied by 0", ->
-      expect(a.times(0).toString()).toEqual '0'
-
-
-  describe "with value 12345679", ->
-    a = num 12345679
-
-    it "can have its sign changed", ->
-      expect(a.neg().toString()).toEqual '-12345679'
-
-    it "can have its absolute value taken", ->
-      expect(a.abs().toString()).toEqual '12345679'
-      expect(a.neg().abs().toString()).toEqual '12345679'
-
-    it "can have its sign determined", ->
-      expect(a.sgn()).toBe 1
-      expect(a.neg().sgn()).toBe -1
-
-    it "can be compared with an integer", ->
-      expect(a.cmp(12345680)).toBeLessThan 0
-
-    it "can be compared with 0", ->
-      expect(a.cmp(0)).toBeGreaterThan 0
-
-    it "can be compared with another number", ->
-      expect(a.cmp(num 12345680)).toBeLessThan 0
-
-    it "can have an integer added to it", ->
-      expect(a.plus(87654320).toString()).toEqual '99999999'
-
-    it "can have another number added to it", ->
-      expect(a.plus(num 87654320).toString()).toEqual '99999999'
-
-    it "can have an integer subtracted from it", ->
-      expect(a.minus(4445).toString()).toEqual '12341234'
-
-    it "can have another number subtracted from it", ->
-      expect(a.minus(num 4445).toString()).toEqual '12341234'
-
-    it "can be multiplied with an integer", ->
-      expect(a.times(9000000009).toString()).toEqual '111111111111111111'
-
-    it "can be multiplied with another number", ->
-      expect(a.times(num 9000000009).toString())
-        .toEqual '111111111111111111'
-
-    it "can be multiplied by 0", ->
-      expect(a.times(0).toString()).toEqual '0'
-
-    it "can be negated and then multiplied by 0", ->
-      expect(a.neg().times(0).toString()).toEqual '0'
-
-    it "can be divided by an integer", ->
-      expect(a.idiv(343).toString()).toEqual '35993'
-
-    it "can be divided by another number", ->
-      expect(a.idiv(num 343).toString()).toEqual '35993'
-
-    it "can be taken modulo an integer", ->
-      expect(a.mod(343).toString()).toEqual '80'
-
-    it "can be taken modulo another number", ->
-      expect(a.mod(num 343).toString()).toEqual '80'
-
-    it "can be taken to an integer power", ->
-      expect(a.pow(5).toString()).toEqual '286797197645258138803977054387424399'
-      expect(a.pow(4).toString()).toEqual '23230573032496482275618623681'
-
-    it "can be taken to a number power", ->
-      expect(a.pow(num 5).toString())
-        .toEqual '286797197645258138803977054387424399'
-      expect(a.pow(num 4).toString())
-        .toEqual '23230573032496482275618623681'
-
-    it "can be taken the square root of", ->
-      expect(a.isqrt().toString()).toEqual '3513'
-      expect(a.pow(4).isqrt().toString()).toEqual a.pow(2).toString()
-
-
   describe """If a, b and c are long integers with
               a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
     a = num -1e12 + 5001
