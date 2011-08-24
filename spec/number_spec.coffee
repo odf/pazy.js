@@ -15,6 +15,8 @@ describe "An expression", ->
           throw new Error "Expected #{seen} to be #{expected}."
         expect(classof seen).toEqual classof expected
 
+  a = b = c = null
+
   check 0, -> num(0).sgn()
   check 0, -> num(0).cmp(0)
 
@@ -26,7 +28,6 @@ describe "An expression", ->
   check num(7), -> num(98).gcd 21
   check num(7), -> num(77777).gcd 21
 
-  a = null
   check num(8192),  -> a = num Math.pow 2, 13
   check num(8194),  -> a.plus 2
   check num(8192),  -> a.times 1
@@ -67,96 +68,41 @@ describe "An expression", ->
   check num('123456789000006789'), -> a.plus -123450000
   check num(0),                    -> a.minus a
 
-describe "A number", ->
-  describe """If a, b and c are long integers with
-              a = -1e12 + 5001, b = 5001 and c = 1e12 - 5000""", ->
-    a = num -1e12 + 5001
-    b = num 5001
-    c = num 1e12 - 5000
-    one = num 1
 
-    it "a should print as -999999994999", ->
-      expect(a.toString()).toEqual '-999999994999'
+  check num('-999999994999'), -> a = num -1e12 + 5001
+  check num('5001'),          -> b = num 5001
+  check num('999999995000'),  -> c = num 1e12 - 5000
 
-    it "a should convert to the number -1e12 + 5001", ->
-      expect(a.toNative()).toBe -1e12 + 5001
+  check '-999999994999', -> a.toString()
+  check -1e12 + 5001,    -> a.toNative()
+  check '999999995000',  -> c.toString()
+  check 1e12 - 5000,     -> c.toNative()
 
-    it "b should print as 5001", ->
-      expect(b.toString()).toEqual '5001'
+  check true,  -> a.cmp(b) < 0
+  check true,  -> a.lt b
+  check true,  -> a.lt b.neg()
+  check false, -> a.gt b
+  check true,  -> a.neg().gt b
 
-    it "a should convert to the number 5001", ->
-      expect(b.toNative()).toBe 5001
+  check '-999999989998',    -> a.plus(b).toString()
+  check num(-1e12 + 10002), -> a.plus b
+  check '-1000000000000',   -> a.minus(b).toString()
+  check num(-1e12),         -> a.minus b
+  check '1000000000000',    -> b.minus(a).toString()
+  check num(1e12),          -> b.minus a
+  check '0',                -> a.minus(a).toString()
+  check num(0),             -> a.minus a
+  check '1',                -> a.plus(c).toString()
+  check num(1),             -> a.plus c
 
-    it "c should print as 999999995000", ->
-      expect(c.toString()).toEqual '999999995000'
+  check '999999989998000025010001',
+                            -> a.times(a).toString()
+  check '999999979996000150060005499699940621500150020001',
+                            -> (a.times a).times(a.times a).toString()
 
-    it "a should be smaller than b", ->
-      expect(a.cmp(b)).toBeLessThan 0
-
-    it "a should be smaller than -b", ->
-      expect(a.cmp(b.neg())).toBeLessThan 0
-
-    it "-a should be larger than b", ->
-      expect(a.neg().cmp(b)).toBeGreaterThan 0
-
-    it "c should convert to the number 1e12 - 5000", ->
-      expect(c.toNative()).toBe 1e12 - 5000
-
-    it "a + b should print as -999999989998", ->
-      expect(a.plus(b).toString()).toEqual '-999999989998'
-
-    it "a + b should convert to the number -1e12 + 10002", ->
-      expect(a.plus(b).toNative()).toBe -1e12 + 10002
-
-    it "a - b should print as -1000000000000", ->
-      expect(a.minus(b).toString()).toEqual '-1000000000000'
-
-    it "a - b should convert to the number -1e12", ->
-      expect(a.minus(b).toNative()).toBe -1e12
-
-    it "b - a should print as 1000000000000", ->
-      expect(b.minus(a).toString()).toEqual '1000000000000'
-
-    it "b - a should convert to the number 1e12", ->
-      expect(b.minus(a).toNative()).toBe 1e12
-
-    it "a - a should print as 0", ->
-      expect(a.minus(a).toString()).toEqual '0'
-
-    it "a - a should convert to the number 0", ->
-      expect(a.minus(a).toNative()).toBe 0
-
-    it "a + c should print as 1", ->
-      expect(a.plus(c).toString()).toEqual '1'
-
-    it "a + c should convert to the number 1", ->
-      expect(a.plus(c).toNative()).toBe 1
-
-    it "a * a should print as 999999989998000025010001", ->
-      expect(a.times(a).toString()).toEqual "999999989998000025010001"
-
-    it """(a * a) * (a * a) should print as
-          999999979996000150060005499699940621500150020001""", ->
-      expect((a.times a).times(a.times a).toString())
-        .toEqual "999999979996000150060005499699940621500150020001"
-
-    it "(c * c * c) / (c * c) should print as c", ->
-      expect(c.times(c).times(c).idiv(c.times(c)).toString()).toEqual c.toString()
-
-    it "(c * c * c) % (c * c) should print as 0", ->
-      expect(c.times(c).times(c).mod(c.times(c)).toString()).toEqual "0"
-
-    it "(c * c * c + 1) / (c * c) should print as c", ->
-      expect(c.times(c).times(c).plus(one).idiv(c.times(c)).toString())
-        .toEqual c.toString()
-
-    it "(c * c * c + 1) % (c * c) should print as 1", ->
-      expect(c.times(c).times(c).plus(one).mod(c.times(c)).toString()).toEqual "1"
-
-    it "(c * c * c - 1) / (c * c) should print as c - 1", ->
-      expect(c.times(c).times(c).minus(one).idiv(c.times(c)).toString())
-        .toEqual c.minus(one).toString()
-
-    it "(c * c * c - 1) % (c * c) should print as c * c - 1", ->
-      expect(c.times(c).times(c).minus(one).mod(c.times(c)).toString())
-        .toEqual c.times(c).minus(one).toString()
+  check c,                   -> c.pow(3).idiv(c.times(c))
+  check num(0),              -> c.pow(3).mod(c.times(c))
+  check c,                   -> c.pow(3).plus(1).idiv(c.times(c))
+  check num(1),              -> c.pow(3).plus(1).mod(c.times(c))
+  check c.minus(1),          -> c.pow(3).minus(1).idiv(c.times(c))
+  check c.times(c).minus(1), -> c.pow(3).minus(1).mod(c.times(c))
