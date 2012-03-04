@@ -1,5 +1,4 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
   { seq }   = require('sequence')
   { IntSet, HashSet } = require('indexed')
   require 'sequence_extras'

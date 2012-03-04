@@ -23,7 +23,6 @@
 # --------------------------------------------------------------------
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { equal, hashCode } = require 'core_extensions'
   { seq }             = require('sequence')
 else

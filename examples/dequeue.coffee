@@ -8,7 +8,6 @@
 
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { seq } = require('sequence')
 else
   { seq } = this.pazy

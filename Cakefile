@@ -6,7 +6,7 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
 util   = require 'util'
-uglify = require './node_modules/uglify-js'
+uglify = require 'uglify-js'
 
 prodSrcCoffeeDir     = 'lib'
 prodTargetJsDir      = '.'

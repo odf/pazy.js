@@ -7,7 +7,6 @@
 #TODO catch missing return values from function arguments
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { equal }  = require 'core_extensions'
   { bounce } = require('functional')
 else
@@ -231,6 +230,12 @@ cantor_runs = (seqs) ->
     null
 
 combinator 'cantor', (seqs) -> cantor_runs(seqs)?.flatten()
+
+method 'subseqs', (s) ->
+  if s
+    @conj s, => @subseqs__ s.rest()
+  else
+    null
 
 method 'each', (s, func) ->
   step = (t) -> if t then func(t.first()); -> step t.rest()

@@ -8,7 +8,6 @@
 # First, we import some necessary data structures (**TODO**: use a better
 # package system).
 if typeof(require) != 'undefined'
-  require.paths.unshift '#{__dirname}/../lib'
   { equal, hashCode }          = require 'core_extensions'
   { bounce }                   = require 'functional'
   { seq }                      = require 'sequence'

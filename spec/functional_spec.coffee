@@ -1,5 +1,4 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
   { suspend, bounce, scope } = require('functional')
 else
   { suspend, bounce, scope } = pazy

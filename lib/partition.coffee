@@ -5,7 +5,6 @@
 # --------------------------------------------------------------------
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { bounce }  = require('functional')
   { HashMap } = require('indexed')
 else

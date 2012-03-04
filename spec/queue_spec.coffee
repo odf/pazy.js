@@ -1,5 +1,4 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
   { seq }   = require('sequence')
   { Queue } = require('queue')
 else

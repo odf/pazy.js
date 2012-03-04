@@ -11,7 +11,6 @@
 # First, we import some necessary functions and data structures.
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { bounce } = require 'functional'
   { seq }    = require 'sequence'
 else

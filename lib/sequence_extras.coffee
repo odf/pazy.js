@@ -5,7 +5,6 @@
 # --------------------------------------------------------------------
 
 if typeof(require) != 'undefined'
-  require.paths.unshift __dirname
   { seq }     = require('sequence')
   { HashSet } = require('indexed')
 else

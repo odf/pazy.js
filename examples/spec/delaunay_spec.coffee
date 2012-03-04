@@ -1,6 +1,4 @@
 if typeof(require) != 'undefined'
-  require.paths.unshift('#{__dirname}/../lib')
-  require.paths.unshift('#{__dirname}/../examples')
   { seq }                   = require 'sequence'
   { delaunayTriangulation } = require 'delaunay'
 else
