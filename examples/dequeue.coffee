@@ -74,5 +74,5 @@ class Dequeue
 # Exporting.
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.Dequeue = Dequeue

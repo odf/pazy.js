@@ -351,7 +351,7 @@ delaunayTriangulation = do ->
 
 # Exporting.
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.Triangle = Triangle
 exports.Point2d = Point2d
 exports.delaunayTriangulation = delaunayTriangulation

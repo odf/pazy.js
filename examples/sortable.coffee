@@ -49,5 +49,5 @@ class Sortable
 # Exporting.
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.Sortable = Sortable
