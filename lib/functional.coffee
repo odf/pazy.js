@@ -5,7 +5,7 @@
 # Copyright (c) 2011 Olaf Delgado-Friedrichs (odf@github.com)
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 
 # --------------------------------------------------------------------
 # An implementation of the suspend/force paradigm of lazy evaluation

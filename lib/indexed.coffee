@@ -501,7 +501,7 @@ class HashMap extends Collection
 # Exporting.
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 
 exports.IntSet  = IntSet
 exports.IntMap  = IntMap

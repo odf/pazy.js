@@ -503,7 +503,7 @@ class Fraction extends NumberBase
 # ----
 # Exporting.
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.num = num
 
 # ----

@@ -70,7 +70,7 @@ show = (code, catchExceptions = true) ->
 
 # Exporting.
 
-exports ?= pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.codeToString = codeToString
 exports.classof      = classof
 exports.show         = show

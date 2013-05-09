@@ -32,7 +32,7 @@ hashCode = (obj) ->
 # Exporting.
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 
 exports.equal = equal
 exports.hashCode = hashCode

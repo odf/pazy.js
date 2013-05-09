@@ -277,7 +277,7 @@ method 'toString', (s, limit = 10) ->
 # Exporting.
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 exports.seq = seq
 
 

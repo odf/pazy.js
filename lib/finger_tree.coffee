@@ -455,7 +455,7 @@ class SortedSeqType extends FingerTreeType
 # Exports
 # --------------------------------------------------------------------
 
-exports ?= this.pazy ?= {}
+exports = module?.exports or this.pazy ?= {}
 
 exports.FingerTreeType = FingerTreeType
 exports.CountedSeq     = CountedSeq
