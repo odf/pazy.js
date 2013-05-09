@@ -72,21 +72,12 @@ task 'build', 'Build a single JavaScript file from prod files', ->
                 invoke 'uglify'
 
 task 'uglify', 'Minify and obfuscate', ->
-    jsp = uglify.parser
-    pro = uglify.uglify
+    result = uglify.minify(prodTargetJsFile)
+    fs.writeFile prodTargetJsMinFile, result.code
 
-    fs.readFile prodTargetJsFile, 'utf8', (err, fileContents) ->
-        ast = jsp.parse fileContents  # parse code and get the initial AST
-        ast = pro.ast_mangle ast # get a new AST with mangled names
-        ast = pro.ast_squeeze ast # get an AST with compression optimizations
-        final_code = pro.gen_code ast # compressed code here
-
-        fs.writeFile prodTargetJsMinFile, final_code
-        #fs.unlink prodTargetJsFile, (err) -> handleError(err) if err
-
-        message = "Uglified #{prodTargetJsMinFile}"
-        util.log message
-        displayNotification message
+    message = "Uglified #{prodTargetJsMinFile}"
+    util.log message
+    displayNotification message
 
 coffee = (options = "", file) ->
     util.log "Compiling #{file}"
