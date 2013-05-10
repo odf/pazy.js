@@ -1,0 +1,11 @@
+{
+  "name": "pazy-js",
+  "version": "0.0.1",
+  "dependencies": {
+    "coffee-script": "~1.6.2"
+  },
+  "devDependencies": {
+    "jasmine-node": "~1.7.0",
+    "uglify-js": "~2.3.2"
+  }
+}
