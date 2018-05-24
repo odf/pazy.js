@@ -27,7 +27,7 @@ to make the code as efficient and robust as possible without
 sacrificing clarity.
 
 A test suite using the fantastic
-Jasmine[http://pivotal.github.com/jasmine/] framework is
+Jasmine[https://jasmine.github.io/] framework is
 included.
 
 This code is being made available under the MIT Licence
